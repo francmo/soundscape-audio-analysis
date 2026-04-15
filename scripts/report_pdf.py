@@ -300,6 +300,117 @@ def _fmt_time(seconds: float) -> str:
     return f"{m:02d}:{s:02d}"
 
 
+def _build_speech_block(speech: dict, base_name: str, styles) -> list:
+    """Sezione PDF per trascrizione dialoghi (v0.5.0).
+
+    Contenuto:
+    - Header con modello, device, compute_type, lingua rilevata,
+      probability, durata parlato / durata totale, segmenti VAD.
+    - Warning se probability < WHISPER_LANG_CONF_WARN (audio multilingua).
+    - Tabella top-10 segmenti (Tempo, Testo originale).
+    - Trascritto completo inline se < TRANSCRIPT_PDF_MAX_CHARS.
+    - Traduzione italiana inline se lingua != it e testo corto.
+    - Nota su file .txt companion altrimenti.
+
+    Ritorna [] se speech non abilitato o skipped.
+    """
+    story = []
+    if not speech or not speech.get("enabled"):
+        return story
+    if speech.get("skipped_reason"):
+        return story
+
+    model_name = speech.get("model_name", "Whisper")
+    device = speech.get("device", "")
+    compute_type = speech.get("compute_type", "")
+    lang = speech.get("language_detected", "?")
+    prob = float(speech.get("language_probability", 0.0))
+    dur_speech = float(speech.get("duration_speech_s", 0.0))
+    dur_total = float(speech.get("duration_total_s", 0.0))
+    pct = (dur_speech / dur_total * 100.0) if dur_total > 0 else 0.0
+    n_vad = int(speech.get("n_vad_segments", 0))
+
+    header = (
+        f"Modello: <b>{model_name}</b>, device {device}, compute_type "
+        f"{compute_type}. Lingua rilevata: <b>{lang}</b> "
+        f"({prob * 100:.1f}%). Durata parlato: {dur_speech:.1f} s su "
+        f"{dur_total:.1f} s ({pct:.1f}%). Segmenti VAD: {n_vad}."
+    )
+    story.append(Paragraph(header, styles["body"]))
+    story.append(Spacer(1, 4))
+
+    if prob < config.WHISPER_LANG_CONF_WARN and prob > 0:
+        story.append(Paragraph(
+            f"<i>Lingua rilevata con probabilita' bassa ({prob:.2f}): "
+            f"possibile audio multilingua, trascrizione e traduzione da "
+            f"verificare manualmente.</i>",
+            styles["caption"]
+        ))
+        story.append(Spacer(1, 4))
+
+    segments = speech.get("segments") or []
+    if segments:
+        story.append(Paragraph(
+            "<b>Segmenti trascritti (top-10)</b>", styles["body"]
+        ))
+        rows = [["Tempo", "Testo originale"]]
+        for seg in segments[:10]:
+            t0 = _fmt_time(seg.get("t_start_s", 0))
+            t1 = _fmt_time(seg.get("t_end_s", 0))
+            text = (seg.get("text") or "").strip()
+            if len(text) > 120:
+                text = text[:117] + "..."
+            rows.append([f"{t0}-{t1}", text])
+        if len(segments) > 10:
+            rows.append([
+                "...",
+                f"+{len(segments) - 10} segmenti omessi, vedi .txt companion"
+            ])
+        story.append(report_styles.styled_table(
+            rows, [22 * mm, 140 * mm], styles
+        ))
+        story.append(Spacer(1, 6))
+
+    transcript = speech.get("transcript") or ""
+    transcript_it = speech.get("transcript_it") or ""
+    translation_fallback = bool(speech.get("translation_fallback"))
+
+    if len(transcript) < config.TRANSCRIPT_PDF_MAX_CHARS:
+        story.append(Paragraph("<b>Trascritto completo</b>", styles["body"]))
+        story.append(Paragraph(transcript.replace("\n", "<br/>"), styles["body"]))
+        story.append(Spacer(1, 6))
+        if lang != "it" and transcript_it and transcript_it != transcript:
+            story.append(Paragraph(
+                "<b>Traduzione italiana</b>", styles["body"]
+            ))
+            story.append(Paragraph(
+                transcript_it.replace("\n", "<br/>"), styles["body"]
+            ))
+            story.append(Spacer(1, 6))
+    else:
+        note = (
+            f"Trascritto completo esportato in "
+            f"<font face=\"Courier\">{base_name}_transcript.txt</font> "
+            f"accanto al PDF."
+        )
+        if lang != "it" and transcript_it and transcript_it != transcript:
+            note += (
+                f" Traduzione italiana in "
+                f"<font face=\"Courier\">{base_name}_transcript_it.txt</font>."
+            )
+        story.append(Paragraph(note, styles["body"]))
+
+    if translation_fallback and lang != "it":
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            "<i>Traduzione italiana non disponibile (claude non in PATH o "
+            "errore subprocess): testo originale preservato.</i>",
+            styles["caption"]
+        ))
+
+    return story
+
+
 def _format_academic_hints(hints: dict) -> str:
     """Formatta gli academic_hints CLAP (v0.4.1) in prosa compatta per PDF.
 
@@ -544,6 +655,14 @@ def build_report(
     if clap.get("enabled"):
         story.append(Paragraph(INTESTAZIONI["clap"], styles["h1"]))
         story.extend(_build_clap_block(clap, styles))
+        story.append(PageBreak())
+
+    # DIALOGHI TRASCRITTI (v0.5.0)
+    speech = summary.get("speech") or {}
+    if speech.get("enabled") and not speech.get("skipped_reason"):
+        base_name = Path(summary.get("metadata", {}).get("filename", "file")).stem
+        story.append(Paragraph(INTESTAZIONI["dialoghi_trascritti"], styles["h1"]))
+        story.extend(_build_speech_block(speech, base_name, styles))
         story.append(PageBreak())
 
     # MULTICANALE

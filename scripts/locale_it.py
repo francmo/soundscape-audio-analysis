@@ -43,6 +43,7 @@ INTESTAZIONI = {
     "confronto_grm": "Confronto con profili GRM",
     "lettura_compositiva": "Lettura compositiva",
     "clap": "Auto-tagging CLAP (vocabolario italiano)",
+    "dialoghi_trascritti": "Dialoghi trascritti",
     "narrativa": "Descrizione segmentata",
 }
 

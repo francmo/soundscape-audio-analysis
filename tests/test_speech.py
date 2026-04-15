@@ -224,6 +224,51 @@ def test_check_speech_suggestion_none_if_semantic_disabled():
     ) is None
 
 
+def test_agent_payload_includes_speech_when_enabled():
+    """Il payload agente deve contenere il campo `speech` con transcript_it
+    capped a 3000 char, segments top-15, quando speech e' abilitato."""
+    from scripts.agent_payload import build_agent_payload
+    long_transcript = "parola " * 1000  # > 3000 char
+    summary = {
+        "metadata": {"filename": "test.wav", "duration_s": 60},
+        "technical": {}, "hum": {}, "spectral": {}, "ecoacoustic": {},
+        "semantic": {}, "clap": {"enabled": False}, "multichannel": {},
+        "speech": {
+            "enabled": True,
+            "model_name": "Whisper large-v3",
+            "language_detected": "en",
+            "language_probability": 0.98,
+            "duration_speech_s": 45.0,
+            "duration_total_s": 60.0,
+            "n_vad_segments": 20,
+            "transcript_it": long_transcript,
+            "segments": [{"t_start_s": i, "t_end_s": i + 1, "text": f"seg {i}"} for i in range(25)],
+            "translation_fallback": False,
+        },
+    }
+    payload = build_agent_payload(summary, narrative_md="narr")
+    assert "speech" in payload
+    assert payload["speech"]["enabled"] is True
+    assert payload["speech"]["language_detected"] == "en"
+    assert len(payload["speech"]["transcript_it"]) <= 3000
+    assert len(payload["speech"]["segments"]) == 15
+
+
+def test_agent_payload_speech_minimal_when_disabled():
+    """Se speech non abilitato, il campo resta compatto."""
+    from scripts.agent_payload import build_agent_payload
+    summary = {
+        "metadata": {}, "technical": {}, "hum": {}, "spectral": {},
+        "ecoacoustic": {}, "semantic": {}, "clap": {"enabled": False},
+        "multichannel": {},
+        "speech": {"enabled": False, "reason": "disabled"},
+    }
+    payload = build_agent_payload(summary, narrative_md="")
+    assert payload["speech"]["enabled"] is False
+    assert payload["speech"]["transcript_it"] == ""
+    assert payload["speech"]["segments"] == []
+
+
 @pytest.mark.skipif(
     not (FIXTURES_DIR / "speech_italian.wav").exists(),
     reason="Fixture speech_italian.wav non disponibile. Vedi piano v0.5.0 "

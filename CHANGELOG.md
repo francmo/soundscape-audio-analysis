@@ -1,5 +1,98 @@
 # Changelog
 
+## [0.5.0] - 2026-04-15
+
+Trascrizione automatica dei dialoghi opt-in via flag `--speech`. Pipeline
+nuova: Silero VAD standalone come pre-filtro (salta Whisper se meno di 2 s
+di parlato totale, risparmia ~1.2 GB RAM su file non vocali),
+faster-whisper large-v3 con compute_type int8 su CPU (CTranslate2 non
+supporta MPS; le ottimizzazioni NEON SIMD di Apple Silicon producono ~15x
+realtime), traduzione italiana automatica via subprocess `claude -p
+--model claude-haiku-4-5` quando la lingua rilevata non e' italiana.
+Suggerimento automatico a stderr in giallo quando PANNs rileva Speech
+dominante nei frame ma l'utente non ha passato `--speech`: metrica
+`top_dominant_frames.pct > 25%` (semanticamente piu' onesta di una
+confidence media). Sezione PDF "Dialoghi trascritti" con top-10 segmenti,
+trascritto inline se corto o riferimento a `.txt` companion se lungo.
+Payload agente arricchito con campo speech (transcript_it capped 3000
+char, segments top-15) per permettere all'agente di valutare la
+prevalenza parlato e citare contenuti verbali pertinenti.
+
+### Aggiunto
+- `scripts/speech.py`: modulo autonomo con `SpeechResult` dataclass,
+  `SpeechTranscriber` singleton lazy-loaded di faster-whisper,
+  `speech_summary` entry point con pre-filtro Silero VAD e fallback
+  skipped_reason='insufficient_speech' quando non vale la pena caricare
+  Whisper, `translate_transcript` con chunking sopra 8000 char (size
+  6000, overlap 500) via subprocess claude -p --model Haiku,
+  `check_speech_suggestion` helper per la logica stderr.
+- `scripts/config.py`: costanti `WHISPER_*`, `SILERO_VAD_*`,
+  `SPEECH_SUGGEST_DOMINANT_PCT`, `TRANSLATION_*`, `TRANSCRIPT_PDF_MAX_CHARS`.
+- `tests/test_speech.py`: 15 test (disabled, empty waveform, VAD-skip,
+  translation noop/fallback/chunking/short/timeout, 5 sul helper
+  suggestion, 2 sul payload agente, 1 whisper reale skipped).
+- `tests/test_report_pdf.py`: 3 test nuovi per `_build_speech_block`
+  (empty, accenti italiani, long transcript usa companion).
+- Sezione PDF "Dialoghi trascritti" via `_build_speech_block` in
+  `scripts/report_pdf.py`: header con modello/device/compute_type,
+  lingua rilevata con probability, durata parlato/totale con pct,
+  warning multilingua se probability < 0.85, tabella top-10 segmenti,
+  trascritto inline se < `TRANSCRIPT_PDF_MAX_CHARS` (2000 char) o
+  riferimento ai file `.txt` companion altrimenti. Traduzione italiana
+  integrale se lingua != it. Note su translation_fallback se claude
+  non in PATH.
+- Flag CLI `--speech` in `scripts/cli.py::analyze_cmd` (opt-in,
+  default False). Step pipeline rinumerato da [N/9] a [N/10] per
+  includere [8/10] Trascrizione dialoghi.
+- Export `.txt` companion accanto al PDF: `<base>_transcript.txt` con
+  il testo originale, `<base>_transcript_it.txt` con la traduzione
+  italiana quando lingua != it.
+- Suggerimento stderr giallo a fine `analyze_cmd` per file con Speech
+  dominante ma senza `--speech`: "[soundscape] <file>: PANNs rileva
+  Speech dominante nel X% dei frame. Per trascrizione: rilancia con
+  --speech".
+- Campo `speech` nel payload agente con `transcript_it` capped a 3000
+  char e `segments[:15]`.
+- Paragrafo "Come usare speech (v0.5.0)" in `templates/agent_prompt.md`
+  con istruzioni operative: valuta prevalenza parlato
+  (`duration_speech_s / duration_total_s > 0.5` → segnala in
+  Osservazioni critiche), cita contenuti verbali solo se pertinenti e
+  max una citazione per sezione, gestione lingua straniera e traduzione
+  fallback.
+- `~/.claude/agents/soundscape-composer-analyst.md` (agent definition
+  globale fuori dal repo) aggiornato con menzione del campo speech.
+
+### Modificato
+- `requirements.txt`: nuove dipendenze `faster-whisper>=1.0,<2` e
+  `silero-vad>=5.0,<6`. Transitive: ctranslate2, onnxruntime, av.
+- `scripts/locale_it.py::INTESTAZIONI`: nuova chiave
+  `dialoghi_trascritti: "Dialoghi trascritti"` per il titolo sezione PDF.
+- Bump versione 0.4.1 → 0.5.0 in `scripts/__init__.py`, `scripts/cli.py`
+  (tre callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (tre
+  stringhe user-facing), `pyproject.toml`.
+
+### Note tecniche
+- **CTranslate2 non supporta MPS**: faster-whisper gira su CPU con
+  compute_type int8. Le ottimizzazioni NEON di Apple Silicon compensano
+  l'assenza di accelerazione Metal: ~15x realtime su large-v3.
+- **Silero VAD come pre-filtro**: evita di caricare Whisper (~1.2 GB
+  RAM + ~3 GB download al primo run) per audio con meno di
+  `SILERO_VAD_MIN_TOTAL_SPEECH_S = 2.0` secondi di parlato. Su file
+  soundscape tipici (Villa Ficana et al.) Whisper non viene mai
+  caricato.
+- **Traduzione via claude -p Haiku**: modello leggero per velocita',
+  pattern mutuato da `report_synthesizer::invoke_corpus_synthesizer`
+  (stdin + `--model`). Chunking automatico sopra 8000 char con overlap
+  500 per continuita' stilistica.
+- **Singleton Whisper/VAD**: module-level, condivisi fra file in loop
+  corpus per evitare reload ~3 GB per ogni file.
+
+### Test suite
+- 105 passed + 2 skipped (benchmark PANNs gated da
+  `SOUNDSCAPE_BENCHMARK=1`, whisper_real gated da fixture
+  `speech_italian.wav` non committata).
+
+
 ## [0.4.1] - 2026-04-15
 
 Hotfix: risolto off-by-one nella pre-allocazione del resample multicanale

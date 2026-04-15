@@ -140,7 +140,7 @@ def _analyze_single(
     )
 
     summary = {
-        "version": "0.4.1",
+        "version": "0.5.0",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -239,7 +239,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.4.1", prog_name="soundscape")
+@click.version_option(version="0.5.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -456,7 +456,7 @@ def report_merge_command(pdf_path, markdown_path):
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.4.1")
+    click.echo("soundscape-audio-analysis 0.5.0")
 
 
 def main():

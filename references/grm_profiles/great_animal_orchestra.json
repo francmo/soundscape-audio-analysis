@@ -1,0 +1,40 @@
+{
+  "id": "great_animal_orchestra",
+  "title": "The Great Animal Orchestra (field recording corpus)",
+  "author": "Bernie Krause",
+  "year": 2012,
+  "tradition": "ecoacoustica / biofonia",
+  "source_type": "literature_based",
+  "sources_audio": [],
+  "generated_at": "2026-04-14",
+  "notes_it": "Corpus di field recording naturali in habitat intatti. Alta biofonia, nicchie acustiche occupate da specie diverse che evitano sovrapposizioni (ipotesi della nicchia acustica).",
+  "spectral": {
+    "centroid_hz_mean": 3200,
+    "centroid_hz_std": 700,
+    "rolloff_85_hz_mean": 9500,
+    "flatness_mean": 0.12,
+    "bands_pct": {
+      "Sub-bass": 2,
+      "Bass": 7,
+      "Low-mid": 10,
+      "Mid": 22,
+      "High-mid": 28,
+      "Presence": 20,
+      "Brilliance": 11
+    }
+  },
+  "dynamic": {
+    "dynamic_range_db": 28,
+    "crest_db": 15,
+    "integrated_lufs": -28
+  },
+  "ecoacoustic": {
+    "aci": 2600,
+    "ndsi": 0.6,
+    "h_entropy": 0.85
+  },
+  "density": {
+    "onset_per_sec": 4.5,
+    "qualitative": "densa"
+  }
+}

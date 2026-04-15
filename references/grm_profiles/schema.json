@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GRM Reference Profile",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "author",
+    "year",
+    "source_type",
+    "spectral",
+    "dynamic"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "year": {
+      "type": "integer"
+    },
+    "tradition": {
+      "type": "string"
+    },
+    "source_type": {
+      "enum": [
+        "literature_based",
+        "audio_derived"
+      ]
+    },
+    "sources_audio": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "notes_it": {
+      "type": "string"
+    },
+    "spectral": {
+      "type": "object",
+      "required": [
+        "centroid_hz_mean",
+        "flatness_mean",
+        "bands_pct"
+      ],
+      "properties": {
+        "centroid_hz_mean": {
+          "type": "number"
+        },
+        "centroid_hz_std": {
+          "type": "number"
+        },
+        "rolloff_85_hz_mean": {
+          "type": "number"
+        },
+        "flatness_mean": {
+          "type": "number"
+        },
+        "bands_pct": {
+          "type": "object",
+          "properties": {
+            "Sub-bass": {
+              "type": "number"
+            },
+            "Bass": {
+              "type": "number"
+            },
+            "Low-mid": {
+              "type": "number"
+            },
+            "Mid": {
+              "type": "number"
+            },
+            "High-mid": {
+              "type": "number"
+            },
+            "Presence": {
+              "type": "number"
+            },
+            "Brilliance": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "dynamic": {
+      "type": "object",
+      "properties": {
+        "dynamic_range_db": {
+          "type": "number"
+        },
+        "crest_db": {
+          "type": "number"
+        },
+        "integrated_lufs": {
+          "type": "number"
+        }
+      }
+    },
+    "ecoacoustic": {
+      "type": "object",
+      "properties": {
+        "aci": {
+          "type": "number"
+        },
+        "ndsi": {
+          "type": "number"
+        },
+        "h_entropy": {
+          "type": "number"
+        }
+      }
+    },
+    "density": {
+      "type": "object",
+      "properties": {
+        "onset_per_sec": {
+          "type": "number"
+        },
+        "qualitative": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

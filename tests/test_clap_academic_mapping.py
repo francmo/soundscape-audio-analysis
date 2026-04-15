@@ -120,6 +120,60 @@ def test_paesaggi_italiani_expanded_to_20_plus():
     )
 
 
+def test_mark_speech_hallucinations_flags_voice_keywords_when_no_panns_speech():
+    """Caso SheLiesDown citato da Gemini: drone musicale, CLAP propone
+    'Discussione di vicini' ma PANNs non vede Speech."""
+    from scripts.clap_mapping import mark_speech_hallucinations
+    top_global = [
+        {"id": "ita_03", "prompt": "Discussione di vicini dalle finestre",
+         "category": "paesaggi italiani specifici", "score": 0.32},
+        {"id": "elx_07", "prompt": "Drone elettronico continuo",
+         "category": "trasformazioni elettroacustiche", "score": 0.55},
+    ]
+    classifier = {
+        "top_global": [{"name": "Music", "score": 0.74},
+                       {"name": "Speech", "score": 0.05}],
+        "top_dominant_frames": [{"name": "Music", "pct": 78.0}],
+    }
+    out = mark_speech_hallucinations(top_global, classifier)
+    halluc = [t for t in out if t.get("likely_hallucination")]
+    assert len(halluc) == 1
+    assert halluc[0]["prompt"].startswith("Discussione")
+    assert "Drone" not in halluc[0]["prompt"]
+
+
+def test_mark_speech_hallucinations_no_flag_when_panns_has_speech():
+    """Se PANNs rileva Speech sopra soglia, i tag CLAP voce non sono
+    allucinazioni."""
+    from scripts.clap_mapping import mark_speech_hallucinations
+    top_global = [
+        {"id": "ita_15", "prompt": "Voci di mercato in dialetto locale",
+         "category": "paesaggi italiani specifici", "score": 0.42},
+    ]
+    classifier = {
+        "top_global": [{"name": "Speech", "score": 0.65}],
+        "top_dominant_frames": [{"name": "Speech", "pct": 60.0}],
+    }
+    out = mark_speech_hallucinations(top_global, classifier)
+    assert out[0]["likely_hallucination"] is False
+
+
+def test_mark_speech_hallucinations_safe_with_no_classifier():
+    """Se classifier e' None o vuoto, nessun crash. Tutti marcati come
+    allucinazioni se contengono keyword voce (PANNs ipoteticamente assente)."""
+    from scripts.clap_mapping import mark_speech_hallucinations
+    top_global = [
+        {"id": "x", "prompt": "Voci di mercato", "score": 0.3},
+        {"id": "y", "prompt": "Drone musicale", "score": 0.4},
+    ]
+    out = mark_speech_hallucinations(top_global, None)
+    # Voci flaggato (ha keyword), Drone no
+    assert out[0]["likely_hallucination"] is True
+    assert out[1]["likely_hallucination"] is False
+    out2 = mark_speech_hallucinations(top_global, {})
+    assert out2[0]["likely_hallucination"] is True
+
+
 def test_sacralita_sonora_category_exists():
     vocab = load_vocabulary()
     mapping = load_academic_mapping()

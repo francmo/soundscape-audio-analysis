@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.5.1] - 2026-04-15
+
+Hotfix interpretativi su tre fronti emersi dal confronto fra l'output della
+skill su VB_Flauto.mp3 (brano del catalogo) e le analisi manuali fatte
+dall'utente (VB2.pdf, Air Piece.pdf), e dalla critica di Gemini sui report
+SheLiesDown / Washing Machine. Tre interventi mirati senza nuove dipendenze
+ne breaking change. Il modulo `narrative.py` (descrizione delta-based) e
+gli altri miglioramenti strutturali sono rimandati alla v0.6.0.
+
+### Fix
+
+- **Hum check contestualizzato su materiale musicale tonale**:
+  `scripts/hum.py::interpret_in_context(hum_res, spectral, classifier)`
+  arricchisce il dict hum con `interpretation_hint`. Quando flatness < 0.05
+  e il top-1 PANNs e' uno strumento musicale (set
+  `MUSICAL_INSTRUMENT_LABELS` in config con ~50 label AudioSet) con score >
+  0.5, marca i picchi come "probabile componente armonica strumentale, non
+  rumore di rete". Il verdict numerico resta invariato (dato grezzo
+  sempre disponibile), il PDF mostra il caveat in corsivo. Caso colto: il
+  picco a 150 Hz con verdict "presente" sul flauto solista di Very
+  Beautiful era un falso positivo, ora correttamente contestualizzato.
+
+- **Filtro allucinazioni CLAP speech-related**:
+  `scripts/clap_mapping.py::mark_speech_hallucinations(top_global,
+  classifier)` marca con `likely_hallucination=True` i tag CLAP che
+  contengono keyword di voce/parlato/canto (~30 termini in
+  `SPEECH_KEYWORDS_IT`) quando PANNs Speech score <= 0.10 e i frame
+  dominanti Speech <= 5%. I tag NON vengono rimossi (l'utente vede
+  comunque il match) ma resi in corsivo nel PDF con nota "basso supporto
+  empirico". Caso colto da Gemini: "Discussione di vicini dalle finestre"
+  su drone ambient privo di parlato.
+
+- **Diagnostica arricchita di `agent_bridge.py`**: telemetria su stderr
+  dei tentativi di invocazione `claude -p --agents
+  soundscape-composer-analyst` con dimensione prompt in byte, returncode,
+  stderr completo (primi 300 char), durata, n. tentativi. Il dict
+  ritornato include `prompt_size_bytes`, `attempts`, `last_returncode`,
+  `last_stderr_excerpt`, `elapsed_s`. Distinzione esplicita fra "output
+  vuoto con returncode 0" e "returncode != 0". Il bug "lettura
+  compositiva non generata" osservato da Gemini sui report
+  SheLiesDown/Washing Machine ora produce informazione utile per
+  diagnosi successiva (causa esatta visibile sia in stderr sia nel
+  summary JSON).
+
+### Aggiunto
+
+- `scripts/config.py`: nuove costanti `HUM_CONTEXT_FLATNESS_MAX`,
+  `HUM_CONTEXT_CLASSIFIER_SCORE_MIN`, `MUSICAL_INSTRUMENT_LABELS`,
+  `HALLUCINATION_SPEECH_SCORE_MAX`, `HALLUCINATION_SPEECH_DOMINANT_PCT_MAX`,
+  `SPEECH_KEYWORDS_IT`.
+
+- `tests/test_hum.py`: 5 test su `interpret_in_context` (caso flauto,
+  caso ambientale, all-trascurabile, score basso, dati mancanti).
+
+- `tests/test_clap_academic_mapping.py`: 3 test su
+  `mark_speech_hallucinations` (drone con CLAP voce, intervista con
+  Speech alto, classifier mancante).
+
+### Modificato
+
+- `scripts/cli.py::_analyze_single`: chiama
+  `hum.interpret_in_context()` dopo PANNs e
+  `clap_mapping.mark_speech_hallucinations()` dopo CLAP per arricchire i
+  dict prima della scrittura del summary.
+
+- `scripts/report_pdf.py::_build_hum_block`: paragrafo in corsivo con
+  l'`interpretation_hint` quando `likely_musical_harmonic=True`.
+- `scripts/report_pdf.py::_build_clap_block`: tag flagged in corsivo +
+  caption finale con il conteggio degli N tag a basso supporto empirico.
+
+- Bump versione 0.5.0 → 0.5.1 in `scripts/__init__.py`, `scripts/cli.py`
+  (tre callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (tre
+  stringhe user-facing), `pyproject.toml`.
+
+### Test suite
+
+- 113 passed + 2 skipped (10 nuovi: 5 hum context, 3 hallucinations CLAP,
+  +2 da test esistenti aggiornati). Zero regressioni.
+
+### Rimandato a v0.6.0
+
+- Modulo `structure.py` per segmentazione strutturale automatica
+  (changepoint detection su RMS/flatness/ZCR/PANNs dominante).
+- Timeline grafica simbolica nel PDF in stile VB2.
+- `narrative.py` delta-based.
+- Flag `--context <file.md>` per contesto utente.
+- Allineamento testo-musica via Speech timeline.
+
+
 ## [0.5.0] - 2026-04-15
 
 Trascrizione automatica dei dialoghi opt-in via flag `--speech`. Pipeline

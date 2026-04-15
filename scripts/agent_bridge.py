@@ -2,9 +2,16 @@
 
 Invoca `claude -p "..."` in modalità non interattiva, con timeout e retry.
 Fallback pulito se `claude` non è nel PATH.
+
+v0.5.1: diagnostica arricchita su stderr per visibilita' dei failure mode
+(returncode, stderr completo, dimensione prompt, durata, n. tentativi).
+Il dict ritornato include anche prompt_size_bytes e last_returncode per
+ispezione successiva nel summary JSON.
 """
 import shutil
 import subprocess
+import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -57,15 +64,35 @@ def invoke_composer_analyst(summary_path: Path,
     Se `claude` non è disponibile, ritorna un messaggio italiano come placeholder.
     """
     if shutil.which("claude") is None:
+        print(
+            "[agent_bridge] claude non trovato nel PATH: lettura compositiva saltata",
+            file=sys.stderr, flush=True,
+        )
         return {
             "text": MESSAGGI_SISTEMA["claude_cli_mancante"],
             "fallback_used": True,
-            "error": None,
+            "error": "claude_not_in_path",
+            "prompt_size_bytes": 0,
+            "attempts": 0,
+            "last_returncode": None,
+            "last_stderr_excerpt": "",
         }
 
     prompt = _build_prompt(summary_path, narrative_md=narrative_md)
+    prompt_size = len(prompt.encode("utf-8"))
+    print(
+        f"[agent_bridge] invoco claude -p --agents {AGENT_NAME}, prompt "
+        f"{prompt_size} byte, timeout {timeout_s} s, retries={retries}",
+        file=sys.stderr, flush=True,
+    )
+
     last_error: str | None = None
+    last_returncode: int | None = None
+    last_stderr: str = ""
+    attempts = 0
     for attempt in range(retries + 1):
+        attempts = attempt + 1
+        t0 = time.perf_counter()
         try:
             result = subprocess.run(
                 ["claude", "-p", prompt, "--agents", AGENT_NAME],
@@ -73,25 +100,67 @@ def invoke_composer_analyst(summary_path: Path,
                 text=True,
                 timeout=timeout_s,
             )
-            if result.returncode == 0 and result.stdout.strip():
+            elapsed = time.perf_counter() - t0
+            last_returncode = result.returncode
+            last_stderr = (result.stderr or "").strip()
+            stdout_clean = (result.stdout or "").strip()
+            if result.returncode == 0 and stdout_clean:
+                print(
+                    f"[agent_bridge] OK tentativo {attempts}/{retries + 1} "
+                    f"in {elapsed:.1f} s, output {len(stdout_clean)} char",
+                    file=sys.stderr, flush=True,
+                )
                 return {
-                    "text": result.stdout.strip(),
+                    "text": stdout_clean,
                     "fallback_used": False,
                     "error": None,
+                    "prompt_size_bytes": prompt_size,
+                    "attempts": attempts,
+                    "last_returncode": result.returncode,
+                    "last_stderr_excerpt": last_stderr[:500],
+                    "elapsed_s": round(elapsed, 1),
                 }
-            last_error = result.stderr.strip() or "output vuoto"
+            # returncode 0 ma stdout vuoto, oppure returncode != 0
+            if result.returncode == 0:
+                last_error = "output vuoto (returncode 0 ma stdout vuoto)"
+            else:
+                last_error = f"returncode {result.returncode}"
+            print(
+                f"[agent_bridge] tentativo {attempts}/{retries + 1} fallito "
+                f"in {elapsed:.1f} s: {last_error}. stderr ({len(last_stderr)} "
+                f"char): {last_stderr[:300]}",
+                file=sys.stderr, flush=True,
+            )
         except subprocess.TimeoutExpired:
-            last_error = f"timeout dopo {timeout_s}s"
+            elapsed = time.perf_counter() - t0
+            last_error = f"timeout dopo {timeout_s} s"
+            last_returncode = None
+            print(
+                f"[agent_bridge] tentativo {attempts}/{retries + 1} TIMEOUT "
+                f"a {elapsed:.1f} s",
+                file=sys.stderr, flush=True,
+            )
         except Exception as e:
-            last_error = str(e)
+            last_error = f"{type(e).__name__}: {e}"
+            last_returncode = None
+            print(
+                f"[agent_bridge] tentativo {attempts}/{retries + 1} eccezione: "
+                f"{last_error}",
+                file=sys.stderr, flush=True,
+            )
 
     return {
         "text": (
             "La lettura compositiva automatica non è stata generata. "
             f"Errore: {last_error}. "
+            f"Tentativi: {attempts}. Stderr: {last_stderr[:200]}. "
             "Puoi invocare manualmente l'agente con: "
             f"claude -p '...' --agents {AGENT_NAME}"
         ),
         "fallback_used": True,
         "error": last_error,
+        "prompt_size_bytes": prompt_size,
+        "attempts": attempts,
+        "last_returncode": last_returncode,
+        "last_stderr_excerpt": last_stderr[:500],
     }

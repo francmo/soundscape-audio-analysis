@@ -74,6 +74,58 @@ def get_prompt_mapping(prompt_id: str, vocabulary: dict, mapping: dict) -> dict:
     return resolved
 
 
+def mark_speech_hallucinations(
+    top_global: list[dict],
+    classifier: dict | None,
+) -> list[dict]:
+    """Marca i tag CLAP che dipendono da voce umana come likely_hallucination
+    quando PANNs non rileva voce nel materiale (v0.5.1).
+
+    Se il prompt contiene keyword di voce/parlato/canto e PANNs ha Speech con
+    score <= HALLUCINATION_SPEECH_SCORE_MAX (0.10) e Speech non e' tra i frame
+    dominanti, il tag e' probabilmente un'allucinazione del modello CLAP. Il
+    tag NON viene rimosso (l'utente vede comunque il match), viene solo
+    marcato per il rendering nel PDF e per l'agente compositivo.
+
+    Ritorna nuova lista (non modifica in-place).
+    """
+    speech_score = 0.0
+    speech_pct = 0.0
+    if classifier:
+        for t in classifier.get("top_global", []) or []:
+            if t.get("name") == "Speech":
+                speech_score = float(t.get("score", 0))
+                break
+        for f in classifier.get("top_dominant_frames", []) or []:
+            if f.get("name") == "Speech":
+                speech_pct = float(f.get("pct", 0))
+                break
+
+    has_voice = (
+        speech_score > config.HALLUCINATION_SPEECH_SCORE_MAX
+        or speech_pct > config.HALLUCINATION_SPEECH_DOMINANT_PCT_MAX
+    )
+
+    out = []
+    for tag in top_global:
+        new_tag = dict(tag)
+        prompt_lower = (tag.get("prompt") or "").lower()
+        contains_speech_kw = any(
+            kw in prompt_lower for kw in config.SPEECH_KEYWORDS_IT
+        )
+        if contains_speech_kw and not has_voice:
+            new_tag["likely_hallucination"] = True
+            new_tag["hallucination_reason"] = (
+                f"prompt menziona voce/parlato ma PANNs Speech score "
+                f"{speech_score:.2f} (frame dominanti {speech_pct:.1f}%): "
+                f"basso supporto empirico"
+            )
+        else:
+            new_tag["likely_hallucination"] = False
+        out.append(new_tag)
+    return out
+
+
 def aggregate_academic_hints(
     top_global: list[dict],
     vocabulary: dict,

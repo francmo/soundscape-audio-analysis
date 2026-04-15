@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.3.3] - 2026-04-15
+
+Uniformazione in italiano del PDF e dei grafici. La v0.3.2 aveva ancora label
+miste (italiano nei titoli sezione, inglese in alcune etichette di grafico,
+dizionario `locale_it.PARAMETRI` per metà in inglese). Gli acronimi tecnici
+internazionali (LUFS, RMS, STFT, ACI, NDSI, H, BI, ADI, AEI, dB, Hz, true
+peak, clipping, rolloff) restano invariati come convenzione DSP, ma le
+descrizioni discorsive e le intestazioni tabellari sono ora tutte in italiano.
+
+### Modificato
+- `scripts/locale_it.py::PARAMETRI`: tradotte le voci residue inglesi.
+  `Peak` → `Picco`, `Crest factor` → `Fattore di cresta`, `Dynamic range` →
+  `Gamma dinamica`, `Noise floor stimato` → `Rumore di fondo stimato`,
+  `Integrated LUFS` → `LUFS integrato`, `Loudness Range (LRA)` → `Gamma di
+  loudness (LRA)`, `True Peak` → `Picco reale (true peak)`, `DC offset` →
+  `Offset DC`, `Hum 50/60 Hz` → `Ronzio 50/60 Hz`, `Spectral flatness` →
+  `Piattezza spettrale`, `Zero-crossing rate` → `Tasso di attraversamenti
+  zero`. Gli indici ecoacustici (`Acoustic Complexity Index (ACI)`, `Normalized
+  Difference Soundscape Index (NDSI)`, `Acoustic Entropy (H)`, `Bioacoustic
+  Index (BI)`, `Acoustic Diversity Index (ADI)`, `Acoustic Evenness Index
+  (AEI)`) ora hanno descrizione italiana con sigla internazionale tra
+  parentesi.
+- `scripts/locale_it.py::INTESTAZIONI`: rimosso il riferimento obsoleto
+  `(YAMNet)` dalla sezione `classificazione_semantica` (dalla v0.2.0 il
+  backend di default è PANNs, non YAMNet).
+- `scripts/plotting.py`: `"Waveform"` → `"Forma d'onda"`, `"Magnitude (dB)"`
+  → `"Modulo (dB)"` negli spettri e nell'hum zoom.
+- `scripts/comparison_plots.py`: `"Integrated LUFS"` → `"LUFS integrato"`,
+  `"Dynamic Range (dB)"` → `"Gamma dinamica (dB)"`.
+- `scripts/report_pdf.py`: header tabelle: `"Rank"` → `"Posizione"`,
+  `"Score medio"` → `"Punteggio medio"`, `"Range (Hz)"` → `"Intervallo (Hz)"`
+  nella tabella bande Schafer.
+- Bump versione 0.3.2 → 0.3.3 in `scripts/__init__.py`, `scripts/cli.py`
+  (tre callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (tre
+  stringhe user-facing), `pyproject.toml`.
+
+
 ## [0.3.2] - 2026-04-15
 
 Abilitazione MPS (Metal Performance Shaders) per PANNs CNN14 su Apple Silicon.

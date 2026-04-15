@@ -106,10 +106,19 @@ def load_audio_multichannel(path: str | Path, sr: int = config.SR_ANALYSIS) -> d
 
     data, sr_orig = sf.read(str(path), always_2d=True, dtype="float32")
     if sr_orig != sr:
-        resampled = np.zeros((int(data.shape[0] * sr / sr_orig), data.shape[1]), dtype=np.float32)
-        for ch in range(data.shape[1]):
-            resampled[:, ch] = librosa.resample(data[:, ch], orig_sr=sr_orig, target_sr=sr)
-        data = resampled
+        # v0.4.1: fix off-by-one della pre-allocazione. librosa.resample puo'
+        # restituire una lunghezza che differisce di +/-1 sample rispetto alla
+        # formula int(n * target/orig), a seconda dell'algoritmo interno
+        # (default soxr_hq). Risampliamo ciascun canale separatamente e
+        # allineiamo tutti alla lunghezza minima con trim difensivo.
+        resampled_list = [
+            librosa.resample(data[:, ch], orig_sr=sr_orig, target_sr=sr)
+            for ch in range(data.shape[1])
+        ]
+        min_len = min(len(c) for c in resampled_list)
+        data = np.column_stack(
+            [c[:min_len] for c in resampled_list]
+        ).astype(np.float32)
 
     channels = [data[:, i].astype(np.float32) for i in range(data.shape[1])]
     n_ch = len(channels)

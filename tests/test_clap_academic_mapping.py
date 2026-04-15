@@ -16,7 +16,7 @@ from scripts.semantic_clap import load_vocabulary
 
 def test_mapping_loads_and_has_required_keys():
     m = load_academic_mapping()
-    assert m["version"] == "1.0"
+    assert m["version"] == "1.1"
     assert "enums" in m and "category_defaults" in m and "prompts" in m
     for name, values in m["enums"].items():
         assert isinstance(values, list) and len(values) > 0, (
@@ -183,3 +183,60 @@ def test_sacralita_sonora_category_exists():
     defaults = mapping["category_defaults"]["sacralita sonora"]
     assert defaults["schafer_role"] == "soundmark"
     assert defaults["westerkamp_soundwalk_relevance"] is True
+
+
+def test_paesaggi_mediterranei_generici_category_exists():
+    """v0.5.2: nuova categoria per materiale mediterraneo non italo-specifico."""
+    vocab = load_vocabulary()
+    mapping = load_academic_mapping()
+    pmd = [
+        p for p in vocab["prompts"]
+        if p["category"] == "paesaggi mediterranei generici"
+    ]
+    assert len(pmd) >= 8, (
+        f"Categoria paesaggi mediterranei generici con solo {len(pmd)} prompt"
+    )
+    assert "paesaggi mediterranei generici" in mapping["category_defaults"]
+    defaults = mapping["category_defaults"]["paesaggi mediterranei generici"]
+    assert defaults["westerkamp_soundwalk_relevance"] is True
+
+
+def test_mark_geo_specific_flags_italian_category():
+    """Tag appartenenti a 'paesaggi italiani specifici' devono essere
+    marcati geo_specific=True."""
+    from scripts.clap_mapping import mark_geo_specific_tags
+    top_global = [
+        {"id": "ita_05", "prompt": "Conservatorio italiano in pausa lezione",
+         "category": "paesaggi italiani specifici", "score": 0.31},
+    ]
+    out = mark_geo_specific_tags(top_global)
+    assert out[0]["geo_specific"] is True
+
+
+def test_mark_geo_specific_flags_keyword_in_prompt():
+    """Tag con keyword italo-specifica nel prompt (anche fuori categoria
+    dedicata) vanno marcati."""
+    from scripts.clap_mapping import mark_geo_specific_tags
+    top_global = [
+        {"id": "x1", "prompt": "Cicale nella campagna estiva del sud Italia",
+         "category": "biofonia mediterranea", "score": 0.40},
+        {"id": "x2", "prompt": "Vicolo di borgo medievale al tramonto",
+         "category": "paesaggi urbani antichi", "score": 0.28},
+    ]
+    out = mark_geo_specific_tags(top_global)
+    assert out[0]["geo_specific"] is True
+    assert out[1]["geo_specific"] is True
+
+
+def test_mark_geo_specific_no_flag_on_generic():
+    """Prompt geograficamente neutri non devono essere flaggati."""
+    from scripts.clap_mapping import mark_geo_specific_tags
+    top_global = [
+        {"id": "geo_01", "prompt": "Vento fra alberi in foresta temperata",
+         "category": "geofonia", "score": 0.33},
+        {"id": "pmd_01", "prompt": "Porto peschereccio mediterraneo all'alba",
+         "category": "paesaggi mediterranei generici", "score": 0.45},
+    ]
+    out = mark_geo_specific_tags(top_global)
+    assert out[0]["geo_specific"] is False
+    assert out[1]["geo_specific"] is False

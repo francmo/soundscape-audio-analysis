@@ -113,12 +113,14 @@ def _analyze_single(
         clap_res = semantic_clap.clap_summary(clap_waveform, 48000, enable=True)
         # v0.5.1: marca tag CLAP speech-related che PANNs non supporta
         # come likely_hallucination. Non rimuove, solo annota.
+        # v0.5.2: marca anche i tag italo-specifici con flag geo_specific.
         if clap_res.get("enabled") and clap_res.get("top_global"):
-            from .clap_mapping import mark_speech_hallucinations
+            from .clap_mapping import mark_speech_hallucinations, mark_geo_specific_tags
             classifier_res = semantic_res.get("classifier") if do_semantic else None
             clap_res["top_global"] = mark_speech_hallucinations(
                 clap_res["top_global"], classifier_res
             )
+            clap_res["top_global"] = mark_geo_specific_tags(clap_res["top_global"])
 
     # Check suggerimento --speech (v0.5.0): se PANNs rileva Speech dominante
     # nel top_dominant_frames oltre soglia e il flag non e' attivo, raccogliamo
@@ -154,7 +156,7 @@ def _analyze_single(
     )
 
     summary = {
-        "version": "0.5.1",
+        "version": "0.5.2",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -253,7 +255,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.5.1", prog_name="soundscape")
+@click.version_option(version="0.5.2", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -470,7 +472,7 @@ def report_merge_command(pdf_path, markdown_path):
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.5.1")
+    click.echo("soundscape-audio-analysis 0.5.2")
 
 
 def main():

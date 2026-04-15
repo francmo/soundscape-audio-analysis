@@ -131,6 +131,25 @@ SPEECH_KEYWORDS_IT = {
     "discussione di vicini", "vociare di",
 }
 
+# Filtro geo-specificita' (v0.5.2): tag CLAP che contengono keyword di luoghi
+# italo-specifici vengono marcati con flag `geo_specific=True` su materiale
+# non identificato come italiano. Il flag e' separato da `likely_hallucination`:
+# segnala "tag potenzialmente fuori contesto geografico", non hallucination
+# certa. Emerso dal feedback su Presque Rien N°1 (Croazia) classificato come
+# "borgo medievale italiano" e "cicale del sud Italia".
+LOCATION_SPECIFIC_KEYWORDS_IT = {
+    "italian", "italia", "italiana", "italiano", "italiani",
+    "marchigian", "toscan", "siciliana", "siciliano", "napolet",
+    "veneto", "veneta", "lombard", "romana", "romano", "fiorentin",
+    "AFAM", "conservatorio italiano", "borgo medievale", "italianita",
+    "campanile di paese", "barocca", "gregoriano", "afam",
+    "dialetto locale", "in dialetto", "parlato italiano",
+    "centro storico italiano", "ecomuseo rurale",
+    "fiera paesana", "osteria pomeridiana",
+    "bar italiano", "moka", "trituratore per pasta", "caffettiera",
+    "campane di chiesa", "piazza italiana", "via",
+}
+
 # Narrativa (v0.2.2)
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"

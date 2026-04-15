@@ -20,11 +20,11 @@ def _fixtures():
 
 
 def test_vocabulary_load():
-    """v0.4.0: il vocabolario v1.2 ha almeno 150 prompt."""
+    """v0.5.2: il vocabolario v1.3 ha almeno 190 prompt."""
     vocab = load_vocabulary()
     assert "prompts" in vocab
-    assert vocab["version"] == "1.2"
-    assert len(vocab["prompts"]) >= 150
+    assert vocab["version"] == "1.3"
+    assert len(vocab["prompts"]) >= 190
     # Ogni prompt ha i campi obbligatori
     for p in vocab["prompts"]:
         assert "id" in p and "text" in p and "category" in p
@@ -33,6 +33,9 @@ def test_vocabulary_load():
     # Gli id sono unici
     ids = [p["id"] for p in vocab["prompts"]]
     assert len(ids) == len(set(ids)), "id duplicati nel vocabolario"
+    # v0.5.2: nuova categoria 'paesaggi mediterranei generici' presente
+    cats = set(p["category"] for p in vocab["prompts"])
+    assert "paesaggi mediterranei generici" in cats
 
 
 @pytest.mark.skipif(not CLAP_CHECKPOINT_FILE.exists(),

@@ -1,11 +1,11 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "schema_version": "1.0",
   "generated_at": "2026-04-15",
   "language": "it",
   "vocabulary_ref": {
     "path": "references/clap_vocabulary_it.json",
-    "min_version": "1.2"
+    "min_version": "1.3"
   },
   "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping.",
   "enums": {
@@ -154,6 +154,14 @@
       "chion": "semantico",
       "truax": "readiness",
       "westerkamp_soundwalk_relevance": true
+    },
+    "paesaggi mediterranei generici": {
+      "krause": "mista",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "misto",
+      "chion": "misto",
+      "truax": "readiness",
+      "westerkamp_soundwalk_relevance": true
     }
   },
   "prompts": {
@@ -259,6 +267,18 @@
     "sac_06": {"schaeffer_type": "impulsivo", "smalley_motion": "descent"},
     "sac_07": {"schaeffer_type": "iterativo", "smalley_motion": "radiation"},
     "sac_08": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
-    "sac_09": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"}
+    "sac_09": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
+
+    "bio_16": {"schafer_role": "soundmark", "schaeffer_type": "iterativo", "smalley_motion": "radiation", "notes": "gallo come soundmark archetipale dell'alba in villaggi rurali"},
+    "bio_17": {"schaeffer_type": "iterativo", "smalley_motion": "streaming"},
+    "bio_18": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
+    "urb_11": {"chion": "semantico", "schaeffer_type": "iterativo", "smalley_motion": "streaming", "notes": "voci di pescatori in lingua locale, tipico porto mediterraneo"},
+    "urb_12": {"chion": "semantico", "schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
+    "urb_13": {"chion": "misto", "schaeffer_type": "trama", "smalley_motion": "turbulence"},
+    "mec_13": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "diesel piccolo cabotaggio, drone meccanico"},
+    "mec_14": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
+    "geox_11": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "mare calmo come keynote di scena marittima"},
+    "geox_12": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
+    "geox_13": {"schaeffer_type": "tenuto", "smalley_motion": "flow"}
   }
 }

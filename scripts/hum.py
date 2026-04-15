@@ -90,3 +90,66 @@ def _aggregate_verdict(peaks: list[dict]) -> str:
     order = {"trascurabile": 0, "presente": 1, "forte": 2}
     worst = max((p["verdict"] for p in peaks), key=lambda v: order.get(v, 0))
     return worst
+
+
+def interpret_in_context(
+    hum_res: dict,
+    spectral: dict | None,
+    classifier: dict | None,
+) -> dict:
+    """Arricchisce hum_res con `interpretation_hint` (v0.5.1).
+
+    Se il materiale e' tonale (flatness bassa) e PANNs classifica come
+    strumento musicale con score alto, i picchi hum non sono verosimilmente
+    rumore di rete ma armoniche strumentali (es. 150 Hz = armonica di nota
+    di flauto). Il verdict numerico non cambia, viene aggiunto un hint.
+
+    Ritorna hum_res modificato in-place e lo restituisce anche come valore.
+    """
+    hint = {
+        "likely_musical_harmonic": False,
+        "reason": "",
+        "flatness": None,
+        "classifier_top_name": "",
+        "classifier_top_score": 0.0,
+    }
+    overall = hum_res.get("overall_verdict", "trascurabile")
+    if overall == "trascurabile":
+        hum_res["interpretation_hint"] = hint
+        return hum_res
+
+    flatness = None
+    if spectral:
+        flatness = (spectral.get("timbre") or {}).get("spectral_flatness")
+    hint["flatness"] = flatness
+
+    top_name = ""
+    top_score = 0.0
+    if classifier:
+        top_global = classifier.get("top_global") or []
+        if top_global:
+            top_name = top_global[0].get("name", "")
+            top_score = float(top_global[0].get("score", 0.0))
+    hint["classifier_top_name"] = top_name
+    hint["classifier_top_score"] = top_score
+
+    if (
+        flatness is not None
+        and flatness < config.HUM_CONTEXT_FLATNESS_MAX
+        and top_name in config.MUSICAL_INSTRUMENT_LABELS
+        and top_score > config.HUM_CONTEXT_CLASSIFIER_SCORE_MIN
+    ):
+        hint["likely_musical_harmonic"] = True
+        non_trascurabili = [
+            p for p in hum_res.get("peaks", [])
+            if p.get("verdict") != "trascurabile"
+        ]
+        freqs = ", ".join(f"{int(p['target_hz'])} Hz" for p in non_trascurabili[:3])
+        hint["reason"] = (
+            f"materiale tonale (flatness {flatness:.3f}) con classificatore "
+            f"dominante {top_name} ({top_score:.2f}): picchi a {freqs} "
+            f"probabilmente armoniche strumentali, non rumore di rete"
+        )
+
+    hum_res["interpretation_hint"] = hint
+    return hum_res

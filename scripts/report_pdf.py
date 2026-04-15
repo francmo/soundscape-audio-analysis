@@ -254,16 +254,29 @@ def _build_clap_block(clap: dict, styles) -> list:
             "<b>Tag globali (media di similarità sul file completo)</b>", styles["body"]))
         rows = [["Posizione", "Prompt italiano", "Categoria", "Similarità"]]
         for i, t in enumerate(top_global, 1):
-            rows.append([str(i), t["prompt"], t.get("category", ""), f"{t['score']:.3f}"])
+            # v0.5.1: tag marcati come allucinazioni vanno in corsivo
+            prompt_text = t["prompt"]
+            if t.get("likely_hallucination"):
+                prompt_text = f"<i>{prompt_text}</i>"
+            rows.append([str(i), prompt_text, t.get("category", ""), f"{t['score']:.3f}"])
         story.append(report_styles.styled_table(
             rows, [14 * mm, 90 * mm, 38 * mm, 24 * mm], styles
         ))
+        # v0.5.1: nota su tag marcati come allucinazioni
+        n_halluc = sum(1 for t in top_global if t.get("likely_hallucination"))
+        if n_halluc > 0:
+            story.append(Paragraph(
+                f"<i>I {n_halluc} tag in corsivo menzionano voce/parlato ma "
+                f"PANNs non rileva voce nel materiale: trattare come ipotesi "
+                f"di lavoro a basso supporto empirico.</i>",
+                styles["caption"],
+            ))
         story.append(Spacer(1, 8))
 
     hints_text = _format_academic_hints(clap.get("academic_hints", {}))
     if hints_text:
         story.append(Paragraph(
-            "<b>Hint accademici aggregati (v0.5.0)</b>", styles["body"]
+            "<b>Hint accademici aggregati (v0.5.1)</b>", styles["body"]
         ))
         story.append(Paragraph(hints_text, styles["body"]))
         story.append(Spacer(1, 8))
@@ -301,7 +314,7 @@ def _fmt_time(seconds: float) -> str:
 
 
 def _build_speech_block(speech: dict, base_name: str, styles) -> list:
-    """Sezione PDF per trascrizione dialoghi (v0.5.0).
+    """Sezione PDF per trascrizione dialoghi (v0.5.1).
 
     Contenuto:
     - Header con modello, device, compute_type, lingua rilevata,
@@ -412,7 +425,7 @@ def _build_speech_block(speech: dict, base_name: str, styles) -> list:
 
 
 def _format_academic_hints(hints: dict) -> str:
-    """Formatta gli academic_hints CLAP (v0.5.0) in prosa compatta per PDF.
+    """Formatta gli academic_hints CLAP (v0.5.1) in prosa compatta per PDF.
 
     Ritorna stringa vuota se gli hint non sono disponibili.
     """
@@ -514,6 +527,14 @@ def _build_hum_block(hum: dict, styles) -> list:
         f"Risoluzione FFT: {hum.get('bin_hz', 0):.2f} Hz per bin.",
         styles["caption"],
     ))
+    # v0.5.1: contesto musicale per evitare letture errate dei picchi
+    hint = hum.get("interpretation_hint") or {}
+    if hint.get("likely_musical_harmonic"):
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            f"<i>Contesto: {hint.get('reason', '')}.</i>",
+            styles["body"],
+        ))
     return story
 
 
@@ -657,7 +678,7 @@ def build_report(
         story.extend(_build_clap_block(clap, styles))
         story.append(PageBreak())
 
-    # DIALOGHI TRASCRITTI (v0.5.0)
+    # DIALOGHI TRASCRITTI (v0.5.1)
     speech = summary.get("speech") or {}
     if speech.get("enabled") and not speech.get("skipped_reason"):
         base_name = Path(summary.get("metadata", {}).get("filename", "file")).stem
@@ -943,7 +964,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.5.0",
+        "Skill soundscape-audio-analysis v0.5.1",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -955,7 +976,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.5.0: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.5.1: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1036,7 +1057,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.5.0. "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.5.1. "
         "Font Libre Baskerville e Source Sans Pro (licenza SIL OFL). "
         "Pipeline analitica: librosa + soundfile per il carico audio, "
         "ffmpeg ebur128 per i LUFS, PANNs CNN14 per la classificazione semantica "

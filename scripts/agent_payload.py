@@ -13,7 +13,6 @@ non e caricabile (file mancante o malformato), il campo ritorna
 `{"available": False, "reason": "..."}` senza rompere la pipeline.
 """
 from __future__ import annotations
-import sys
 from pathlib import Path
 
 from . import config
@@ -78,43 +77,14 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "enabled": clap.get("enabled", False),
             "model_name": clap.get("model_name"),
             "vocabulary_size": clap.get("vocabulary_size"),
+            "vocabulary_version": clap.get("vocabulary_version"),
+            "academic_mapping_version": clap.get("academic_mapping_version", ""),
             "top_global": clap.get("top_global", [])[:20],
-            "academic_hints": _compute_academic_hints(clap),
+            "academic_hints": clap.get("academic_hints", {"available": False}),
         },
         "narrative_markdown": narrative_md,
     }
     return payload
-
-
-def _compute_academic_hints(clap: dict) -> dict:
-    """Calcola hint accademici aggregati dai top-20 CLAP, pesati per score.
-
-    Wrapping difensivo: se il mapping non carica o top_global e vuoto,
-    ritorna {"available": False, "reason": "..."} senza rompere la pipeline.
-    """
-    if not clap.get("enabled") or not clap.get("top_global"):
-        return {"available": False, "reason": "clap disabled or empty top_global"}
-    try:
-        from .clap_mapping import aggregate_academic_hints, load_academic_mapping
-        from .semantic_clap import load_vocabulary
-        vocabulary = load_vocabulary()
-        mapping = load_academic_mapping()
-    except Exception as e:
-        print(
-            f"[agent_payload] Errore caricamento mapping accademico: {e}",
-            file=sys.stderr, flush=True,
-        )
-        return {"available": False, "reason": f"mapping load error: {e}"}
-    try:
-        return aggregate_academic_hints(
-            clap.get("top_global", [])[:20], vocabulary, mapping
-        )
-    except Exception as e:
-        print(
-            f"[agent_payload] Errore aggregazione hint: {e}",
-            file=sys.stderr, flush=True,
-        )
-        return {"available": False, "reason": f"aggregate error: {e}"}
 
 
 def write_agent_payload(summary: dict, narrative_md: str, out_path: Path) -> Path:

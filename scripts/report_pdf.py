@@ -260,6 +260,14 @@ def _build_clap_block(clap: dict, styles) -> list:
         ))
         story.append(Spacer(1, 8))
 
+    hints_text = _format_academic_hints(clap.get("academic_hints", {}))
+    if hints_text:
+        story.append(Paragraph(
+            "<b>Hint accademici aggregati (v0.4.0)</b>", styles["body"]
+        ))
+        story.append(Paragraph(hints_text, styles["body"]))
+        story.append(Spacer(1, 8))
+
     timeline = clap.get("timeline", [])
     if timeline:
         story.append(Paragraph(
@@ -290,6 +298,52 @@ def _fmt_time(seconds: float) -> str:
     m = int(seconds) // 60
     s = int(seconds) % 60
     return f"{m:02d}:{s:02d}"
+
+
+def _format_academic_hints(hints: dict) -> str:
+    """Formatta gli academic_hints CLAP (v0.4.0) in prosa compatta per PDF.
+
+    Ritorna stringa vuota se gli hint non sono disponibili.
+    """
+    if not hints or not hints.get("available"):
+        return ""
+    parts = []
+    krause = hints.get("krause", {}).get("distribution", {})
+    if krause:
+        krause_str = ", ".join(
+            f"{k} {int(v * 100)}%"
+            for k, v in sorted(krause.items(), key=lambda kv: -kv[1])
+        )
+        parts.append(f"<b>Distribuzione Krause:</b> {krause_str}")
+    schafer_present = hints.get("schafer_role", {}).get("present", [])
+    if schafer_present:
+        parts.append(
+            f"<b>Ruoli Schafer presenti:</b> {', '.join(schafer_present)}"
+        )
+    schafer_fid = hints.get("schafer_fidelity", {}).get("value")
+    if schafer_fid and schafer_fid != "n/a":
+        parts.append(f"<b>Fidelity (Schafer):</b> {schafer_fid}")
+    schaeffer = hints.get("schaeffer_type", {}).get("top_2", [])
+    if schaeffer:
+        s_str = ", ".join(
+            f"{v} {int(p * 100)}%" for v, p in schaeffer[:2]
+        )
+        parts.append(f"<b>Schaeffer:</b> {s_str}")
+    smalley = hints.get("smalley_motion", {}).get("top_2", [])
+    if smalley:
+        sm_str = ", ".join(
+            f"{v} {int(p * 100)}%" for v, p in smalley[:2]
+        )
+        parts.append(f"<b>Smalley motion:</b> {sm_str}")
+    chion = hints.get("chion_modes_present", [])
+    if chion:
+        parts.append(f"<b>Modi Chion:</b> {', '.join(chion)}")
+    sw = hints.get("westerkamp_soundwalk_relevance", {})
+    if sw.get("value"):
+        parts.append(
+            f"<b>Rilevanza soundwalk:</b> sì ({int(sw.get('pct', 0) * 100)}%, ipotesi)"
+        )
+    return ". ".join(parts) + "." if parts else ""
 
 
 def _build_multichannel_block(mc: dict, styles) -> list:
@@ -770,7 +824,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.3.3",
+        "Skill soundscape-audio-analysis v0.4.0",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -782,7 +836,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.3.3: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.4.0: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -863,7 +917,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.3.3. "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.4.0. "
         "Font Libre Baskerville e Source Sans Pro (licenza SIL OFL). "
         "Pipeline analitica: librosa + soundfile per il carico audio, "
         "ffmpeg ebur128 per i LUFS, PANNs CNN14 per la classificazione semantica "

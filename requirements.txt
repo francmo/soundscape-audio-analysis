@@ -1,0 +1,40 @@
+# Soundscape Audio Analysis - dipendenze Python 3.12
+# Pin stringenti per riproducibilità
+
+# Numerico e I/O audio
+numpy>=1.26,<2.3
+scipy>=1.11,<1.15
+librosa>=0.10,<0.11
+soundfile>=0.12,<0.13
+resampy>=0.4.3
+
+# Grafica
+matplotlib>=3.8,<3.10
+
+# Machine learning audio
+tensorflow>=2.16,<2.20
+tensorflow-hub>=0.16
+
+# PANNs classifier (v0.2.0)
+torch>=2.2
+torchaudio>=2.2
+panns_inference>=0.1.1
+
+# CLAP auto-tagging (v0.2.1)
+laion_clap>=1.1.6
+transformers>=4.40
+
+
+# PDF
+reportlab>=4.0,<4.4
+
+# CLI
+click>=8.1,<8.3
+rich>=13.7
+
+# Testing e validazione
+pytest>=8.0
+jsonschema>=4.20
+
+# pkg_resources deprecato da setuptools 82, tensorflow-hub lo richiede ancora
+setuptools<81

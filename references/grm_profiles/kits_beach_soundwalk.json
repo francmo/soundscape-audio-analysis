@@ -1,0 +1,40 @@
+{
+  "id": "kits_beach_soundwalk",
+  "title": "Kits Beach Soundwalk",
+  "author": "Hildegard Westerkamp",
+  "year": 1989,
+  "tradition": "soundscape composition",
+  "source_type": "literature_based",
+  "sources_audio": [],
+  "generated_at": "2026-04-14",
+  "notes_it": "Soundwalk con voce narrante che guida l'ascolto attraverso un paesaggio costiero di Vancouver. Presenza di biofonia (uccelli, acqua), antropofonia urbana distante, voce umana come elemento drammaturgico.",
+  "spectral": {
+    "centroid_hz_mean": 2600,
+    "centroid_hz_std": 500,
+    "rolloff_85_hz_mean": 7500,
+    "flatness_mean": 0.14,
+    "bands_pct": {
+      "Sub-bass": 2,
+      "Bass": 10,
+      "Low-mid": 14,
+      "Mid": 28,
+      "High-mid": 24,
+      "Presence": 14,
+      "Brilliance": 8
+    }
+  },
+  "dynamic": {
+    "dynamic_range_db": 32,
+    "crest_db": 17,
+    "integrated_lufs": -23
+  },
+  "ecoacoustic": {
+    "aci": 2200,
+    "ndsi": 0.1,
+    "h_entropy": 0.78
+  },
+  "density": {
+    "onset_per_sec": 2.0,
+    "qualitative": "media"
+  }
+}

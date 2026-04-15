@@ -1,0 +1,13 @@
+#!/bin/bash
+# Wrapper: attiva venv e invoca il CLI Python della skill.
+set -e
+SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ ! -f "$SKILL_DIR/venv/bin/activate" ]; then
+  echo "Virtualenv non trovato in $SKILL_DIR/venv" >&2
+  echo "Per ricrearla: cd $SKILL_DIR && python3.12 -m venv venv && source venv/bin/activate && pip install -r requirements.txt" >&2
+  exit 1
+fi
+source "$SKILL_DIR/venv/bin/activate"
+cd "$SKILL_DIR"
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+exec python -m scripts.cli "$@"

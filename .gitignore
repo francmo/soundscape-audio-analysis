@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+tests/out/
+tests/fixtures/*.wav
+!tests/fixtures/make_fixtures.py
+/tmp/
+*.log
+.DS_Store

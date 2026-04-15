@@ -1,0 +1,24 @@
+[project]
+name = "soundscape-audio-analysis"
+version = "0.3.2"
+description = "Analisi tecnica e compositiva di file audio per soundscape, field recording, musica elettroacustica"
+requires-python = ">=3.12"
+authors = [{name = "Francesco Mariano"}]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["scripts"]
+
+[project.scripts]
+soundscape = "scripts.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]

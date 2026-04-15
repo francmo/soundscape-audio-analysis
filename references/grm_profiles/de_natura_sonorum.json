@@ -1,0 +1,40 @@
+{
+  "id": "de_natura_sonorum",
+  "title": "De Natura Sonorum",
+  "author": "Bernard Parmegiani",
+  "year": 1975,
+  "tradition": "musique concrète GRM",
+  "source_type": "literature_based",
+  "sources_audio": [],
+  "generated_at": "2026-04-14",
+  "notes_it": "Ciclo di studi spettrali e morfologici, estetica GRM matura. Montaggio stretto, trasformazioni concrete, uso della sintesi, equilibrio tra fonti riconoscibili e astrazione.",
+  "spectral": {
+    "centroid_hz_mean": 2000,
+    "centroid_hz_std": 400,
+    "rolloff_85_hz_mean": 6500,
+    "flatness_mean": 0.18,
+    "bands_pct": {
+      "Sub-bass": 3,
+      "Bass": 12,
+      "Low-mid": 15,
+      "Mid": 28,
+      "High-mid": 22,
+      "Presence": 13,
+      "Brilliance": 7
+    }
+  },
+  "dynamic": {
+    "dynamic_range_db": 38,
+    "crest_db": 18,
+    "integrated_lufs": -20
+  },
+  "ecoacoustic": {
+    "aci": 1800,
+    "ndsi": -0.3,
+    "h_entropy": 0.72
+  },
+  "density": {
+    "onset_per_sec": 3.2,
+    "qualitative": "densa"
+  }
+}

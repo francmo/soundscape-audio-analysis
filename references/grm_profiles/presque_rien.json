@@ -1,0 +1,40 @@
+{
+  "id": "presque_rien",
+  "title": "Presque Rien N. 1 - Le lever du jour au bord de la mer",
+  "author": "Luc Ferrari",
+  "year": 1970,
+  "tradition": "musique anecdotique",
+  "source_type": "literature_based",
+  "sources_audio": [],
+  "generated_at": "2026-04-14",
+  "notes_it": "Alba in un villaggio di pescatori di Vela Luka (Croazia), compressa in 21 minuti. Keynote di mare e silenzio, progressiva apparizione di voci e segnali umani. Editing concettualmente documentaristico ma compositivamente rigoroso.",
+  "spectral": {
+    "centroid_hz_mean": 1600,
+    "centroid_hz_std": 350,
+    "rolloff_85_hz_mean": 5500,
+    "flatness_mean": 0.22,
+    "bands_pct": {
+      "Sub-bass": 5,
+      "Bass": 18,
+      "Low-mid": 18,
+      "Mid": 26,
+      "High-mid": 18,
+      "Presence": 10,
+      "Brilliance": 5
+    }
+  },
+  "dynamic": {
+    "dynamic_range_db": 35,
+    "crest_db": 20,
+    "integrated_lufs": -26
+  },
+  "ecoacoustic": {
+    "aci": 1500,
+    "ndsi": 0.05,
+    "h_entropy": 0.8
+  },
+  "density": {
+    "onset_per_sec": 0.9,
+    "qualitative": "media"
+  }
+}

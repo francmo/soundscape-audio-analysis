@@ -60,6 +60,7 @@ Flag principali:
 - `--output=<dir>`              cartella di output (default: dir del file audio)
 - `--multichannel=auto|split|downmix-only`  gestione file multicanale (default auto)
 - `--agent/--no-agent`          invocazione agente compositivo (default attivo)
+- `--speech`                    trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana automatica (opt-in, v0.5.0)
 - `--lang=it|en`                lingua output (default it)
 
 Sub-comandi per gestione profili GRM:

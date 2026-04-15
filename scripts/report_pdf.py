@@ -289,7 +289,7 @@ def _build_clap_block(clap: dict, styles) -> list:
     hints_text = _format_academic_hints(clap.get("academic_hints", {}))
     if hints_text:
         story.append(Paragraph(
-            "<b>Hint accademici aggregati (v0.5.1)</b>", styles["body"]
+            "<b>Hint accademici aggregati</b>", styles["body"]
         ))
         story.append(Paragraph(hints_text, styles["body"]))
         story.append(Spacer(1, 8))

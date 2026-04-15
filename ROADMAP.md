@@ -128,20 +128,80 @@ estensione di `report_pdf.py` per timeline grafica.
 
 **Prerequisito**: aprire Plan Mode con `/plan` per design dettagliato.
 
-### v0.5.2 — Hotfix dipendenti dal feedback utente
+### v0.5.3 — Plausibility check CLAP (feedback audio5/Presque Rien N°1)
 
-Una volta che `references/user_feedback/VB_Flauto.md` (e altri brani) e'
-compilato, traduzione delle correzioni in:
+Hotfix mirato ai gap residui emersi rilanciando Presque Rien N°1 con la v0.5.2
+(`references/user_feedback/Presque_Rien_N1.md` sezione "Note libere audio5"):
+il flag `geo_specific` ha funzionato e i prompt mediterranei generici sono
+entrati in top-10, ma restano 4 classi di hallucination CLAP non coperte dai
+filtri attuali. Tempo stimato: 6-10 h.
 
-- Prompt CLAP rimossi/aggiunti in `clap_vocabulary_it.json` v1.3.
-- Override del mapping accademico per casi specifici corretti dall'utente.
-- Ricalibrazione soglie `HUM_CONTEXT_*`, `HALLUCINATION_*`,
-  `SPEECH_SUGGEST_*`.
-- Nuove parole chiave nel filtro hallucination.
-- Glossario lessico CLAP -> terminologia musicale corretta (per
-  arricchimento PDF e prompt agente).
+**Hallucinations residue documentate**:
 
-Tempo: 2-4 h dopo ogni ciclo di feedback.
+1. **"Acqua del rubinetto che scorre" (top-1, 0.212)** su sciabordio di onde
+   contro scafo in porto peschereccio. CLAP confonde acqua domestica con acqua
+   mediterranea. Nessun filtro attuale lo cattura.
+2. **"Preghiera collettiva sussurrata in chiesa" (top-2, 0.208)** su voci di
+   pescatori e bambini in banchina. Il filtro `likely_hallucination` v0.5.1
+   non scatta perche' PANNs vede Speech al 48% dei frame: c'e' voce, ma non
+   di preghiera. Serve un livello semantico piu' fine (tipo di voce, non
+   solo presenza).
+3. **Prompt musicali strumentali**: "Quartetto d'archi in esecuzione",
+   "Tastiera elettrica o sintetizzatore", "Musica elettronica ambient",
+   "Processione con coro e tamburi", "Campane di chiesa che suonano" compaiono
+   ripetutamente nella timeline su field recording di porto. CLAP li propone
+   su suoni meccanici o ambientali tonali.
+4. **Prompt di composizione soundscape**: "Profilo dinamico in morphing
+   continuo", "Transizione dal silenzio notturno a [alba]", "Cross-sintesi fra
+   due suoni concreti" entrano come top-1/top-2 in molti segmenti su field
+   recording grezzo. CLAP li associa a qualsiasi transizione dinamica.
+5. **Confusione motore terrestre/marittimo**: "Treno regionale in arrivo a
+   stazione", "Treno ad alta velocita'" vs motore diesel di peschereccio.
+   Vocabolario non distingue bene.
+
+**Azioni proposte**:
+
+- **`scripts/clap_plausibility.py` (nuovo) `mark_implausible_tags()`**. Filtro
+  post-hoc che marca `plausibility: "low"|"medium"|"high"` sui tag in base
+  a consistenza con contesto tecnico. Regole:
+  - Prompt di categoria "musica registrata", "sacralita sonora",
+    "composizione soundscape", "trasformazioni elettroacustiche", "performance
+    multimediale" richiedono PANNs "Music"/"Orchestra"/"Choir"/"Chant" nei
+    top-5 globali (score > 0.1) per avere `plausibility: high`. Altrimenti
+    `low`.
+  - Prompt di categoria "paesaggi italiani specifici" o con keyword
+    italo-specifiche richiedono conferma esterna dall'utente (flag
+    `geo_specific` gia' in v0.5.2) + `plausibility: medium` di default su
+    materiale non identificato.
+  - Prompt con keyword "preghiera/liturgia/cerimonia/processione" richiedono
+    PANNs "Choir"/"Chant"/"Religious music" nei top-10 per `plausibility:
+    high`. Altrimenti `low`, anche se PANNs Speech c'e' genericamente.
+  - Prompt "treno/ferrovia/stazione" richiedono PANNs "Train"/"Rail" nei
+    top-10 per plausibility alta. Altrimenti degradati.
+- **Vocabolario v1.4**: aggiungere 4-6 prompt per motori marittimi specifici
+  (gia' abbiamo `mec_13-14`, espandere con "Motore diesel lento di peschereccio
+  con scoppio irregolare", "Scafo in legno che cigola sul molo", "Sciabordio
+  di onde contro scafo ormeggiato") per dare a CLAP alternative piu' precise
+  agli erronei "Treno" e "Acqua del rubinetto".
+- **Rendering PDF**: tag con `plausibility: "low"` resi in corsivo grigio (gia'
+  usato per allucinazioni) con caption distinta "tag con bassa plausibilita'
+  tecnica", separata da `likely_hallucination` (speech-specific) e
+  `geo_specific` (geografico). Terza categoria di markup.
+- **Test fixture dedicata**: `tests/test_clap_plausibility.py` con 4-5
+  casi reali estratti da `audio5_summary.json` per regression coverage sui
+  filtri.
+- **Payload agente**: propagare `plausibility` nei campi top_global. Istruire
+  l'agente a ignorare tag con `plausibility: "low"` come fa gia' con
+  `likely_hallucination`.
+
+**Fuori scope v0.5.3** (rinviati a v0.6.0+): post-hoc reranking via embedding
+text-audio con modello secondario, fine-tuning CLAP su soundscape annotato.
+
+### v0.5.4 — Hotfix dipendenti dal feedback utente (continuo)
+
+Traduzione di ogni nuovo `references/user_feedback/<brano>.md` in patch
+concrete: prompt CLAP aggiunti/rimossi, soglie ricalibrate, regole di
+plausibility estese. Cicli da 2-4 h ciascuno.
 
 ### v0.7.0+ — Idee successive
 

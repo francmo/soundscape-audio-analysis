@@ -175,7 +175,7 @@ def plot_lufs_bar(entries: list[CorpusEntry], out_path: Path) -> Path:
                 label="target broadcast -23 LUFS")
     ax.axvline(-16, color=TAB10_PRIMARY[4], linestyle=":", linewidth=1,
                 label="target podcast -16 LUFS")
-    ax.set_xlabel("Integrated LUFS")
+    ax.set_xlabel("LUFS integrato")
     ax.set_title("Loudness integrato per file del corpus", fontsize=11, weight="bold")
     ax.legend(fontsize=8, loc="lower right")
 
@@ -203,7 +203,7 @@ def plot_dynamic_range_bar(entries: list[CorpusEntry], out_path: Path) -> Path:
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels)
     ax.invert_yaxis()
-    ax.set_xlabel("Dynamic Range (dB)")
+    ax.set_xlabel("Gamma dinamica (dB)")
     ax.set_title("Dinamica percettiva per file del corpus (P95-P10 frame RMS)",
                   fontsize=11, weight="bold")
     for i, v in enumerate(values):

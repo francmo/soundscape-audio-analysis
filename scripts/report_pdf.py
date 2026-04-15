@@ -125,7 +125,7 @@ def _hum_verdict(hum: dict, target: int) -> str:
 
 
 def _build_bande_table(bands: dict, styles) -> Table:
-    rows = [["Banda", "Range (Hz)", "Energia %", "dB rel."]]
+    rows = [["Banda", "Intervallo (Hz)", "Energia %", "dB rel."]]
     for name, info in bands.items():
         lo, hi = info["range_hz"]
         rows.append([name, f"{lo}-{hi}", f"{info['energy_pct']:.2f}%", f"{info['energy_db']:+.1f}"])
@@ -192,7 +192,7 @@ def _build_semantic_block(semantic: dict, styles) -> list:
 
     top_global = classifier.get("top_global", [])[:10]
     if top_global:
-        rows = [["Rank", f"Categoria {model_label}", "Score medio"]]
+        rows = [["Posizione", f"Categoria {model_label}", "Punteggio medio"]]
         for i, cat in enumerate(top_global, 1):
             rows.append([str(i), cat["name"], f"{cat['score']:.4f}"])
         story.append(report_styles.styled_table(rows, [15 * mm, 95 * mm, 35 * mm], styles))
@@ -252,7 +252,7 @@ def _build_clap_block(clap: dict, styles) -> list:
     if top_global:
         story.append(Paragraph(
             "<b>Tag globali (media di similarità sul file completo)</b>", styles["body"]))
-        rows = [["Rank", "Prompt italiano", "Categoria", "Similarità"]]
+        rows = [["Posizione", "Prompt italiano", "Categoria", "Similarità"]]
         for i, t in enumerate(top_global, 1):
             rows.append([str(i), t["prompt"], t.get("category", ""), f"{t['score']:.3f}"])
         story.append(report_styles.styled_table(
@@ -770,7 +770,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.3.2",
+        "Skill soundscape-audio-analysis v0.3.3",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -782,7 +782,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.3.2: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.3.3: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -863,7 +863,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.3.2. "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.3.3. "
         "Font Libre Baskerville e Source Sans Pro (licenza SIL OFL). "
         "Pipeline analitica: librosa + soundfile per il carico audio, "
         "ffmpeg ebur128 per i LUFS, PANNs CNN14 per la classificazione semantica "

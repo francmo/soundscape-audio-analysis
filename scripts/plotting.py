@@ -17,7 +17,7 @@ def _style(ax):
         spine.set_color(config.PALETTE["muted_gray"])
 
 
-def plot_waveform(y: np.ndarray, sr: int, out_path: Path, title: str = "Waveform") -> Path:
+def plot_waveform(y: np.ndarray, sr: int, out_path: Path, title: str = "Forma d'onda") -> Path:
     dur = len(y) / sr
     t = np.linspace(0, dur, len(y))
     fig, ax = plt.subplots(figsize=(12, 2.5))
@@ -58,7 +58,7 @@ def plot_spectrum_mean(spectrum: np.ndarray, freqs: np.ndarray, out_path: Path,
         ax.axvspan(lo, hi, alpha=0.04, color=config.PALETTE["terracotta"])
     ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
     ax.set_xlabel("Frequenza (Hz)")
-    ax.set_ylabel("Magnitude (dB)")
+    ax.set_ylabel("Modulo (dB)")
     ax.set_xlim(20, freqs[-1])
     _style(ax)
     plt.tight_layout()
@@ -94,7 +94,7 @@ def plot_hum_zoom(peaks: list[dict], baseline_db: float, out_path: Path,
     ax.axhline(baseline_db, color=config.PALETTE["teal"], linestyle="--", label="baseline locale")
     ax.set_title("Hum check 0-200 Hz (baseline locale)", fontsize=10, color=config.PALETTE["dark"])
     ax.set_xlabel("Frequenza (Hz)")
-    ax.set_ylabel("Magnitude (dB)")
+    ax.set_ylabel("Modulo (dB)")
     ax.set_xlim(0, max_hz)
     ax.legend(fontsize=8)
     _style(ax)
@@ -144,7 +144,7 @@ def generate_all_plots(y: np.ndarray, sr: int, spectrum: np.ndarray, freqs: np.n
     out_dir.mkdir(parents=True, exist_ok=True)
     files = {}
     files["waveform"] = plot_waveform(y, sr, out_dir / f"{base}_waveform.png",
-                                       title=f"Waveform - {base}")
+                                       title=f"Forma d'onda - {base}")
     files["spectrogram"] = plot_spectrogram(y, sr, out_dir / f"{base}_spettrogramma.png")
     files["spectrum_mean"] = plot_spectrum_mean(spectrum, freqs, out_dir / f"{base}_spettro_medio.png")
     files["bands_bar"] = plot_bands_bar(bands, out_dir / f"{base}_bande.png")

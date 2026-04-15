@@ -11,6 +11,11 @@ cosine su tassonomie Schafer/Truax/Krause/Schaeffer/Smalley/Chion/Westerkamp,
 calcolate da `scripts.clap_mapping.aggregate_academic_hints`. Se il mapping
 non e caricabile (file mancante o malformato), il campo ritorna
 `{"available": False, "reason": "..."}` senza rompere la pipeline.
+
+v0.5.0: aggiunto campo `speech` quando la trascrizione e' attiva.
+Contiene lingua rilevata, durate, trascritto italiano capped a 3000 char
+e top-15 segmenti VAD. Se speech non abilitato o skipped, il campo resta
+compatto con solo enabled=False + skipped_reason.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -28,6 +33,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
     eco = summary.get("ecoacoustic", {})
     classifier = (summary.get("semantic", {}) or {}).get("classifier", {}) or {}
     clap = summary.get("clap", {}) or {}
+    speech = summary.get("speech", {}) or {}
     mc = summary.get("multichannel", {}) or {}
 
     payload = {
@@ -81,6 +87,19 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "academic_mapping_version": clap.get("academic_mapping_version", ""),
             "top_global": clap.get("top_global", [])[:20],
             "academic_hints": clap.get("academic_hints", {"available": False}),
+        },
+        "speech": {
+            "enabled": speech.get("enabled", False),
+            "model_name": speech.get("model_name", ""),
+            "language_detected": speech.get("language_detected", ""),
+            "language_probability": speech.get("language_probability", 0),
+            "duration_speech_s": speech.get("duration_speech_s", 0),
+            "duration_total_s": speech.get("duration_total_s", 0),
+            "n_vad_segments": speech.get("n_vad_segments", 0),
+            "transcript_it": (speech.get("transcript_it") or "")[:3000],
+            "segments": speech.get("segments", [])[:15],
+            "skipped_reason": speech.get("skipped_reason", ""),
+            "translation_fallback": speech.get("translation_fallback", False),
         },
         "narrative_markdown": narrative_md,
     }

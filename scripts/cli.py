@@ -44,6 +44,7 @@ def _analyze_single(
     semantic_backend: str | None = None,
     do_clap: bool = True,
     narrative_mode: str = "full",
+    do_transcribe_speech: bool = False,
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     from . import io_loader, technical, hum, spectral, ecoacoustic, semantic
@@ -56,7 +57,7 @@ def _analyze_single(
             f"Binari mancanti: {', '.join(missing)}. Installa con: brew install ffmpeg"
         )
 
-    click.echo(f"\n[1/8] Metadati e caricamento audio: {audio_path.name}")
+    click.echo(f"\n[1/10] Metadati e caricamento audio: {audio_path.name}")
     meta = io_loader.load_metadata(audio_path)
 
     is_multi = meta.get("channels", 1) > 1 and multichannel_mode != "downmix-only"
@@ -70,13 +71,13 @@ def _analyze_single(
 
     duration_s = len(y) / sr
 
-    click.echo(f"[2/8] Livelli, dinamica, LUFS")
+    click.echo(f"[2/10] Livelli, dinamica, LUFS")
     tech = technical.technical_summary(audio_path, y)
 
-    click.echo(f"[3/8] Hum check (baseline locale)")
+    click.echo(f"[3/10] Hum check (baseline locale)")
     hum_res = hum.hum_check(audio_path)
 
-    click.echo(f"[4/8] Spettrale (bande Schafer, feature, onset)")
+    click.echo(f"[4/10] Spettrale (bande Schafer, feature, onset)")
     spec = spectral.spectral_summary(y, sr, duration_s)
     from .spectral import hifi_lofi_score
     spec["hifi_lofi"] = hifi_lofi_score(
@@ -84,14 +85,14 @@ def _analyze_single(
         spec["timbre"]["spectral_flatness"],
     )
 
-    click.echo(f"[5/8] Indici ecoacustici ({ecoacoustic_mode})")
+    click.echo(f"[5/10] Indici ecoacustici ({ecoacoustic_mode})")
     extended = ecoacoustic_mode == "extended"
     eco = ecoacoustic.ecoacoustic_summary(y, sr, extended=extended)
 
     semantic_res = {"enabled": False}
     if do_semantic:
         backend_name = semantic_backend or config.SEMANTIC_BACKEND
-        click.echo(f"[6/9] Semantica {backend_name.upper()} (con pre-check LUFS)")
+        click.echo(f"[6/10] Semantica {backend_name.upper()} (con pre-check LUFS)")
         semantic_res = semantic.semantic_summary(
             audio_path, backend=backend_name, enable=True
         )
@@ -99,18 +100,28 @@ def _analyze_single(
     clap_res = {"enabled": False}
     if do_clap:
         from . import semantic_clap
-        click.echo(f"[7/9] CLAP auto-tagging italiano (70 prompt)")
+        click.echo(f"[7/10] CLAP auto-tagging italiano")
         # Waveform caricata a 48 kHz per CLAP
         from .semantic import prepare_waveform
         clap_waveform = prepare_waveform(audio_path, sr=48000)
         clap_res = semantic_clap.clap_summary(clap_waveform, 48000, enable=True)
 
+    speech_res = {"enabled": False, "reason": "disabled"}
+    if do_transcribe_speech:
+        from . import speech
+        click.echo(f"[8/10] Trascrizione dialoghi (Whisper large-v3 + Silero VAD)")
+        speech_res = speech.speech_summary(
+            y, sr, enable=True, duration_total_s=duration_s
+        )
+        if speech_res.get("enabled") and not speech_res.get("skipped_reason"):
+            speech_res = speech.translate_transcript(speech_res)
+
     mc_res = None
     if is_multi:
-        click.echo(f"[8/9] Analisi multicanale ({mc['n_channels']} canali, layout {mc['layout']})")
+        click.echo(f"[9/10] Analisi multicanale ({mc['n_channels']} canali, layout {mc['layout']})")
         mc_res = multichannel.multichannel_summary(mc)
 
-    click.echo(f"[9/9] Grafici e profili")
+    click.echo(f"[10/10] Grafici e profili")
     base = safe_filename(audio_path.stem)
     graphics_dir = output_dir / "graphics"
     ensure_dir(graphics_dir)
@@ -130,6 +141,7 @@ def _analyze_single(
         "ecoacoustic": eco,
         "semantic": semantic_res,
         "clap": clap_res,
+        "speech": speech_res,
         "multichannel": mc_res,
     }
 
@@ -189,10 +201,30 @@ def _analyze_single(
             plot_paths=plot_paths,
         )
 
+    # Export .txt companion dei trascritti (v0.5.0): accanto al PDF
+    transcript_txt = None
+    transcript_it_txt = None
+    if speech_res.get("enabled") and speech_res.get("transcript"):
+        transcript_txt = output_dir / f"{base}_transcript.txt"
+        transcript_txt.write_text(speech_res["transcript"], encoding="utf-8")
+        click.echo(f"Trascritto: {transcript_txt}")
+        if (
+            speech_res.get("transcript_it")
+            and speech_res.get("language_detected", "") != "it"
+            and speech_res.get("transcript_it") != speech_res["transcript"]
+        ):
+            transcript_it_txt = output_dir / f"{base}_transcript_it.txt"
+            transcript_it_txt.write_text(
+                speech_res["transcript_it"], encoding="utf-8"
+            )
+            click.echo(f"Traduzione italiana: {transcript_it_txt}")
+
     return {
         "audio": str(audio_path),
         "summary_json": str(json_path),
         "pdf": str(pdf_path) if pdf_path else None,
+        "transcript_txt": str(transcript_txt) if transcript_txt else None,
+        "transcript_it_txt": str(transcript_it_txt) if transcript_it_txt else None,
         "graphics": {k: str(v) for k, v in plot_paths.items()},
     }
 
@@ -228,9 +260,12 @@ def cli():
 @click.option("--clap/--no-clap", default=True, help="Auto-tagging CLAP con vocabolario italiano")
 @click.option("--narrative", "narrative_mode", type=click.Choice(["full", "summary", "none"]),
               default="full", help="Descrizione segmentata italiana (v0.2.2)")
+@click.option("--speech", is_flag=True, default=False,
+              help="Trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana via claude -p (opt-in, v0.5.0)")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, compare_mode,
-                report_format, output_dir, multichannel_mode, agent, clap, narrative_mode, lang):
+                report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
+                speech, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
@@ -270,6 +305,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, com
                 semantic_backend=semantic_backend,
                 do_clap=clap,
                 narrative_mode=narrative_mode,
+                do_transcribe_speech=speech,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))

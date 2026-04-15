@@ -106,6 +106,14 @@ def _analyze_single(
         clap_waveform = prepare_waveform(audio_path, sr=48000)
         clap_res = semantic_clap.clap_summary(clap_waveform, 48000, enable=True)
 
+    # Check suggerimento --speech (v0.5.0): se PANNs rileva Speech dominante
+    # nel top_dominant_frames oltre soglia e il flag non e' attivo, raccogliamo
+    # un hint da stampare a fine analyze_cmd in giallo su stderr.
+    from . import speech as _speech
+    speech_suggestion_pct = _speech.check_speech_suggestion(
+        semantic_res, flag_active=do_transcribe_speech
+    )
+
     speech_res = {"enabled": False, "reason": "disabled"}
     if do_transcribe_speech:
         from . import speech
@@ -225,6 +233,7 @@ def _analyze_single(
         "pdf": str(pdf_path) if pdf_path else None,
         "transcript_txt": str(transcript_txt) if transcript_txt else None,
         "transcript_it_txt": str(transcript_it_txt) if transcript_it_txt else None,
+        "speech_suggestion_pct": speech_suggestion_pct,
         "graphics": {k: str(v) for k, v in plot_paths.items()},
     }
 
@@ -319,6 +328,19 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, com
     for r in results:
         if r.get("pdf"):
             click.echo(f"  {r['pdf']}")
+
+    # Suggerimento --speech (v0.5.0): stampato a fine pipeline in giallo su
+    # stderr per visibilita' sopra il prompt, solo quando l'utente NON ha
+    # passato --speech e PANNs ha rilevato Speech dominante nei frame.
+    for r in results:
+        pct = r.get("speech_suggestion_pct")
+        if pct is not None:
+            audio_name = Path(r.get("audio", "")).name
+            click.echo(click.style(
+                f"[soundscape] {audio_name}: PANNs rileva Speech dominante nel "
+                f"{pct:.1f}% dei frame. Per trascrizione: rilancia con --speech",
+                fg="yellow"
+            ), err=True)
 
 
 @cli.group("profile")

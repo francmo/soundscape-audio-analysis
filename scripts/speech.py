@@ -309,6 +309,33 @@ def _translate_long(text: str, model: str) -> str:
     return "\n".join(translated_parts)
 
 
+def check_speech_suggestion(
+    semantic_res: dict,
+    flag_active: bool,
+    threshold_pct: float = None,
+) -> float | None:
+    """Scansiona semantic_res['classifier']['top_dominant_frames'] per un item
+    con name='Speech' e pct > threshold_pct. Ritorna il pct (float) se match
+    e flag NON attivo, altrimenti None.
+
+    Permette di suggerire via stderr all'utente di rilanciare con --speech
+    quando PANNs rileva parlato dominante nei frame.
+    """
+    if flag_active:
+        return None
+    threshold = (
+        threshold_pct if threshold_pct is not None
+        else config.SPEECH_SUGGEST_DOMINANT_PCT
+    )
+    top_dom = (semantic_res.get("classifier", {}) or {}).get(
+        "top_dominant_frames", []
+    )
+    for item in top_dom:
+        if item.get("name") == "Speech" and float(item.get("pct", 0)) > threshold:
+            return float(item["pct"])
+    return None
+
+
 def translate_transcript(
     speech_dict: dict,
     target_lang: str = "it",

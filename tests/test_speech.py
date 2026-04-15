@@ -166,6 +166,64 @@ def test_translation_timeout_fallback(monkeypatch, capsys):
     assert "Traduzione fallita" in captured.err
 
 
+def test_check_speech_suggestion_returns_pct_when_dominant():
+    """PANNs ha Speech con pct > soglia, flag non attivo: ritorna pct."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": 62.5},
+                {"name": "Music", "pct": 15.0},
+            ]
+        }
+    }
+    pct = speech.check_speech_suggestion(semantic_res, flag_active=False)
+    assert pct == 62.5
+
+
+def test_check_speech_suggestion_none_if_flag_active():
+    """Se il flag --speech e' gia' attivo, nessun suggerimento."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [{"name": "Speech", "pct": 80.0}]
+        }
+    }
+    pct = speech.check_speech_suggestion(semantic_res, flag_active=True)
+    assert pct is None
+
+
+def test_check_speech_suggestion_none_below_threshold():
+    """Speech presente ma sotto soglia 25%: nessun suggerimento."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [{"name": "Speech", "pct": 10.0}]
+        }
+    }
+    pct = speech.check_speech_suggestion(semantic_res, flag_active=False)
+    assert pct is None
+
+
+def test_check_speech_suggestion_none_if_no_speech_label():
+    """top_dominant_frames senza 'Speech': nessun suggerimento."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Music", "pct": 40.0},
+                {"name": "Vehicle", "pct": 30.0},
+            ]
+        }
+    }
+    pct = speech.check_speech_suggestion(semantic_res, flag_active=False)
+    assert pct is None
+
+
+def test_check_speech_suggestion_none_if_semantic_disabled():
+    """Se semantic_res e' vuoto o senza classifier, nessun crash e nessun suggerimento."""
+    assert speech.check_speech_suggestion({}, flag_active=False) is None
+    assert speech.check_speech_suggestion(
+        {"enabled": False}, flag_active=False
+    ) is None
+
+
 @pytest.mark.skipif(
     not (FIXTURES_DIR / "speech_italian.wav").exists(),
     reason="Fixture speech_italian.wav non disponibile. Vedi piano v0.5.0 "

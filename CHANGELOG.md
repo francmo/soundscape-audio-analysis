@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.4.1] - 2026-04-15
+
+Hotfix: risolto off-by-one nella pre-allocazione del resample multicanale
+in `scripts/io_loader.py::load_audio_multichannel` che scatenava
+`ValueError: could not broadcast input array from shape (N,) into shape
+(N-1,)` su file stereo lunghi (es. WAV 44100 Hz risampleato a 48000 Hz
+con durata ~88 s). Bug originale della v0.3.3, rilevato in produzione
+dopo il bump a v0.4.0.
+
+### Fix
+- `scripts/io_loader.py::load_audio_multichannel` (riga 109 v0.3.3):
+  la formula `int(data.shape[0] * sr / sr_orig)` usata per pre-allocare
+  l'array `resampled` puo' differire di +/-1 sample rispetto all'output
+  effettivo di `librosa.resample` (algoritmo default `soxr_hq`). Ora
+  risampliamo ciascun canale separatamente in una lista, misuriamo la
+  lunghezza minima effettiva e allineiamo tutti i canali con trim
+  difensivo via `np.column_stack`. Il check `if sr_orig != sr` esistente
+  gia' salta il resample nel caso sr_orig == target_sr.
+
+### Aggiunto
+- `tests/test_multichannel.py`:
+  - `test_load_multichannel_resample_44100_to_48000_no_off_by_one`:
+    regressione del crash con file stereo 44100 Hz a 88 s risampleato a
+    48000 Hz. Verifica coerenza lunghezza +/- 2 e allineamento canali.
+  - `test_load_multichannel_no_resample_when_sr_matches`: verifica che
+    quando `sr_orig == target_sr` i campioni restino invariati bit-wise
+    e non venga fatta alcuna operazione di resample.
+
+### Modificato
+- Bump versione 0.4.0 → 0.4.1 in `scripts/__init__.py`, `scripts/cli.py`
+  (tre callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (tre
+  stringhe user-facing), `pyproject.toml`.
+
+
 ## [0.4.0] - 2026-04-15
 
 Espansione del vocabolario CLAP italiano da 102 a 172 prompt in 17 categorie

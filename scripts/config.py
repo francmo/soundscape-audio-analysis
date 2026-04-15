@@ -61,6 +61,34 @@ CLAP_CHECKPOINT_URL = "https://huggingface.co/lukewys/laion_clap/resolve/main/mu
 CLAP_SEGMENT_S = 10.0
 CLAP_TOP_K = 3
 
+# Speech transcription (v0.5.0)
+WHISPER_MODEL = "large-v3"
+WHISPER_COMPUTE_TYPE = "int8"
+WHISPER_DEVICE = "cpu"  # CTranslate2 non supporta MPS; NEON SIMD su Apple Silicon da' ~15x realtime
+WHISPER_BEAM_SIZE = 5
+WHISPER_LANG_DETECT_SEGMENTS = 3  # 90 s per mitigare audio multilingua
+WHISPER_LANG_CONF_WARN = 0.85  # warning se language_probability sotto soglia
+WHISPER_SR = 16000  # sample rate richiesto da Whisper e Silero VAD
+
+# Silero VAD (v0.5.0)
+SILERO_VAD_THRESHOLD = 0.5
+SILERO_VAD_MIN_SPEECH_MS = 250
+SILERO_VAD_MIN_SILENCE_MS = 250
+SILERO_VAD_MIN_TOTAL_SPEECH_S = 2.0  # soglia per saltare Whisper (risparmia ~1.2 GB RAM)
+
+# Speech suggerimento automatico stderr (v0.5.0)
+SPEECH_SUGGEST_DOMINANT_PCT = 25.0  # soglia PANNs top_dominant_frames per suggerire --speech
+
+# Traduzione via claude -p (v0.5.0)
+TRANSLATION_MODEL = "claude-haiku-4-5"
+TRANSLATION_TIMEOUT_S = 120
+TRANSLATION_CHUNK_THRESHOLD_CHARS = 8000
+TRANSLATION_CHUNK_SIZE_CHARS = 6000
+TRANSLATION_CHUNK_OVERLAP_CHARS = 500
+
+# PDF Dialoghi trascritti (v0.5.0)
+TRANSCRIPT_PDF_MAX_CHARS = 2000  # soglia inline nel PDF, oltre esporta .txt companion
+
 # Narrativa (v0.2.2)
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"

@@ -1,9 +1,9 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "generated_at": "2026-04-15",
   "model": "LAION-CLAP music_audioset_epoch_15_esc_90",
   "language": "it",
-  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.2 (v0.4.0): espansione da 102 a 172 prompt. Nuova categoria 'sacralita sonora' (10 prompt: campane, organi, canto liturgico, processioni). Categoria 'paesaggi italiani specifici' espansa da 8 a 22 prompt (mercato cittadino, borgo medievale, conservatorio italiano, aula AFAM, motorino in centro storico, treno regionale, dialetto, piazza con fontana, ecomuseo, osteria, bar italiano, venditore ambulante, fiera paesana). Altri incrementi: biofonia granulare (+10), antropofonia meccanica specifica (+8), antropofonia urbana (+5), geofonia estesa (+4), trasformazioni elettroacustiche (+5), oggetto sonoro astratto (+3), geofonia (+3), ambiente didattico AFAM (+3), antropofonia domestica (+2), musica registrata (+2), performance multimediale (+1). Schema invariato: ogni prompt ha {id, category, text}. Editabile: aggiungere o rimuovere prompt non richiede modifiche al codice.",
+  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.3 (v0.5.2): espansione da 172 a 193 prompt sulla base del feedback Presque Rien N°1 di Luc Ferrari. Nuova categoria 'paesaggi mediterranei generici' (10 prompt) per affiancare 'paesaggi italiani specifici' su materiale mediterraneo non italiano (Croazia, Grecia, Spagna, Francia mediterranea). Estensioni: geofonia estesa +3 (mare calmo onde leggere, sciabordio molo, brezza marina alba), biofonia +3 (gallo all'alba villaggio costiero, gabbiani in volo distante, coro rane mare), antropofonia urbana +3 (pescatori dalle barche, bambini in lingua straniera, mercato pesce), antropofonia meccanica +2 (peschereccio diesel piccolo cabotaggio, catene di barca). Schema invariato.",
   "prompts": [
     {"id": "geo_01", "category": "geofonia", "text": "Acqua che scorre in un ruscello"},
     {"id": "geo_02", "category": "geofonia", "text": "Pioggia costante su foglie"},
@@ -31,6 +31,9 @@
     {"id": "bio_13", "category": "biofonia", "text": "Cavalli che nitriscono in maneggio"},
     {"id": "bio_14", "category": "biofonia", "text": "Pipistrelli in volo al crepuscolo"},
     {"id": "bio_15", "category": "biofonia", "text": "Insetti in texture densa su corteccia"},
+    {"id": "bio_16", "category": "biofonia", "text": "Gallo che canta all'alba in villaggio costiero"},
+    {"id": "bio_17", "category": "biofonia", "text": "Uccelli marini gabbiani in volo distante"},
+    {"id": "bio_18", "category": "biofonia", "text": "Coro di rane al bordo del mare di prima mattina"},
 
     {"id": "dom_01", "category": "antropofonia domestica", "text": "Passi su pavimento di legno"},
     {"id": "dom_02", "category": "antropofonia domestica", "text": "Porta di legno che si apre e si chiude"},
@@ -53,6 +56,9 @@
     {"id": "urb_08", "category": "antropofonia urbana", "text": "Clacson multipli in ingorgo urbano"},
     {"id": "urb_09", "category": "antropofonia urbana", "text": "Lavori stradali con martello pneumatico"},
     {"id": "urb_10", "category": "antropofonia urbana", "text": "Bar affollato con macchina del caffè"},
+    {"id": "urb_11", "category": "antropofonia urbana", "text": "Pescatori che si chiamano dalle barche in porto"},
+    {"id": "urb_12", "category": "antropofonia urbana", "text": "Bambini che giocano in lingua straniera in piazza"},
+    {"id": "urb_13", "category": "antropofonia urbana", "text": "Mercato di pesce al mattino con voci e ghiaccio"},
 
     {"id": "mec_01", "category": "antropofonia meccanica", "text": "Motore elettrico acceso"},
     {"id": "mec_02", "category": "antropofonia meccanica", "text": "Ventilatore che gira"},
@@ -66,6 +72,8 @@
     {"id": "mec_10", "category": "antropofonia meccanica", "text": "Aspirapolvere in uso domestico"},
     {"id": "mec_11", "category": "antropofonia meccanica", "text": "Compressore industriale in funzione"},
     {"id": "mec_12", "category": "antropofonia meccanica", "text": "Tosaerba elettrico in giardino"},
+    {"id": "mec_13", "category": "antropofonia meccanica", "text": "Motore di peschereccio diesel di piccolo cabotaggio"},
+    {"id": "mec_14", "category": "antropofonia meccanica", "text": "Tintinnio di catene di barca o pesi da pesca"},
 
     {"id": "scf_01", "category": "qualita schaefferiane", "text": "Stanza chiusa con riverbero corto"},
     {"id": "scf_02", "category": "qualita schaefferiane", "text": "Sala grande con riverbero lungo"},
@@ -133,6 +141,9 @@
     {"id": "geox_08", "category": "geofonia estesa", "text": "Tuoni multipli in sequenza ravvicinata"},
     {"id": "geox_09", "category": "geofonia estesa", "text": "Sorgente di acqua minerale in montagna"},
     {"id": "geox_10", "category": "geofonia estesa", "text": "Neve compressa sotto i passi"},
+    {"id": "geox_11", "category": "geofonia estesa", "text": "Mare calmo di prima mattina con leggero rifrangere"},
+    {"id": "geox_12", "category": "geofonia estesa", "text": "Sciabordio di onde leggere su scogli o molo"},
+    {"id": "geox_13", "category": "geofonia estesa", "text": "Brezza marina di alba in villaggio costiero"},
 
     {"id": "trs_01", "category": "trasporti e mobilita", "text": "Treno ad alta velocità che sfreccia"},
     {"id": "trs_02", "category": "trasporti e mobilita", "text": "Metropolitana in galleria con vibrazione"},
@@ -192,6 +203,17 @@
     {"id": "sac_07", "category": "sacralita sonora", "text": "Campane a festa multiple in sequenza"},
     {"id": "sac_08", "category": "sacralita sonora", "text": "Carillon di orologio di chiesa"},
     {"id": "sac_09", "category": "sacralita sonora", "text": "Campanello d'altare durante liturgia"},
-    {"id": "sac_10", "category": "sacralita sonora", "text": "Preghiera collettiva sussurrata in chiesa"}
+    {"id": "sac_10", "category": "sacralita sonora", "text": "Preghiera collettiva sussurrata in chiesa"},
+
+    {"id": "pmd_01", "category": "paesaggi mediterranei generici", "text": "Porto peschereccio mediterraneo all'alba con voci"},
+    {"id": "pmd_02", "category": "paesaggi mediterranei generici", "text": "Villaggio costiero al mattino con voci miste in lingua locale"},
+    {"id": "pmd_03", "category": "paesaggi mediterranei generici", "text": "Piazza di villaggio mediterraneo con bar e radio"},
+    {"id": "pmd_04", "category": "paesaggi mediterranei generici", "text": "Vicolo bianco di villaggio mediterraneo con passi e eco"},
+    {"id": "pmd_05", "category": "paesaggi mediterranei generici", "text": "Mercato di pesce mediterraneo di prima mattina"},
+    {"id": "pmd_06", "category": "paesaggi mediterranei generici", "text": "Spiaggia mediterranea con onde leggere e voci distanti"},
+    {"id": "pmd_07", "category": "paesaggi mediterranei generici", "text": "Festa di paese mediterranea con musica popolare"},
+    {"id": "pmd_08", "category": "paesaggi mediterranei generici", "text": "Tavolata in cortile di villaggio costiero con piatti e voci"},
+    {"id": "pmd_09", "category": "paesaggi mediterranei generici", "text": "Crepuscolo in villaggio mediterraneo con cicale e radio"},
+    {"id": "pmd_10", "category": "paesaggi mediterranei generici", "text": "Pioggia leggera su tegole di villaggio mediterraneo"}
   ]
 }

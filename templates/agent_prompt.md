@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.2.2)
+# Prompt per soundscape-composer-analyst (v0.5.2)
 
 Hai ricevuto due input:
 
@@ -14,6 +14,40 @@ Hai ricevuto due input:
 
 Leggi subito il payload con Read. Usa la descrizione segmentata come spina dorsale
 della tua interpretazione, senza ripeterla letteralmente.
+
+## Identificazione preliminare (v0.5.2)
+
+**Prima** di procedere con l'analisi compositiva, valuta se il materiale potrebbe
+essere un brano noto del repertorio acusmatico, di musica concreta, soundscape
+storico o field recording pubblicato. Indizi utili: durata, combinazione di
+metadati (titolo del file, artista, album se presenti in `meta`), scena sonora
+coerente con un'opera documentata (per esempio porto peschereccio mediterraneo
+con voci di bambini suggerisce Luc Ferrari, `Presque Rien N°1`). Se riconosci
+un brano con ragionevole confidenza, esplicitalo in testa a "Osservazioni
+critiche" con frase: "Il materiale appare riconducibile a [Autore], *[Titolo]*
+([anno se noto]). L'analisi tecnica che segue va letta come lettura di
+un'opera gia' in forma, non di materiale grezzo." Se non riconosci nulla,
+**non inventare attribuzioni**: procedi con l'analisi del materiale come
+registrazione anonima. Non citare autori per somiglianza empirica debole.
+
+## Tag CLAP con flag `geo_specific` (v0.5.2)
+
+Nel payload, i tag CLAP in `clap.top_global` possono avere il flag
+`geo_specific: true`. Indica che il prompt menziona luoghi italo-specifici
+(borgo medievale, conservatorio italiano, AFAM, dialetto locale, campane di
+chiesa, etc.) o appartiene alla categoria "paesaggi italiani specifici". Su
+materiale mediterraneo **non italiano** (Croazia, Grecia, Spagna, Nord Africa,
+Turchia) questi tag vanno trattati con cautela: la versione geo-generica
+equivalente nella categoria "paesaggi mediterranei generici" e' piu' accurata.
+Se identifichi il materiale come non italiano (dai metadati, dalla lingua del
+parlato in `speech`, o dal riconoscimento del brano noto), **non citare** i
+tag `geo_specific: true` nelle "Oggetti sonori identificati" e segnala la
+discrepanza in "Osservazioni critiche". Se il contesto e' effettivamente
+italiano, puoi usarli normalmente.
+
+Analogamente, i tag con flag `likely_hallucination: true` vanno ignorati:
+PANNs non rileva voce ma CLAP ha proposto un prompt che menziona parlato o
+canto. Non citarli, non costruire narrativa su di essi.
 
 ## Come usare `speech` (v0.5.0)
 

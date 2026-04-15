@@ -1,5 +1,88 @@
 # Changelog
 
+## [0.5.2] - 2026-04-15
+
+Hotfix mirato al feedback raccolto analizzando *Presque Rien N°1* di Luc
+Ferrari (1967-70, Vela Luka, Croazia). La skill ha prodotto falsi positivi
+geografici ("borgo medievale italiano", "cicale del sud Italia",
+"conservatorio italiano", "preghiera collettiva sussurrata in chiesa") perche'
+il vocabolario CLAP era italo-centrico e mancava di prompt mediterranei
+generici. Inoltre l'agente compositivo non aveva istruzioni per riconoscere
+brani noti del repertorio prima di interpretare, producendo analisi "da
+materiale grezzo" su un'opera canonica. Tre interventi non breaking.
+
+### Added
+
+- **Vocabolario CLAP v1.3**: aggiunta categoria nuova `paesaggi mediterranei
+  generici` (10 prompt da `pmd_01` a `pmd_10`: porto peschereccio, mercato
+  pesce mediterraneo, voci di bambini che giocano in piazza, sciabordio
+  barche, gabbiani costieri, cicale mediterranee, brezza marina, rane
+  marine, ecc.) piu' 11 prompt aggiuntivi in altre categorie
+  (`bio_16-18`, `urb_11-13`, `mec_13-14`, `geox_11-13`). Totale 193 prompt
+  in 18 categorie (+21 rispetto alla v1.2).
+- **Mapping accademico v1.1**: `clap_academic_mapping_it.json` con
+  `vocabulary_ref.min_version` allineato a "1.3", `category_defaults` per
+  "paesaggi mediterranei generici" (`krause: mista`,
+  `schafer_role: soundmark`, `schafer_fidelity: misto`, `chion: misto`,
+  `truax: readiness`, `westerkamp_soundwalk_relevance: true`) e 11
+  override prompt specifici.
+- **Flag `geo_specific` sui tag CLAP**:
+  `scripts/clap_mapping.py::mark_geo_specific_tags(top_global)` marca con
+  `geo_specific=True` i tag che appartengono alla categoria "paesaggi
+  italiani specifici" o contengono keyword italo-specifiche (borgo
+  medievale, conservatorio italiano, AFAM, campane di chiesa, dialetto
+  locale, osteria pomeridiana, ecc.) nel set `LOCATION_SPECIFIC_KEYWORDS_IT`
+  di `config.py`. Separato da `likely_hallucination`: non hallucination
+  certa ma "potenziale fuori contesto geografico". Il PDF renderizza
+  questi tag in corsivo con caption dedicata.
+
+### Changed
+
+- **Prompt agente `soundscape-composer-analyst`**: aggiunte istruzioni
+  esplicite per (a) identificare eventuale brano noto del repertorio prima
+  di scrivere l'analisi (cambia il senso di "Gesti compositivi suggeriti"
+  da interventi post-produzione a riflessioni analitiche sull'opera);
+  (b) trattare con cautela i tag `geo_specific=True` su materiale non
+  italiano (riconosciuto da metadati, lingua speech, identificazione del
+  brano). Aggiornato sia `templates/agent_prompt.md` sia
+  `~/.claude/agents/soundscape-composer-analyst.md`.
+- **Rendering PDF sezione CLAP**: i tag con `geo_specific=True` e quelli
+  con `likely_hallucination=True` sono entrambi renderizzati in corsivo,
+  con caption separate che spiegano il flag specifico.
+
+### Fixed
+
+- Falso positivo CLAP "Vicolo di borgo medievale al tramonto" su porto
+  peschereccio croato: ora flaggato `geo_specific=True` e reso in corsivo
+  con hint per l'agente di preferire la versione geo-generica quando il
+  materiale e' identificato come non italiano.
+- Manca di riconoscimento brano noto nell'output agente: ora un paragrafo
+  dedicato istruisce a valutare file name, metadati, durata, scena
+  coerente con opera canonica prima di scrivere l'analisi. Cambia il
+  senso stesso di "Gesti compositivi" (da intervento compositivo a lettura
+  analitica dell'opera gia' in forma).
+
+### Internal
+
+- Test nuovi in `tests/test_clap_academic_mapping.py`
+  (`test_paesaggi_mediterranei_generici_category_exists`,
+  `test_mark_geo_specific_flags_italian_category`,
+  `test_mark_geo_specific_flags_keyword_in_prompt`,
+  `test_mark_geo_specific_no_flag_on_generic`) piu' aggiornamenti in
+  `tests/test_clap_tagging.py` per la nuova versione vocabolario.
+- Bump versione 0.5.1 → 0.5.2 in `scripts/__init__.py`, `scripts/cli.py`
+  (3 callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py`
+  (3 stringhe user-facing), `pyproject.toml`.
+
+### Feedback sources
+
+- `references/user_feedback/Presque_Rien_N1.md`: analisi di 20m46 di
+  field recording mediterraneo (porto peschereccio a Vela Luka, Korcula)
+  comparata con letteratura accademica su Luc Ferrari. Ha identificato 12
+  prompt mancanti, 3 hallucination concrete (tra cui "preghiera collettiva
+  sussurrata in chiesa" flaggata correttamente dalla v0.5.1) e il gap
+  strutturale del riconoscimento brani.
+
 ## [0.5.1] - 2026-04-15
 
 Hotfix interpretativi su tre fronti emersi dal confronto fra l'output della

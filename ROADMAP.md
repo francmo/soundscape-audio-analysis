@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.5.1 (15 aprile 2026)
-**Test suite**: 113 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.5.2 (15 aprile 2026)
+**Test suite**: 117 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.5.1)
+## Stato corrente (v0.5.2)
 
 ### Capabilities attive
 
@@ -26,11 +26,15 @@ chi fa cosa. Aggiornato a ogni release.
   modalita' extended.
 - **Classificazione semantica PANNs CNN14** (default): 527 classi AudioSet,
   pre-check LUFS per evitare bug "97% Silence" su file molto bassi.
-- **Auto-tagging CLAP italiano**: 172 prompt v1.2 in 17 categorie
+- **Auto-tagging CLAP italiano**: 193 prompt v1.3 in 18 categorie
   (geofonia, biofonia, antropofonia *, musica, sacralita sonora, paesaggi
-  italiani specifici, ecc.). **v0.5.1**: filtro allucinazioni speech-related
-  che marca con `likely_hallucination=True` i tag con keyword voce/parlato
-  quando PANNs Speech score <= 0.10.
+  italiani specifici, **paesaggi mediterranei generici** nuova in v0.5.2,
+  ecc.). **v0.5.1**: filtro allucinazioni speech-related che marca con
+  `likely_hallucination=True` i tag con keyword voce/parlato quando PANNs
+  Speech score <= 0.10. **v0.5.2**: flag `geo_specific=True` sui tag
+  italo-specifici (categoria "paesaggi italiani specifici" o keyword
+  italiane nel prompt), resi in corsivo nel PDF con caption dedicata per
+  evitare falsi positivi su materiale mediterraneo non italiano.
 - **Mapping accademico** (v0.4.0): hint aggregati su Schafer (keynote/signal/
   soundmark), Truax (listening modes), Krause (biofonia/antropofonia/
   geofonia), Schaeffer (tipologia), Smalley (motion processes), Chion
@@ -181,6 +185,10 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.5.2** (15/04/2026): hotfix mediterraneo (vocabolario CLAP v1.3 con
+  categoria "paesaggi mediterranei generici", flag `geo_specific` sui tag
+  italo-specifici, istruzioni agente per riconoscimento brani noti).
+  Feedback source: Presque Rien N°1 di Luc Ferrari.
 - **v0.5.1** (15/04/2026): hotfix interpretativi (hum contestuale,
   allucinazioni CLAP, diagnostica agent).
 - **v0.5.0** (15/04/2026): trascrizione dialoghi opt-in via

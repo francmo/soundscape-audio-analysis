@@ -126,6 +126,37 @@ def mark_speech_hallucinations(
     return out
 
 
+def mark_geo_specific_tags(top_global: list[dict]) -> list[dict]:
+    """Marca i tag CLAP italo-specifici con `geo_specific=True` (v0.5.2).
+
+    Diverso da `likely_hallucination`: segnala "tag che potrebbe essere fuori
+    contesto geografico se il materiale non e' italiano", non hallucination
+    certa. Esempi: "Cicale in campagna estiva del sud Italia",
+    "Vicolo di borgo medievale", "Conservatorio italiano". Su materiale
+    mediterraneo non italiano (Croazia, Grecia, Spagna) questi tag vanno
+    valutati con cautela perche' la versione geo-generica
+    (`paesaggi mediterranei generici`) sarebbe piu' accurata.
+
+    Non rimuove i tag (li lascia visibili). Aggiunge solo flag che il PDF
+    rendera' in corsivo con caption "tag geograficamente italo-specifico,
+    valutare se contesto effettivamente italiano".
+    """
+    out = []
+    for tag in top_global:
+        new_tag = dict(tag)
+        prompt_lower = (tag.get("prompt") or "").lower()
+        category_lower = (tag.get("category") or "").lower()
+        # La categoria 'paesaggi italiani specifici' e tutti i prompt che
+        # menzionano luoghi italo-specifici nel testo
+        is_italo_specific = (
+            "paesaggi italiani specifici" in category_lower
+            or any(kw in prompt_lower for kw in config.LOCATION_SPECIFIC_KEYWORDS_IT)
+        )
+        new_tag["geo_specific"] = bool(is_italo_specific)
+        out.append(new_tag)
+    return out
+
+
 def aggregate_academic_hints(
     top_global: list[dict],
     vocabulary: dict,

@@ -744,9 +744,10 @@ def build_report(
     # COLOFONE
     story.append(Spacer(1, 20))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis. "
-        "Font Libre Baskerville e Source Sans Pro (OFL). "
-        "Hum check con baseline locale, pre-check LUFS per classificazione semantica.",
+        "di Francesco Mariano. Documento prodotto dalla skill "
+        "soundscape-audio-analysis. Font Libre Baskerville e Source Sans Pro "
+        "(OFL). Hum check con baseline locale, pre-check LUFS per "
+        "classificazione semantica.",
         styles["caption"],
     ))
 
@@ -1057,13 +1058,13 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.5.1. "
-        "Font Libre Baskerville e Source Sans Pro (licenza SIL OFL). "
-        "Pipeline analitica: librosa + soundfile per il carico audio, "
-        "ffmpeg ebur128 per i LUFS, PANNs CNN14 per la classificazione semantica "
-        "primaria, LAION-CLAP per l'auto-tagging italiano, scikit-maad-like "
-        "per gli indici ecoacustici. Contrasto tipografico WCAG AA 4.5:1 "
-        "verificato in tutte le pagine.",
+        "di Francesco Mariano. Documento prodotto dalla skill "
+        "soundscape-audio-analysis v0.5.1. Font Libre Baskerville e Source "
+        "Sans Pro (licenza SIL OFL). Pipeline analitica: librosa + soundfile "
+        "per il carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "
+        "classificazione semantica primaria, LAION-CLAP per l'auto-tagging "
+        "italiano, scikit-maad-like per gli indici ecoacustici. Contrasto "
+        "tipografico WCAG AA 4.5:1 verificato in tutte le pagine.",
         styles["body"]
     ))
     story.append(Spacer(1, 6))

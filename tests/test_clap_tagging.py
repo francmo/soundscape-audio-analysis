@@ -20,17 +20,19 @@ def _fixtures():
 
 
 def test_vocabulary_load():
-    """Il vocabolario italiano si carica e ha almeno 40 prompt."""
+    """v0.4.0: il vocabolario v1.2 ha almeno 150 prompt."""
     vocab = load_vocabulary()
     assert "prompts" in vocab
-    assert len(vocab["prompts"]) >= 40
+    assert vocab["version"] == "1.2"
+    assert len(vocab["prompts"]) >= 150
     # Ogni prompt ha i campi obbligatori
     for p in vocab["prompts"]:
-        assert "id" in p and "text" in p
-        # Tutti i prompt sono in italiano (heuristic: contengono vocali accentate italiane
-        # o sono in lingua naturale italiana)
+        assert "id" in p and "text" in p and "category" in p
         assert isinstance(p["text"], str)
         assert len(p["text"]) > 0
+    # Gli id sono unici
+    ids = [p["id"] for p in vocab["prompts"]]
+    assert len(ids) == len(set(ids)), "id duplicati nel vocabolario"
 
 
 @pytest.mark.skipif(not CLAP_CHECKPOINT_FILE.exists(),

@@ -42,9 +42,11 @@ class ClapResult:
     device: str = ""
     vocabulary_size: int = 0
     vocabulary_version: str = ""
+    academic_mapping_version: str = ""
     segment_seconds: float = 0.0
     timeline: list[dict] = field(default_factory=list)
     top_global: list[dict] = field(default_factory=list)
+    academic_hints: dict = field(default_factory=dict)
     embeddings_audio_b64: str = ""
     embeddings_prompts_b64: str = ""
     embeddings_shape: list[int] = field(default_factory=list)
@@ -237,15 +239,37 @@ def clap_summary(
 
     _model, dev = load_clap_model()
 
+    # v0.4.0: calcola hint accademici aggregati sui top-20. Wrapping
+    # difensivo: se il mapping non carica (file mancante o malformato)
+    # la pipeline non si interrompe e il campo resta {"available": False}.
+    academic_hints: dict = {}
+    academic_mapping_version = ""
+    try:
+        import sys as _sys
+        from .clap_mapping import aggregate_academic_hints, load_academic_mapping
+        mapping = load_academic_mapping()
+        academic_mapping_version = mapping.get("version", "")
+        top20 = global_top_tags(audio_emb, prompt_emb, prompts, top_k=20)
+        academic_hints = aggregate_academic_hints(top20, vocab, mapping)
+    except Exception as e:
+        import sys as _sys
+        print(
+            f"[semantic_clap] Errore calcolo academic_hints: {e}",
+            file=_sys.stderr, flush=True,
+        )
+        academic_hints = {"available": False, "reason": f"hints error: {e}"}
+
     result = ClapResult(
         enabled=True,
         model_name=vocab.get("model", "LAION-CLAP"),
         device=dev,
         vocabulary_size=len(prompts),
         vocabulary_version=vocab.get("version", "1.0"),
+        academic_mapping_version=academic_mapping_version,
         segment_seconds=segment_seconds,
         timeline=timeline,
         top_global=top_global,
+        academic_hints=academic_hints,
     )
     if include_embeddings:
         result.embeddings_audio_b64 = _encode_float16(audio_emb)

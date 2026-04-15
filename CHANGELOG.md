@@ -1,5 +1,98 @@
 # Changelog
 
+## [0.4.0] - 2026-04-15
+
+Espansione del vocabolario CLAP italiano da 102 a 172 prompt in 17 categorie
+(nuova categoria "sacralita sonora", "paesaggi italiani specifici" cresciuta
+da 8 a 22 prompt). Introduzione di un layer di mapping accademico post-hoc
+(`references/clap_academic_mapping_it.json`) che associa ogni prompt alle
+tassonomie di riferimento (Schafer 1977, Truax 1984, Krause 2012, Schaeffer
+1966, Smalley 1997, Chion, Westerkamp) con ereditarieta category_defaults
+→ prompt override. Il payload che l'agente `soundscape-composer-analyst`
+riceve ora contiene `clap.academic_hints` con distribuzioni pesate per
+score cosine (krause, schafer_role, schafer_fidelity, schaeffer_type,
+smalley_motion, chion, truax, westerkamp_soundwalk_relevance), da usare
+come punto di partenza per la lettura critica, sempre da validare contro
+narrativa e dati tecnici. Il PDF nella sezione CLAP riporta 2-3 righe di
+sommario degli hint.
+
+### Aggiunto
+- `references/clap_vocabulary_it.json` v1.2: 172 prompt (+70 rispetto a
+  v1.1). Nuova categoria `sacralita sonora` (10 prompt: campane maggiori,
+  organo liturgico, canto gregoriano, processioni, rintocchi funebri,
+  carillon, preghiere sussurrate). Espansione `paesaggi italiani specifici`
+  da 8 a 22 prompt (mercato cittadino, borgo medievale, conservatorio,
+  aula AFAM, motorino in centro storico, treno regionale, dialetto, piazza
+  con fontana, ecomuseo, osteria, bar italiano, venditore ambulante, fiera
+  paesana, traffico centro storico). Altri incrementi: biofonia (+10),
+  antropofonia meccanica (+8), antropofonia urbana (+5), geofonia estesa
+  (+4), trasformazioni elettroacustiche (+5), oggetto sonoro astratto (+3),
+  geofonia (+3), ambiente didattico AFAM (+3), antropofonia domestica (+2),
+  musica registrata (+2), performance multimediale (+1).
+- `references/clap_academic_mapping_it.json` v1.0: schema con `enums`
+  (liste valide per schafer_role/fidelity/krause/schaeffer_type/
+  smalley_motion/chion/truax/confidence), `category_defaults` per le 17
+  categorie del vocabolario v1.2, `prompts` override per 80+ prompt con
+  specificita tipologica (schaeffer_type, smalley_motion) o promozione a
+  soundmark (campane, soundscape italiani).
+- `scripts/clap_mapping.py`: tre funzioni pubbliche:
+  - `load_academic_mapping(path)`: carica e valida enum.
+  - `get_prompt_mapping(prompt_id, vocab, mapping)`: merge superficiale
+    category_defaults + prompts override, a query-time.
+  - `aggregate_academic_hints(top_global, vocab, mapping, min_score=0.15)`:
+    filtra tag rumorosi, pesa per score cosine, produce `distribution` +
+    `dominant` con label `confidence` (high >= 0.5, medium >= 0.33,
+    low < 0.33). Campi `truax` e `westerkamp_soundwalk_relevance` marcati
+    `tentative: true`.
+- Integrazione in `scripts/semantic_clap.py::clap_summary()`: calcola
+  gli hint accademici dopo il top_global e li include nel `ClapResult`
+  (nuovi campi `academic_hints` e `academic_mapping_version`). Wrapping
+  try/except: se il mapping non carica, campo ritorna
+  `{"available": False, "reason": "..."}` senza rompere la pipeline.
+- `tests/test_clap_academic_mapping.py`: 9 test (load + enum, coverage
+  categorie, risoluzione prompt con ereditarieta, enum validity, override,
+  aggregate struttura, aggregate segnale debole, espansione paesaggi,
+  categoria sacra).
+
+### Modificato
+- `scripts/agent_payload.py::build_agent_payload`: legge `academic_hints`
+  direttamente da `summary["clap"]` (invece di calcolarli dentro il
+  payload). Aggiunto campo `vocabulary_version` e `academic_mapping_version`
+  al payload per tracciare la provenienza.
+- `templates/agent_prompt.md`: aggiunto paragrafo esplicito "Come usare
+  `clap.academic_hints` (v0.4.0)" che spiega i campi principali
+  (`krause.distribution`, `schafer_role.present`, `schafer_fidelity`,
+  `schaeffer_type.top_2`, `smalley_motion.top_2`, `chion_modes_present`) e
+  il principio "punto di partenza, non verita". Istruzioni su come
+  trattare `confidence: low` e `tentative: true`.
+- `~/.claude/agents/soundscape-composer-analyst.md` (agent definition
+  globale fuori dal repo): aggiornata sezione "Come ricevi i dati" con
+  menzione del nuovo campo e istruzione di validazione. Fallback al
+  comportamento v0.3.x se `available: false`.
+- `scripts/report_pdf.py::_build_clap_block`: aggiunto sommario prosaico
+  di 2-3 righe degli academic_hints (distribuzione Krause, ruoli Schafer,
+  fidelity, Schaeffer top-2, Smalley top-2, modi Chion, rilevanza
+  soundwalk) fra la tabella top-10 e la timeline. Solo se
+  `available: true`.
+- `scripts/semantic_clap.py::ClapResult`: aggiunti campi opzionali
+  `academic_mapping_version: str` e `academic_hints: dict`.
+- `tests/test_clap_tagging.py::test_vocabulary_load`: soglia `>= 40` →
+  `>= 150`, aggiunto `assert vocab["version"] == "1.2"`, verifica id
+  univoci.
+- Bump versione 0.3.3 → 0.4.0 in `scripts/__init__.py`, `scripts/cli.py`
+  (tre callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (tre
+  stringhe user-facing), `pyproject.toml`.
+
+### Test suite
+- 85 test passati + 1 skipped (76 pre-esistenti + 9 nuovi test
+  `test_clap_academic_mapping.py`). Zero regressioni.
+
+### Fuori scope v0.4.0, pianificato v0.5 o oltre
+- Trascrizione dialoghi via Whisper large-v3 + VAD + traduzione italiana
+  (flag CLI `--transcribe-speech`). Richiede aggiunta dipendenze
+  (`openai-whisper`, `silero-vad`) e test dedicati su audio misto.
+
+
 ## [0.3.3] - 2026-04-15
 
 Uniformazione in italiano del PDF e dei grafici. La v0.3.2 aveva ancora label

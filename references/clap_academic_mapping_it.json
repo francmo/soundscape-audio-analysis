@@ -1,22 +1,103 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "schema_version": "1.0",
   "generated_at": "2026-04-15",
   "language": "it",
   "vocabulary_ref": {
     "path": "references/clap_vocabulary_it.json",
-    "min_version": "1.3"
+    "min_version": "1.4"
   },
-  "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping.",
+  "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping. v1.2 (16/04/2026): aggiunto enum schaeffer_detail (22 valori, sotto-tipi del Solfege Schaeffer 1966), enum smalley_growth (6 valori, growth processes Smalley 1997), category_defaults per nuova categoria utterance Wishart 1996.",
   "enums": {
-    "schafer_role": ["keynote", "signal", "soundmark", "sound-object"],
-    "schafer_fidelity": ["hi-fi", "lo-fi", "misto", "n/a"],
-    "krause": ["biofonia", "antropofonia", "geofonia", "mista"],
-    "schaeffer_type": ["impulsivo", "iterativo", "tenuto", "tenuto-evolutivo", "trama", "campione"],
-    "smalley_motion": ["flow", "turbulence", "streaming", "radiation", "oscillation", "ascent", "descent", "rotation", "plane", "convergence", "divergence"],
-    "chion": ["causale", "semantico", "ridotto", "misto"],
-    "truax": ["background", "readiness", "search", "n/a"],
-    "confidence": ["high", "medium", "low", "insufficient"]
+    "schafer_role": [
+      "keynote",
+      "signal",
+      "soundmark",
+      "sound-object"
+    ],
+    "schafer_fidelity": [
+      "hi-fi",
+      "lo-fi",
+      "misto",
+      "n/a"
+    ],
+    "krause": [
+      "biofonia",
+      "antropofonia",
+      "geofonia",
+      "mista"
+    ],
+    "schaeffer_type": [
+      "impulsivo",
+      "iterativo",
+      "tenuto",
+      "tenuto-evolutivo",
+      "trama",
+      "campione"
+    ],
+    "smalley_motion": [
+      "flow",
+      "turbulence",
+      "streaming",
+      "radiation",
+      "oscillation",
+      "ascent",
+      "descent",
+      "rotation",
+      "plane",
+      "convergence",
+      "divergence"
+    ],
+    "chion": [
+      "causale",
+      "semantico",
+      "ridotto",
+      "misto"
+    ],
+    "truax": [
+      "background",
+      "readiness",
+      "search",
+      "n/a"
+    ],
+    "confidence": [
+      "high",
+      "medium",
+      "low",
+      "insufficient"
+    ],
+    "schaeffer_detail": [
+      "impulsivo-secco",
+      "impulsivo-risonante",
+      "impulsivo-modulato",
+      "iterativo-regolare-veloce",
+      "iterativo-regolare-lento",
+      "iterativo-irregolare",
+      "tenuto-omogeneo",
+      "tenuto-modulato",
+      "tenuto-evolutivo-graduale",
+      "evolutivo-discontinuo",
+      "evolutivo-continuo",
+      "trama-fine",
+      "trama-grossa",
+      "trama-rugosa",
+      "trama-disordinata",
+      "campione-naturale",
+      "campione-tecnologico",
+      "campione-musicale",
+      "crescendo",
+      "decrescendo",
+      "morphing",
+      "cross-sintesi"
+    ],
+    "smalley_growth": [
+      "dilation",
+      "accumulation",
+      "dissipation",
+      "exogeny",
+      "endogeny",
+      "contraction"
+    ]
   },
   "category_defaults": {
     "geofonia": {
@@ -73,7 +154,9 @@
       "schafer_fidelity": "hi-fi",
       "chion": "misto",
       "truax": "readiness",
-      "westerkamp_soundwalk_relevance": true
+      "westerkamp_soundwalk_relevance": true,
+      "smalley_growth": "dilation",
+      "schaeffer_detail": "morphing"
     },
     "musica registrata": {
       "krause": "antropofonia",
@@ -105,7 +188,8 @@
       "schafer_fidelity": "n/a",
       "chion": "ridotto",
       "truax": "search",
-      "westerkamp_soundwalk_relevance": false
+      "westerkamp_soundwalk_relevance": false,
+      "smalley_growth": "endogeny"
     },
     "geofonia estesa": {
       "krause": "geofonia",
@@ -137,7 +221,9 @@
       "schafer_fidelity": "n/a",
       "chion": "ridotto",
       "truax": "search",
-      "westerkamp_soundwalk_relevance": false
+      "westerkamp_soundwalk_relevance": false,
+      "smalley_growth": "accumulation",
+      "schaeffer_detail": "cross-sintesi"
     },
     "silenzi compositivi": {
       "krause": "mista",
@@ -145,7 +231,9 @@
       "schafer_fidelity": "n/a",
       "chion": "ridotto",
       "truax": "readiness",
-      "westerkamp_soundwalk_relevance": false
+      "westerkamp_soundwalk_relevance": false,
+      "smalley_growth": "dissipation",
+      "schaeffer_detail": "tenuto-omogeneo"
     },
     "sacralita sonora": {
       "krause": "antropofonia",
@@ -162,123 +250,492 @@
       "chion": "misto",
       "truax": "readiness",
       "westerkamp_soundwalk_relevance": true
+    },
+    "utterance": {
+      "krause": "antropofonia",
+      "schafer_role": "sound-object",
+      "schafer_fidelity": "hi-fi",
+      "chion": "ridotto",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": false,
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "oscillation"
     }
   },
   "prompts": {
-    "geo_01": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "ruscello: keynote classico, flusso idrico continuo"},
-    "geo_02": {"schaeffer_type": "iterativo", "smalley_motion": "streaming", "notes": "pioggia: streaming di micro-impatti"},
-    "geo_03": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "geo_04": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "geo_05": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "geo_06": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation", "notes": "tuono: impulso con coda riverberata, ascolto causale"},
-    "geo_07": {"schaeffer_type": "impulsivo", "smalley_motion": "rotation", "notes": "goccia: impulso con micro-riverbero in ambiente"},
-    "geo_08": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "geo_09": {"schaeffer_type": "tenuto", "smalley_motion": "plane", "notes": "neve: texture uniforme senza direzione"},
-    "geo_10": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-
-    "bio_01": {"schaeffer_type": "iterativo", "smalley_motion": "streaming"},
-    "bio_05": {"schaeffer_type": "trama", "smalley_motion": "turbulence", "notes": "grilli: texture densa stocastica, confine fra signal e keynote"},
-    "bio_11": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "bio_12": {"schaeffer_type": "trama", "smalley_motion": "streaming", "notes": "dawn chorus: polifonia di richiami sovrapposti"},
-    "bio_15": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-
-    "dom_01": {"schaeffer_type": "impulsivo", "smalley_motion": "rotation"},
-    "dom_02": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
-    "dom_04": {"chion": "misto", "schaeffer_type": "tenuto", "smalley_motion": "streaming", "notes": "voce come massa non intelligibile, ambiguo fra causale e semantico"},
-    "dom_05": {"schaeffer_type": "impulsivo", "smalley_motion": "turbulence"},
-    "dom_09": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "turbulence", "notes": "moka: attacco graduale con crescita turbolenta"},
-
-    "urb_01": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "urb_03": {"schafer_role": "soundmark", "schaeffer_type": "impulsivo", "smalley_motion": "radiation", "notes": "campane chiesa: soundmark locale schafferiano tipico"},
-    "urb_04": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
-    "urb_06": {"schafer_role": "soundmark", "schaeffer_type": "iterativo", "smalley_motion": "radiation"},
-    "urb_07": {"schaeffer_type": "iterativo", "smalley_motion": "ascent", "notes": "Doppler di avvicinamento"},
-    "urb_09": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-
-    "mec_01": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "mec_02": {"schaeffer_type": "tenuto", "smalley_motion": "rotation"},
-    "mec_05": {"schaeffer_type": "tenuto", "smalley_motion": "turbulence"},
-    "mec_07": {"schaeffer_type": "tenuto", "smalley_motion": "rotation"},
-    "mec_08": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "mec_12": {"schaeffer_type": "tenuto", "smalley_motion": "rotation"},
-
-    "scf_03": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-    "scf_04": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-    "scf_05": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "scf_07": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-
-    "mus_01": {"schaeffer_type": "impulsivo", "smalley_motion": "descent"},
-    "mus_05": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "chion": "semantico"},
-    "mus_08": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "flow"},
-
-    "prf_04": {"schaeffer_type": "trama", "smalley_motion": "turbulence", "notes": "applausi: texture stocastica collettiva"},
-    "prf_06": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "ascent", "notes": "larsen: feedback in crescita"},
-    "prf_07": {"schaeffer_type": "iterativo", "smalley_motion": "rotation"},
-    "prf_09": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "ascent"},
-
-    "edu_02": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
-    "edu_04": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "convergence", "notes": "accordatura: convergenza verso centro tonale"},
-    "edu_06": {"schaeffer_type": "tenuto", "smalley_motion": "plane", "chion": "semantico"},
-
-    "obj_01": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
-    "obj_02": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "obj_03": {"schaeffer_type": "tenuto", "smalley_motion": "oscillation"},
-    "obj_06": {"schaeffer_type": "impulsivo", "smalley_motion": "descent"},
-    "obj_07": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "obj_08": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "flow"},
-    "obj_09": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-
-    "geox_01": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "geox_03": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "geox_06": {"schaeffer_type": "iterativo", "smalley_motion": "rotation"},
-    "geox_07": {"schaeffer_type": "iterativo", "smalley_motion": "streaming"},
-    "geox_10": {"schaeffer_type": "impulsivo", "smalley_motion": "rotation"},
-
-    "trs_01": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "treno: passaggio con Doppler, ma su finestra breve e flow continuo"},
-    "trs_03": {"schaeffer_type": "iterativo", "smalley_motion": "streaming"},
-    "trs_04": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "ascent"},
-
-    "ita_01": {"schafer_role": "soundmark", "schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
-    "ita_04": {"schaeffer_type": "trama", "smalley_motion": "turbulence", "chion": "misto"},
-    "ita_08": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "ita_09": {"schaeffer_type": "trama", "smalley_motion": "turbulence", "chion": "misto"},
-    "ita_10": {"schaeffer_type": "tenuto", "smalley_motion": "rotation", "notes": "borgo: vicolo stretto con echi, reflessioni multiple"},
-    "ita_13": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "flow", "notes": "motorino in movimento: Doppler + eco di vicoli"},
-    "ita_14": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "ascent"},
-    "ita_15": {"chion": "semantico"},
-    "ita_16": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-
-    "elx_01": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "ascent"},
-    "elx_02": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "elx_03": {"schaeffer_type": "tenuto", "smalley_motion": "flow"},
-    "elx_07": {"schaeffer_type": "iterativo", "smalley_motion": "rotation"},
-    "elx_09": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-
-    "sil_01": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-    "sil_02": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-    "sil_03": {"schaeffer_type": "tenuto", "smalley_motion": "plane"},
-    "sil_04": {"schaeffer_type": "impulsivo", "smalley_motion": "descent"},
-
-    "sac_01": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation", "notes": "campane maggiori: colpo + coda riverberata lunga"},
-    "sac_02": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
-    "sac_03": {"schaeffer_type": "tenuto-evolutivo", "smalley_motion": "flow", "chion": "semantico"},
-    "sac_04": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "chion": "semantico"},
-    "sac_05": {"schaeffer_type": "iterativo", "smalley_motion": "streaming", "chion": "semantico"},
-    "sac_06": {"schaeffer_type": "impulsivo", "smalley_motion": "descent"},
-    "sac_07": {"schaeffer_type": "iterativo", "smalley_motion": "radiation"},
-    "sac_08": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
-    "sac_09": {"schaeffer_type": "impulsivo", "smalley_motion": "radiation"},
-
-    "bio_16": {"schafer_role": "soundmark", "schaeffer_type": "iterativo", "smalley_motion": "radiation", "notes": "gallo come soundmark archetipale dell'alba in villaggi rurali"},
-    "bio_17": {"schaeffer_type": "iterativo", "smalley_motion": "streaming"},
-    "bio_18": {"schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "urb_11": {"chion": "semantico", "schaeffer_type": "iterativo", "smalley_motion": "streaming", "notes": "voci di pescatori in lingua locale, tipico porto mediterraneo"},
-    "urb_12": {"chion": "semantico", "schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "urb_13": {"chion": "misto", "schaeffer_type": "trama", "smalley_motion": "turbulence"},
-    "mec_13": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "diesel piccolo cabotaggio, drone meccanico"},
-    "mec_14": {"schaeffer_type": "iterativo", "smalley_motion": "oscillation"},
-    "geox_11": {"schaeffer_type": "tenuto", "smalley_motion": "flow", "notes": "mare calmo come keynote di scena marittima"},
-    "geox_12": {"schaeffer_type": "iterativo", "smalley_motion": "turbulence"},
-    "geox_13": {"schaeffer_type": "tenuto", "smalley_motion": "flow"}
+    "geo_01": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "notes": "ruscello: keynote classico, flusso idrico continuo"
+    },
+    "geo_02": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming",
+      "notes": "pioggia: streaming di micro-impatti"
+    },
+    "geo_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "geo_04": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "geo_05": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "geo_06": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation",
+      "notes": "tuono: impulso con coda riverberata, ascolto causale"
+    },
+    "geo_07": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "rotation",
+      "notes": "goccia: impulso con micro-riverbero in ambiente"
+    },
+    "geo_08": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "geo_09": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane",
+      "notes": "neve: texture uniforme senza direzione"
+    },
+    "geo_10": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "bio_01": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming"
+    },
+    "bio_05": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence",
+      "notes": "grilli: texture densa stocastica, confine fra signal e keynote"
+    },
+    "bio_11": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "bio_12": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "streaming",
+      "notes": "dawn chorus: polifonia di richiami sovrapposti"
+    },
+    "bio_15": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "dom_01": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "rotation"
+    },
+    "dom_02": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation"
+    },
+    "dom_04": {
+      "chion": "misto",
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "streaming",
+      "notes": "voce come massa non intelligibile, ambiguo fra causale e semantico"
+    },
+    "dom_05": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "turbulence"
+    },
+    "dom_09": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "turbulence",
+      "notes": "moka: attacco graduale con crescita turbolenta"
+    },
+    "urb_01": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "urb_03": {
+      "schafer_role": "soundmark",
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation",
+      "notes": "campane chiesa: soundmark locale schafferiano tipico"
+    },
+    "urb_04": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "oscillation"
+    },
+    "urb_06": {
+      "schafer_role": "soundmark",
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "radiation"
+    },
+    "urb_07": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "ascent",
+      "notes": "Doppler di avvicinamento"
+    },
+    "urb_09": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "mec_01": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "mec_02": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "rotation"
+    },
+    "mec_05": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "turbulence"
+    },
+    "mec_07": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "rotation"
+    },
+    "mec_08": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "mec_12": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "rotation"
+    },
+    "scf_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "scf_04": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "scf_05": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "scf_07": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "mus_01": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "descent"
+    },
+    "mus_05": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "chion": "semantico"
+    },
+    "mus_08": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "flow"
+    },
+    "prf_04": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence",
+      "notes": "applausi: texture stocastica collettiva"
+    },
+    "prf_06": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "ascent",
+      "notes": "larsen: feedback in crescita"
+    },
+    "prf_07": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "rotation"
+    },
+    "prf_09": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "ascent"
+    },
+    "edu_02": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "oscillation"
+    },
+    "edu_04": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "convergence",
+      "notes": "accordatura: convergenza verso centro tonale"
+    },
+    "edu_06": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane",
+      "chion": "semantico"
+    },
+    "obj_01": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation"
+    },
+    "obj_02": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "obj_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "oscillation"
+    },
+    "obj_06": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "descent"
+    },
+    "obj_07": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "obj_08": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "flow"
+    },
+    "obj_09": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "geox_01": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "geox_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "geox_06": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "rotation"
+    },
+    "geox_07": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming"
+    },
+    "geox_10": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "rotation"
+    },
+    "trs_01": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "notes": "treno: passaggio con Doppler, ma su finestra breve e flow continuo"
+    },
+    "trs_03": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming"
+    },
+    "trs_04": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "ascent"
+    },
+    "ita_01": {
+      "schafer_role": "soundmark",
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation"
+    },
+    "ita_04": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence",
+      "chion": "misto"
+    },
+    "ita_08": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "ita_09": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence",
+      "chion": "misto"
+    },
+    "ita_10": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "rotation",
+      "notes": "borgo: vicolo stretto con echi, reflessioni multiple"
+    },
+    "ita_13": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "flow",
+      "notes": "motorino in movimento: Doppler + eco di vicoli"
+    },
+    "ita_14": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "ascent"
+    },
+    "ita_15": {
+      "chion": "semantico"
+    },
+    "ita_16": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "elx_01": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "ascent"
+    },
+    "elx_02": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "elx_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "elx_07": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "rotation"
+    },
+    "elx_09": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "sil_01": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "sil_02": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "sil_03": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "plane"
+    },
+    "sil_04": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "descent"
+    },
+    "sac_01": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation",
+      "notes": "campane maggiori: colpo + coda riverberata lunga"
+    },
+    "sac_02": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation"
+    },
+    "sac_03": {
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "flow",
+      "chion": "semantico"
+    },
+    "sac_04": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "chion": "semantico"
+    },
+    "sac_05": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming",
+      "chion": "semantico"
+    },
+    "sac_06": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "descent"
+    },
+    "sac_07": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "radiation"
+    },
+    "sac_08": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "oscillation"
+    },
+    "sac_09": {
+      "schaeffer_type": "impulsivo",
+      "smalley_motion": "radiation"
+    },
+    "bio_16": {
+      "schafer_role": "soundmark",
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "radiation",
+      "notes": "gallo come soundmark archetipale dell'alba in villaggi rurali"
+    },
+    "bio_17": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming"
+    },
+    "bio_18": {
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "urb_11": {
+      "chion": "semantico",
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "streaming",
+      "notes": "voci di pescatori in lingua locale, tipico porto mediterraneo"
+    },
+    "urb_12": {
+      "chion": "semantico",
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "urb_13": {
+      "chion": "misto",
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "mec_13": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "notes": "diesel piccolo cabotaggio, drone meccanico"
+    },
+    "mec_14": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "oscillation"
+    },
+    "geox_11": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow",
+      "notes": "mare calmo come keynote di scena marittima"
+    },
+    "geox_12": {
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "geox_13": {
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
+    },
+    "utt_01": {
+      "schaeffer_detail": "impulsivo-risonante",
+      "smalley_growth": "dissipation"
+    },
+    "utt_02": {
+      "schaeffer_detail": "iterativo-irregolare",
+      "smalley_growth": "accumulation"
+    },
+    "utt_03": {
+      "schaeffer_detail": "iterativo-regolare-lento",
+      "smalley_growth": "endogeny"
+    },
+    "utt_04": {
+      "schaeffer_detail": "tenuto-modulato",
+      "smalley_growth": "endogeny"
+    },
+    "utt_05": {
+      "schaeffer_detail": "iterativo-irregolare",
+      "smalley_growth": "accumulation"
+    },
+    "utt_06": {
+      "schaeffer_detail": "tenuto-modulato",
+      "smalley_growth": "exogeny"
+    },
+    "utt_07": {
+      "schaeffer_detail": "iterativo-regolare-veloce",
+      "smalley_growth": "contraction"
+    },
+    "utt_08": {
+      "schaeffer_detail": "tenuto-evolutivo-graduale",
+      "smalley_growth": "dissipation"
+    },
+    "utt_09": {
+      "schaeffer_detail": "morphing",
+      "smalley_growth": "dilation",
+      "chion": "ridotto",
+      "schafer_role": "sound-object"
+    },
+    "utt_10": {
+      "schaeffer_detail": "tenuto-omogeneo",
+      "smalley_growth": "accumulation"
+    }
   }
 }

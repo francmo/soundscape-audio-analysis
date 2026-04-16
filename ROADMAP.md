@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.5.2 (15 aprile 2026)
+**Versione corrente**: 0.5.3 (16 aprile 2026)
 **Test suite**: 117 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.5.2)
+## Stato corrente (v0.5.3)
 
 ### Capabilities attive
 
@@ -96,43 +96,6 @@ priorita' alta a nice-to-have (rinviato a v0.7.0). Emergono invece due gap
 piu' urgenti: agente non riconosce Presque Rien nonostante indizi forti, e
 `narrative.py` produce 10 pagine di testo ridondante (stessa frase con
 centroide 3029 Hz / flatness 0.040 / onset 86 ripetuta in 40+ blocchi).
-
-### v0.5.3 — Hotfix agente: riconoscimento brani noti (1-3 h)
-
-**Problema osservato**: in `audio5_report.pdf` l'agente produce una lettura
-compositiva di qualita' alta (struttura tripartita, evidenza contraddittoria,
-gesti operativi) ma tratta il materiale come "registrazione anonima" invece
-che come Presque Rien N°1 di Luc Ferrari, pur avendo 20 minuti di porto
-peschereccio mediterraneo + arco crepuscolare + presa lunga documentale,
-tutte firme riconoscibilissime.
-
-**Ipotesi**: il paragrafo "Identificazione preliminare" in
-`templates/agent_prompt.md` introdotto nella v0.5.2 e' formulato come
-suggerimento opzionale. L'agente lo salta perche' non forzato.
-
-**Azioni**:
-
-- **Rafforzare l'istruzione**: trasformare da suggerimento a passo obbligatorio.
-  In testa al prompt, aggiungere step esplicito: "Prima di scrivere qualsiasi
-  sezione, elenca internamente 2-3 ipotesi di attribuzione in formato
-  [Autore, Titolo, anno, confidence low/medium/high]. Se anche solo una
-  raggiunge confidence medium, citala in 'Osservazioni critiche' come prima
-  frase. Se tutte restano low, procedi come anonimo."
-- **Arricchire payload agente con signature features**: aggiungere in
-  `agent_payload.py` un campo `signature` con durata (20m46), scena dominante
-  dedotta da PANNs+CLAP (porto peschereccio mediterraneo crepuscolare),
-  arco tecnico (RMS da -58 dBFS a -26 dBFS = crescendo graduale). Serve
-  dare all'agente feature di livello "alto" non solo tag singoli.
-- **Istruzione simmetrica per negare attribuzioni deboli**: l'agente deve
-  anche dire esplicitamente "nessuna attribuzione plausibile" quando non
-  riconosce nulla, per esporre il ragionamento.
-- **Test manuale post-fix**: rilanciare `audio5.mp3` con v0.5.3 e verificare
-  che "Osservazioni critiche" si apra con riferimento a Ferrari. Se non
-  funziona, valutare soglia di temperatura/reasoning budget nel subprocess
-  `claude -p --agents`.
-
-**File da modificare**: `templates/agent_prompt.md`,
-`~/.claude/agents/soundscape-composer-analyst.md`, `scripts/agent_payload.py`.
 
 ### v0.6.0 — Strumento compositivo (16-22 h, prossima sessione Plan Mode)
 
@@ -281,6 +244,10 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.5.3** (16/04/2026): hotfix agente (riconoscimento brani noti da
+  suggerimento a passo obbligatorio, nuovo campo `signature` nel payload).
+  Feedback source: rilettura di audio5_report.pdf (Presque Rien N°1
+  rilanciato con v0.5.2).
 - **v0.5.2** (15/04/2026): hotfix mediterraneo (vocabolario CLAP v1.3 con
   categoria "paesaggi mediterranei generici", flag `geo_specific` sui tag
   italo-specifici, istruzioni agente per riconoscimento brani noti).

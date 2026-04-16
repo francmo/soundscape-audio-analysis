@@ -305,9 +305,11 @@ def _build_clap_block(clap: dict, styles) -> list:
             t1 = _fmt_time(seg["t_end_s"])
             tags = seg.get("tags", [])
             row = [f"{t0}-{t1}"]
+            # v0.6.2: niente slice [:35]; styled_table._wrap avvolge i prompt
+            # in Paragraph con word-wrap ReportLab (vedi report_styles.py).
             for idx in range(3):
                 if idx < len(tags):
-                    row.append(f"{tags[idx]['prompt'][:35]}")
+                    row.append(tags[idx]["prompt"])
                 else:
                     row.append("")
             rows.append(row)
@@ -472,6 +474,27 @@ def _format_academic_hints(hints: dict) -> str:
             f"{v} {int(p * 100)}%" for v, p in smalley[:2]
         )
         parts.append(f"<b>Smalley motion:</b> {sm_str}")
+    # v0.6.2: tassonomie compositive estese (schaeffer_detail TARTYP 22 sotto-tipi,
+    # smalley_growth 6 growth processes). Rese solo se confidence sufficiente per
+    # evitare rumore; sempre citate come ipotesi (tentative=True nel payload).
+    schaeffer_detail = hints.get("schaeffer_detail", {})
+    sd_conf = schaeffer_detail.get("confidence")
+    sd_value = schaeffer_detail.get("value")
+    if sd_value and sd_conf in ("high", "medium"):
+        sd_pct = int(schaeffer_detail.get("pct", 0) * 100)
+        parts.append(
+            f"<b>Schaeffer detail (TARTYP, {sd_conf}):</b> "
+            f"<i>{sd_value}</i> {sd_pct}%"
+        )
+    smalley_growth = hints.get("smalley_growth", {})
+    sg_conf = smalley_growth.get("confidence")
+    sg_value = smalley_growth.get("value")
+    if sg_value and sg_conf in ("high", "medium"):
+        sg_pct = int(smalley_growth.get("pct", 0) * 100)
+        parts.append(
+            f"<b>Smalley growth ({sg_conf}):</b> "
+            f"<i>{sg_value}</i> {sg_pct}%"
+        )
     chion = hints.get("chion_modes_present", [])
     if chion:
         parts.append(f"<b>Modi Chion:</b> {', '.join(chion)}")
@@ -1049,7 +1072,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.6.1",
+        "Skill soundscape-audio-analysis v0.6.2",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -1061,7 +1084,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.6.1: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.6.2: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1142,7 +1165,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.1 di "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.2 di "
         "Francesco Mariano. Font Libre Baskerville e Source Sans Pro "
         "(licenza SIL OFL). Pipeline analitica: librosa + soundfile per il "
         "carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "

@@ -3,7 +3,7 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.1 (16 aprile 2026)
+**Versione corrente**: 0.6.2 (16 aprile 2026)
 **Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
@@ -107,7 +107,7 @@ misurare la qualita' descrittiva. Tre conseguenze sulla pianificazione:
 5. **Soundscapy/ISO 12913-3** (era v0.7.0) scivola a v0.8.0: dimensione
    perceptive interessante ma meno urgente del riconoscimento eventi.
 
-### v0.6.1 — Patch indici ecoacustici (3-4 h)
+### v0.6.3 — Patch indici ecoacustici (3-4 h)
 
 Driver: ricerca web 16/04/2026
 (`references/external_feedback/research_2026-04-16_soundscape_texts.md`)
@@ -128,7 +128,7 @@ di soundscape predice il *cambiamento* di community.
   di soundscape, non di valore assoluto."
 - Test su fixture corte gia' esistenti.
 
-### v0.6.2 — Hotfix dipendenti dal feedback utente (continuo)
+### v0.6.4 — Hotfix dipendenti dal feedback utente (continuo)
 
 Traduzione di ogni nuovo `references/user_feedback/<brano>.md` in patch
 concrete: prompt CLAP aggiunti/rimossi, soglie ricalibrate. Cicli da 2-4 h
@@ -303,6 +303,20 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.2** (16/04/2026): hotfix PDF/agente emerso dalla validazione
+  visuale di `audio7_report.pdf`. Tre regressori fixati in blocco: (a)
+  celle timeline CLAP troncate a 35 char in `report_pdf.py::_build_clap_block`
+  sostituite con word-wrap ReportLab nativo (via `styled_table._wrap`);
+  (b) `schaeffer_detail` e `smalley_growth` v0.6.0 presenti in
+  `clap_mapping.aggregate_academic_hints` ma non renderizzati da
+  `report_pdf.py::_format_academic_hints`, aggiunti i due branch con
+  rendering solo se confidence high/medium; (c) `agent_bridge.py::except
+  subprocess.TimeoutExpired` non leggeva `e.stdout`/`e.stderr`, quindi
+  su timeout perdevamo ogni diagnostica (audio7 mostrava "Stderr: ." dopo
+  2 tentativi). Ora stdout/stderr parziali vengono decodificati e loggati
+  a stderr. Bump `AGENT_TIMEOUT_S` 300→600 s per sostenere payload
+  structure + narrative esteso. Driver: rilettura audio7_report.pdf
+  16/04 sera.
 - **v0.6.1** (16/04/2026): sub-comando `soundscape agent
   <summary.json>` per invocare solo l'agente compositivo su summary
   esistente (modalita' stdout + modalita' --pdf), evitando di rifare

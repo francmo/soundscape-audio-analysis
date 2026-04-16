@@ -229,7 +229,10 @@ PDF_MARGINS_MM = {"top": 22, "right": 20, "bottom": 20, "left": 22}
 # Il ragionamento iniziale + lettura del file JSON puo' richiedere oltre 120 s
 # su file lunghi (~20 min audio con timeline densa). Aumentato a 300 s per
 # evitare timeout su Presque Rien e simili.
-AGENT_TIMEOUT_S = 300
+# v0.6.2: con payload esteso da structure + schaeffer_detail + smalley_growth
+# e narrative delta-based espansa su file ~20 min, 300 s restano stretti.
+# audio7_report.pdf ha mostrato timeout x2 senza output. Portato a 600 s.
+AGENT_TIMEOUT_S = 600
 AGENT_RETRIES = 1
 
 # Testo output

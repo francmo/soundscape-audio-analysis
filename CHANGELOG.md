@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.6.2] - 2026-04-16
+
+Hotfix PDF/agente scaturito dalla validazione visuale di
+`audio7_report.pdf` (Presque Rien N°1 di Luc Ferrari rilanciato con
+v0.6.1). Tre regressori rilevati e sistemati in un unico bump patch.
+
+### Fixed
+
+- **Celle timeline CLAP troncate a 35 caratteri** (`report_pdf.py::
+  _build_clap_block`). Era un hard-coded `tags[idx]['prompt'][:35]`
+  che tagliava i prompt a metà parola: "Preghiera collettiva sussurrata
+  in", "Nave mercantile con motore diesel l", "Cicale in campagna estiva
+  del sud I", ecc. Rimosso lo slice; ora lo styled_table avvolge i
+  prompt in `Paragraph(styles["table_cell"])` e ReportLab fa word-wrap
+  nativo rispettando la larghezza delle colonne. Le righe crescono in
+  altezza per prompt su due righe senza perdere caratteri.
+- **Hint accademici `schaeffer_detail` e `smalley_growth` non
+  renderizzati nel PDF** (`report_pdf.py::_format_academic_hints`).
+  `clap_mapping.aggregate_academic_hints` li produceva correttamente a
+  partire da v0.6.0 (con `tentative: true` + soglie confidence
+  dinamiche per enum a 22/6 valori), ma il formatter del PDF era rimasto
+  fermo al set v0.5.x (solo `schaeffer_type` e `smalley_motion`). Il
+  risultato: feature cardine di v0.6.0 invisibile nel PDF. Aggiunti due
+  branch che renderizzano dominante + percentuale in corsivo quando
+  `confidence in {high, medium}`. Confidence "low" o "insufficient" resta
+  silenziata per evitare rumore.
+- **Diagnostica agent_bridge persa su timeout** (`agent_bridge.py`).
+  Il branch `except subprocess.TimeoutExpired` non leggeva
+  `TimeoutExpired.stdout`/`.stderr`, che `subprocess.run` con
+  `capture_output=True` popola con il buffer fino al momento del kill.
+  Su audio7 abbiamo avuto 2 tentativi falliti e il messaggio riportava
+  "Stderr: ." (vuoto), rendendo impossibile capire perche'. Ora decodifichiamo
+  stdout/stderr parziali (bytes o str) e li logghiamo a stderr con lunghezza
+  + primi 300 char, e popoliamo `last_stderr` anche nel ramo timeout
+  cosi' che `last_stderr_excerpt` nel dict ritornato contenga qualcosa
+  di utile.
+
+### Changed
+
+- **`config.AGENT_TIMEOUT_S` 300 -> 600 s**. Il payload v0.6.0 include
+  `structure` (8 sezioni), narrative delta-based estesa e hint estesi
+  (schaeffer_detail, smalley_growth). Su file ~20 min (Presque Rien
+  20:46) con classifier dense il prompt supera i 20 KB. 300 s sono
+  risultati stretti, due tentativi entrambi in timeout. Raddoppiato il
+  budget singolo; retries=1 invariato.
+
+### Internal
+
+- Bump 0.6.1 -> 0.6.2 in `scripts/__init__.py`, `pyproject.toml`,
+  `scripts/report_cmd.py`, `scripts/report_pdf.py` (3 stringhe
+  user-facing del corpus report).
+- ROADMAP: la sezione "v0.6.1 — Patch indici ecoacustici (FADI + Kane)"
+  era un refuso post-release v0.6.1 agent subcmd; rinominata v0.6.3 e
+  spostata in coda. La sezione "v0.6.2 — Hotfix feedback utente
+  (continuo)" rinominata v0.6.4.
+
+### Driver
+
+Lettura del PDF `audio7_report.pdf` (16/04/2026 sera): oltre ai tre
+regressori tecnici sopra, sono emersi come conferme attese (non in
+questa patch) il fallimento di plausibility CLAP ("Acqua del rubinetto"
+top-1 su porto peschereccio) e il falso positivo PANNs Speech 48% su
+texture granulari. Saranno affrontati in v0.7.0 (plausibility check) e
+v0.7.1 (benchmark con golden analyses), gia' pianificati in ROADMAP.
+
 ## [0.6.1] - 2026-04-16
 
 Sub-comando `agent` per invocare solo l'agente compositivo su un

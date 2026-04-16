@@ -131,13 +131,26 @@ def invoke_composer_analyst(summary_path: Path,
                 f"char): {last_stderr[:300]}",
                 file=sys.stderr, flush=True,
             )
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as te:
             elapsed = time.perf_counter() - t0
             last_error = f"timeout dopo {timeout_s} s"
             last_returncode = None
+            # v0.6.2: subprocess.TimeoutExpired espone stdout/stderr catturati
+            # fino al kill quando capture_output=True. Senza leggerli perdiamo
+            # ogni diagnostica sul failure (PDF audio7 mostrava "Stderr: .").
+            def _decode(x):
+                if x is None:
+                    return ""
+                if isinstance(x, bytes):
+                    return x.decode("utf-8", errors="replace")
+                return x
+            last_stderr = _decode(te.stderr).strip()
+            partial_stdout = _decode(te.stdout).strip()
             print(
                 f"[agent_bridge] tentativo {attempts}/{retries + 1} TIMEOUT "
-                f"a {elapsed:.1f} s",
+                f"a {elapsed:.1f} s. stderr ({len(last_stderr)} char): "
+                f"{last_stderr[:300] or '<vuoto>'}. stdout parziale: "
+                f"{len(partial_stdout)} char",
                 file=sys.stderr, flush=True,
             )
         except Exception as e:

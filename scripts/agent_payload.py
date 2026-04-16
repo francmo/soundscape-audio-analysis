@@ -99,6 +99,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
     clap = summary.get("clap", {}) or {}
     speech = summary.get("speech", {}) or {}
     mc = summary.get("multichannel", {}) or {}
+    structure = summary.get("structure", {}) or {}
 
     payload = {
         "file": {
@@ -165,6 +166,11 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "segments": speech.get("segments", [])[:15],
             "skipped_reason": speech.get("skipped_reason", ""),
             "translation_fallback": speech.get("translation_fallback", False),
+        },
+        "structure": {
+            "enabled": structure.get("enabled", False),
+            "n_sections": structure.get("n_sections", 0),
+            "sections": structure.get("sections", [])[:8],
         },
         "narrative_markdown": narrative_md,
     }

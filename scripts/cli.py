@@ -174,6 +174,17 @@ def _analyze_single(
         "multichannel": mc_res,
     }
 
+    # Segmentazione strutturale (v0.6.0): identifica sezioni significative
+    # del brano via changepoint detection deterministico. Output usato dal
+    # PDF (timeline grafica + tabella) e dal payload agente.
+    from . import structure as structure_mod
+    click.echo(f"  Segmentazione strutturale (changepoint detection)")
+    structure_res = structure_mod.compute_structure(
+        waveform=y, sr=sr, summary=summary,
+        window_seconds=config.STRUCTURE_WINDOW_S,
+    )
+    summary["structure"] = structure_res
+
     # Narrativa segmentata (v0.2.2): prosa italiana 30s
     narrative_res = {"enabled": False}
     if narrative_mode != "none":

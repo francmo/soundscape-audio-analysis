@@ -154,6 +154,33 @@ LOCATION_SPECIFIC_KEYWORDS_IT = {
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"
 
+# Narrativa delta-based (v0.6.0): la prima finestra ha descrizione completa,
+# le successive vengono descritte solo se almeno una di queste feature
+# cambia significativamente rispetto alla finestra precedente. Le finestre
+# senza delta vengono accumulate come "plateau" con una sola riga finale.
+# Driver: bug del v0.5.x in cui le feature timbriche globali erano ripetute
+# identiche in 40+ blocchi (audio6_report.pdf pp. 14-21).
+NARRATIVE_DELTA_CENTROID_PCT = 0.15  # +/- 15% sul centroide
+NARRATIVE_DELTA_FLATNESS_PCT = 0.30  # +/- 30% sulla flatness
+NARRATIVE_DELTA_RMS_DB = 6.0  # +/- 6 dB sul RMS
+
+# Segmentazione strutturale (v0.6.0): identifica sezioni significative del
+# brano via changepoint detection deterministico su gradiente di feature
+# multidimensionali per finestra (RMS, centroide, flatness, top-1 PANNs/CLAP).
+STRUCTURE_WINDOW_S = 10.0  # finestra di analisi (allineata a CLAP)
+STRUCTURE_MIN_SECTIONS = 2  # almeno 2 sezioni anche su file omogenei
+STRUCTURE_MAX_SECTIONS = 8  # massimo 8 sezioni anche su file frammentati
+STRUCTURE_MIN_SECTION_DURATION_S = 30.0  # min distance fra confini consecutivi
+STRUCTURE_GRADIENT_THRESHOLD_MAD_K = 2.0  # soglia adattiva: mediana + K*MAD
+# Mappa colori per la timeline grafica (per categoria Krause dominante)
+STRUCTURE_TIMELINE_COLORS = {
+    "biofonia": "#2e7d32",  # verde scuro
+    "antropofonia": "#ef6c00",  # arancio
+    "geofonia": "#1565c0",  # blu
+    "mista": "#6a1b9a",  # viola
+    "silenzio": "#757575",  # grigio
+}
+
 # Corpus report (v0.3.0)
 GOLDEN_REPORTS_DIR = REFERENCES_DIR / "golden_reports"
 GOLDEN_VILLA_FICANA = GOLDEN_REPORTS_DIR / "REPORT_ANALISI_villa_ficana.md"

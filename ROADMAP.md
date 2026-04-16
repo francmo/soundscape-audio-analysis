@@ -84,11 +84,67 @@ chi fa cosa. Aggiornato a ogni release.
 
 ## Pianificato (priorita' decrescente)
 
+Priorita' riordinate dopo la rilettura completa di `audio5_report.pdf`
+(16/04/2026): l'agente applica correttamente il flag `geo_specific` ed
+identifica autonomamente le hallucination CLAP in "Evidenza contraddittoria"
+(esempio: "CLAP propone 'acqua del rubinetto' 0.21 e 'preghiera collettiva
+sussurrata' 0.21 come tag dominanti, ma il classificatore non rileva ne'
+Water ne' Religious music. Queste associazioni riflettono probabilmente la
+texture continua a grana fine degli insetti che CLAP confonde con flussi
+d'acqua o mormorii vocali"). Questo sposta il plausibility check CLAP da
+priorita' alta a nice-to-have (rinviato a v0.7.0). Emergono invece due gap
+piu' urgenti: agente non riconosce Presque Rien nonostante indizi forti, e
+`narrative.py` produce 10 pagine di testo ridondante (stessa frase con
+centroide 3029 Hz / flatness 0.040 / onset 86 ripetuta in 40+ blocchi).
+
+### v0.5.3 — Hotfix agente: riconoscimento brani noti (1-3 h)
+
+**Problema osservato**: in `audio5_report.pdf` l'agente produce una lettura
+compositiva di qualita' alta (struttura tripartita, evidenza contraddittoria,
+gesti operativi) ma tratta il materiale come "registrazione anonima" invece
+che come Presque Rien N°1 di Luc Ferrari, pur avendo 20 minuti di porto
+peschereccio mediterraneo + arco crepuscolare + presa lunga documentale,
+tutte firme riconoscibilissime.
+
+**Ipotesi**: il paragrafo "Identificazione preliminare" in
+`templates/agent_prompt.md` introdotto nella v0.5.2 e' formulato come
+suggerimento opzionale. L'agente lo salta perche' non forzato.
+
+**Azioni**:
+
+- **Rafforzare l'istruzione**: trasformare da suggerimento a passo obbligatorio.
+  In testa al prompt, aggiungere step esplicito: "Prima di scrivere qualsiasi
+  sezione, elenca internamente 2-3 ipotesi di attribuzione in formato
+  [Autore, Titolo, anno, confidence low/medium/high]. Se anche solo una
+  raggiunge confidence medium, citala in 'Osservazioni critiche' come prima
+  frase. Se tutte restano low, procedi come anonimo."
+- **Arricchire payload agente con signature features**: aggiungere in
+  `agent_payload.py` un campo `signature` con durata (20m46), scena dominante
+  dedotta da PANNs+CLAP (porto peschereccio mediterraneo crepuscolare),
+  arco tecnico (RMS da -58 dBFS a -26 dBFS = crescendo graduale). Serve
+  dare all'agente feature di livello "alto" non solo tag singoli.
+- **Istruzione simmetrica per negare attribuzioni deboli**: l'agente deve
+  anche dire esplicitamente "nessuna attribuzione plausibile" quando non
+  riconosce nulla, per esporre il ragionamento.
+- **Test manuale post-fix**: rilanciare `audio5.mp3` con v0.5.3 e verificare
+  che "Osservazioni critiche" si apra con riferimento a Ferrari. Se non
+  funziona, valutare soglia di temperatura/reasoning budget nel subprocess
+  `claude -p --agents`.
+
+**File da modificare**: `templates/agent_prompt.md`,
+`~/.claude/agents/soundscape-composer-analyst.md`, `scripts/agent_payload.py`.
+
 ### v0.6.0 — Strumento compositivo (16-22 h, prossima sessione Plan Mode)
 
 Trasforma la skill da "report statistico" a "strumento di analisi
 compositiva" allineato al modo in cui Francesco scrive le analisi
-(rif. VB2.pdf, Air Piece.pdf).
+(rif. VB2.pdf, Air Piece.pdf). **Priorita' interna**: il punto 3
+(`narrative.py` delta-based) e' il piu' urgente e visibile: in
+`audio5_report.pdf` occupa 10 pagine con lo stesso paragrafo ripetuto 40+
+volte (centroide 3029 Hz, flatness 0.040, onset 86 identici perche'
+feature globali erroneamente presentate come locali). Potrebbe valere la
+pena estrarlo in una v0.5.4 intermedia se il resto di v0.6.0 richiede
+troppo tempo.
 
 **Cinque feature nuove correlate**:
 
@@ -104,11 +160,15 @@ compositiva" allineato al modo in cui Francesco scrive le analisi
    glissandi/crescendo, triangoli per acuti). Ogni sezione ha una "firma
    visiva" sintetica.
 
-3. **`narrative.py` delta-based**. Prima finestra descrizione completa,
-   finestre successive solo delta significativi (centroide cambia di +/-
-   15%, flatness cambia di +/- 30%, etc.). Risolve la verbosita'
-   identificata da Gemini ("Spettralmente il centroide si colloca a 1485
-   Hz" ripetuto in ogni segmento).
+3. **`narrative.py` delta-based** [**URGENTE**]. Prima finestra descrizione
+   completa, finestre successive solo delta significativi (centroide cambia
+   di +/- 15%, flatness cambia di +/- 30%, RMS cambia di +/- 6 dB, top-3
+   CLAP cambia, top-3 PANNs cambia). Bug confermato in `audio5_report.pdf`:
+   centroide 3029 Hz, flatness 0.040, onset 86 (2.9/s) ripetuti identici in
+   40+ blocchi perche' la funzione usa feature globali del file intero
+   invece che feature per finestra. Fix: audit `narrative.py` per isolare
+   dove passa le globali al formatter, ricomputare su finestre locali con
+   cache, poi applicare logica delta-based.
 
 4. **Flag CLI `--context <file.md>`**. L'utente fornisce biografia autore,
    contesto storico, link video, frasi chiave. Il payload agente lo
@@ -128,84 +188,60 @@ estensione di `report_pdf.py` per timeline grafica.
 
 **Prerequisito**: aprire Plan Mode con `/plan` per design dettagliato.
 
-### v0.5.3 — Plausibility check CLAP (feedback audio5/Presque Rien N°1)
-
-Hotfix mirato ai gap residui emersi rilanciando Presque Rien N°1 con la v0.5.2
-(`references/user_feedback/Presque_Rien_N1.md` sezione "Note libere audio5"):
-il flag `geo_specific` ha funzionato e i prompt mediterranei generici sono
-entrati in top-10, ma restano 4 classi di hallucination CLAP non coperte dai
-filtri attuali. Tempo stimato: 6-10 h.
-
-**Hallucinations residue documentate**:
-
-1. **"Acqua del rubinetto che scorre" (top-1, 0.212)** su sciabordio di onde
-   contro scafo in porto peschereccio. CLAP confonde acqua domestica con acqua
-   mediterranea. Nessun filtro attuale lo cattura.
-2. **"Preghiera collettiva sussurrata in chiesa" (top-2, 0.208)** su voci di
-   pescatori e bambini in banchina. Il filtro `likely_hallucination` v0.5.1
-   non scatta perche' PANNs vede Speech al 48% dei frame: c'e' voce, ma non
-   di preghiera. Serve un livello semantico piu' fine (tipo di voce, non
-   solo presenza).
-3. **Prompt musicali strumentali**: "Quartetto d'archi in esecuzione",
-   "Tastiera elettrica o sintetizzatore", "Musica elettronica ambient",
-   "Processione con coro e tamburi", "Campane di chiesa che suonano" compaiono
-   ripetutamente nella timeline su field recording di porto. CLAP li propone
-   su suoni meccanici o ambientali tonali.
-4. **Prompt di composizione soundscape**: "Profilo dinamico in morphing
-   continuo", "Transizione dal silenzio notturno a [alba]", "Cross-sintesi fra
-   due suoni concreti" entrano come top-1/top-2 in molti segmenti su field
-   recording grezzo. CLAP li associa a qualsiasi transizione dinamica.
-5. **Confusione motore terrestre/marittimo**: "Treno regionale in arrivo a
-   stazione", "Treno ad alta velocita'" vs motore diesel di peschereccio.
-   Vocabolario non distingue bene.
-
-**Azioni proposte**:
-
-- **`scripts/clap_plausibility.py` (nuovo) `mark_implausible_tags()`**. Filtro
-  post-hoc che marca `plausibility: "low"|"medium"|"high"` sui tag in base
-  a consistenza con contesto tecnico. Regole:
-  - Prompt di categoria "musica registrata", "sacralita sonora",
-    "composizione soundscape", "trasformazioni elettroacustiche", "performance
-    multimediale" richiedono PANNs "Music"/"Orchestra"/"Choir"/"Chant" nei
-    top-5 globali (score > 0.1) per avere `plausibility: high`. Altrimenti
-    `low`.
-  - Prompt di categoria "paesaggi italiani specifici" o con keyword
-    italo-specifiche richiedono conferma esterna dall'utente (flag
-    `geo_specific` gia' in v0.5.2) + `plausibility: medium` di default su
-    materiale non identificato.
-  - Prompt con keyword "preghiera/liturgia/cerimonia/processione" richiedono
-    PANNs "Choir"/"Chant"/"Religious music" nei top-10 per `plausibility:
-    high`. Altrimenti `low`, anche se PANNs Speech c'e' genericamente.
-  - Prompt "treno/ferrovia/stazione" richiedono PANNs "Train"/"Rail" nei
-    top-10 per plausibility alta. Altrimenti degradati.
-- **Vocabolario v1.4**: aggiungere 4-6 prompt per motori marittimi specifici
-  (gia' abbiamo `mec_13-14`, espandere con "Motore diesel lento di peschereccio
-  con scoppio irregolare", "Scafo in legno che cigola sul molo", "Sciabordio
-  di onde contro scafo ormeggiato") per dare a CLAP alternative piu' precise
-  agli erronei "Treno" e "Acqua del rubinetto".
-- **Rendering PDF**: tag con `plausibility: "low"` resi in corsivo grigio (gia'
-  usato per allucinazioni) con caption distinta "tag con bassa plausibilita'
-  tecnica", separata da `likely_hallucination` (speech-specific) e
-  `geo_specific` (geografico). Terza categoria di markup.
-- **Test fixture dedicata**: `tests/test_clap_plausibility.py` con 4-5
-  casi reali estratti da `audio5_summary.json` per regression coverage sui
-  filtri.
-- **Payload agente**: propagare `plausibility` nei campi top_global. Istruire
-  l'agente a ignorare tag con `plausibility: "low"` come fa gia' con
-  `likely_hallucination`.
-
-**Fuori scope v0.5.3** (rinviati a v0.6.0+): post-hoc reranking via embedding
-text-audio con modello secondario, fine-tuning CLAP su soundscape annotato.
-
-### v0.5.4 — Hotfix dipendenti dal feedback utente (continuo)
+### v0.6.1 — Hotfix dipendenti dal feedback utente (continuo)
 
 Traduzione di ogni nuovo `references/user_feedback/<brano>.md` in patch
 concrete: prompt CLAP aggiunti/rimossi, soglie ricalibrate, regole di
 plausibility estese. Cicli da 2-4 h ciascuno.
 
-### v0.7.0+ — Idee successive
+### v0.7.0 — Plausibility check CLAP (rinviato da v0.5.3, 6-10 h)
 
-Da valutare quando v0.6.0 e' rilasciata e stabile.
+**Rinviato** (era v0.5.3 in roadmap precedente): il motivo della retrocessione
+e' che l'agente compositivo gia' svolge il ruolo di plausibility check in
+modo efficace nella sezione "Evidenza contraddittoria" della lettura
+compositiva. Automatizzarlo con un modulo deterministico produrrebbe
+duplicazione, e rischia di mascherare hallucination che l'agente saprebbe
+identificare via ragionamento contestuale. Si rivaluta dopo la v0.6.0 se
+l'agente non basta.
+
+**Gap residui che giustificherebbero l'implementazione** (documentati in
+audio5_report.pdf):
+
+1. "Acqua del rubinetto che scorre" top-1 globale 0.212 su sciabordio onde.
+2. "Preghiera collettiva sussurrata in chiesa" top-2 globale 0.208: filtro
+   `likely_hallucination` non scatta perche' PANNs Speech e' al 48% dei frame
+   (c'e' voce ma non di preghiera).
+3. Prompt musicali strumentali (Quartetto d'archi, Tastiera elettrica,
+   Processione con coro e tamburi) che non compaiono in PANNs top-10.
+4. Prompt di composizione soundscape (Profilo dinamico in morphing continuo,
+   Cross-sintesi) applicati a field recording grezzo.
+5. Confusione treno/motore marittimo.
+
+**Azioni proposte se implementato**:
+
+- **`scripts/clap_plausibility.py` (nuovo) `mark_implausible_tags()`**. Filtro
+  post-hoc che marca `plausibility: "low"|"medium"|"high"` sui tag in base
+  a consistenza con contesto tecnico. Regole principali: prompt di categoria
+  musicale richiedono PANNs "Music/Orchestra/Choir" nei top-5 globali; prompt
+  con keyword "preghiera/liturgia/processione" richiedono PANNs "Choir/Chant/
+  Religious music" nei top-10; prompt "treno/ferrovia" richiedono PANNs
+  "Train/Rail" nei top-10.
+- **Vocabolario v1.4**: 4-6 prompt per motori marittimi specifici
+  (espandere `mec_13-14` con "Motore diesel lento di peschereccio con
+  scoppio irregolare", "Scafo in legno che cigola sul molo", "Sciabordio
+  di onde contro scafo ormeggiato").
+- **Rendering PDF**: terzo markup (corsivo grigio) per `plausibility: low`,
+  separato da `likely_hallucination` e `geo_specific`.
+- **Test fixture dedicata**: `tests/test_clap_plausibility.py` con casi
+  reali estratti da `audio5_summary.json`.
+- **Payload agente**: propagare `plausibility`, istruire a ignorare i `low`.
+
+**Fuori scope v0.7.0** (rinviati a v0.8.0+): post-hoc reranking via embedding
+text-audio con modello secondario, fine-tuning CLAP su soundscape annotato.
+
+### v0.8.0+ — Idee successive
+
+Da valutare quando v0.6.0 e v0.7.0 sono rilasciate e stabili.
 
 - **Confronto strutturale fra brani di un corpus**: analisi del comune
   e del divergente fra sezioni omologhe di brani diversi. Estensione del

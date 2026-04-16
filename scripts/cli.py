@@ -161,7 +161,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.6.0",
+        "version": "0.6.1",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -280,7 +280,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.6.0", prog_name="soundscape")
+@click.version_option(version="0.6.1", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -501,10 +501,116 @@ def report_merge_command(pdf_path, markdown_path):
     click.echo(click.style(f"PDF aggiornato: {new_pdf}", fg="green", bold=True))
 
 
+@cli.command("agent")
+@click.argument("summary_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--pdf", is_flag=True, default=False,
+              help="Rigenera il PDF completo usando il summary esistente (default: "
+                   "stampa solo il markdown dell'agente su stdout e salva <base>_agent.md)")
+@click.option("--output", "output_dir", type=click.Path(path_type=Path),
+              default=None,
+              help="Directory di output (default: accanto al summary.json)")
+@click.option("--known-piece", "known_piece", type=str, default="",
+              help="Attribuzione utente esplicita (come in analyze). Sovrascrive "
+                   "eventuale valore gia' presente in summary.metadata.user_known_piece.")
+def agent_cmd(summary_path: Path, pdf: bool, output_dir: Path | None,
+              known_piece: str):
+    """Invoca solo l'agente compositivo su un summary.json esistente (v0.6.1).
+
+    Salta PANNs/CLAP/narrative/structure (gia' calcolati) e rigenera solo la
+    "Lettura compositiva". Utile per iterare sul prompt dell'agente o per
+    riprocessare l'analisi dopo aggiornamenti delle istruzioni, senza rifare
+    l'intera pipeline (5-10 minuti -> 30-90 secondi).
+
+    Modalita':
+    - default: stampa il markdown dell'agente su stdout e salva `<base>_agent.md`
+      accanto al summary.
+    - `--pdf`: rigenera anche il PDF completo (richiede che `<base>_graphics/`
+      con gli spettrogrammi esista gia' accanto al summary).
+    """
+    from . import agent_bridge, agent_payload, serialization, report_pdf
+
+    if output_dir is None:
+        output_dir = summary_path.parent
+    output_dir = ensure_dir(output_dir)
+
+    summary = serialization.load(summary_path)
+    if not isinstance(summary, dict):
+        click.echo(click.style(
+            f"summary.json malformato: {summary_path}", fg="red"
+        ), err=True)
+        sys.exit(1)
+
+    if known_piece:
+        meta = summary.get("metadata") or {}
+        meta = dict(meta)
+        meta["user_known_piece"] = known_piece.strip()
+        summary["metadata"] = meta
+
+    base = summary_path.stem
+    if base.endswith("_summary"):
+        base = base[: -len("_summary")]
+
+    narrative_md = (summary.get("narrative") or {}).get("markdown", "")
+    payload_path = output_dir / f"{base}_agent_payload.json"
+    agent_payload.write_agent_payload(summary, narrative_md, payload_path)
+    click.echo(f"Payload agente: {payload_path}")
+
+    click.echo(f"Invocazione agente compositivo soundscape-composer-analyst")
+    ag = agent_bridge.invoke_composer_analyst(
+        payload_path, narrative_md=narrative_md
+    )
+    agent_text = ag.get("text", "") or ""
+    if ag.get("fallback_used"):
+        click.echo(click.style(
+            f"  (agente non invocato: {ag.get('error') or 'claude non disponibile'})",
+            fg="yellow"
+        ))
+    if not agent_text:
+        click.echo(click.style(
+            "Agente non ha prodotto output utilizzabile", fg="red"
+        ), err=True)
+        sys.exit(1)
+
+    md_path = output_dir / f"{base}_agent.md"
+    md_path.write_text(agent_text, encoding="utf-8")
+    click.echo(click.style(f"Markdown agente: {md_path}", fg="green"))
+
+    summary["agent"] = ag
+    if pdf:
+        pdf_path = output_dir / f"{base}_report.pdf"
+        # Ricostruisce plot_paths scansionando graphics_dir se esiste
+        graphics_dir = output_dir / "graphics"
+        plot_paths: dict = {}
+        if graphics_dir.exists():
+            for suffix, key in [
+                ("waveform.png", "waveform"),
+                ("spettrogramma.png", "spectrogram"),
+                ("spettro_medio.png", "spectrum_mean"),
+                ("bande.png", "bands_bar"),
+                ("hum.png", "hum_zoom"),
+                ("structure_timeline.png", "structure_timeline"),
+            ]:
+                candidate = graphics_dir / f"{base}_{suffix}"
+                if candidate.exists():
+                    plot_paths[key] = candidate
+        click.echo(f"Generazione PDF: {pdf_path}")
+        report_pdf.build_report(
+            summary=summary,
+            output_path=pdf_path,
+            rank_grm=[],
+            agent_text=agent_text,
+            plot_paths=plot_paths,
+        )
+        click.echo(click.style(f"PDF finale: {pdf_path}", fg="green", bold=True))
+    else:
+        click.echo("")
+        click.echo(agent_text)
+
+
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.6.0")
+    click.echo("soundscape-audio-analysis 0.6.1")
 
 
 def main():

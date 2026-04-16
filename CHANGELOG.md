@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.6.1] - 2026-04-16
+
+Sub-comando `agent` per invocare solo l'agente compositivo su un
+`summary.json` esistente, evitando di rifare l'intera pipeline (5-10
+minuti -> 30-90 secondi). Utile per iterare sul prompt agente o
+riprocessare l'analisi dopo aggiornamenti delle istruzioni.
+
+### Added
+
+- **`./bin/soundscape agent <summary.json>`**: nuovo sub-comando.
+  Modalita' default: stampa il markdown dell'agente su stdout e salva
+  `<base>_agent.md` accanto al summary. Modalita' `--pdf`: rigenera
+  anche il PDF completo riusando i grafici esistenti in
+  `<base>_graphics/` (waveform, spettrogramma, spettro medio, bande,
+  hum, structure_timeline). Flag `--known-piece` opzionale, identico
+  ad `analyze`.
+
+### Internal
+
+- Bump 0.6.0 -> 0.6.1 in `scripts/__init__.py`, `scripts/cli.py` (3
+  callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (3
+  stringhe user-facing), `pyproject.toml`.
+
+### Esempio
+
+```
+./bin/soundscape agent ~/Downloads/audio7_summary.json
+./bin/soundscape agent ~/Downloads/audio7_summary.json --pdf
+./bin/soundscape agent ~/Downloads/audio7_summary.json \
+    --known-piece "Luc Ferrari, Presque Rien N°1, 1967-70"
+```
+
 ## [0.6.0] - 2026-04-16
 
 Strumento compositivo step 1: refactor narrativa per-finestra delta-based,

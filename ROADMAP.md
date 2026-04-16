@@ -3,7 +3,7 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.0 (16 aprile 2026)
+**Versione corrente**: 0.6.1 (16 aprile 2026)
 **Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
@@ -303,6 +303,10 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.1** (16/04/2026): sub-comando `soundscape agent
+  <summary.json>` per invocare solo l'agente compositivo su summary
+  esistente (modalita' stdout + modalita' --pdf), evitando di rifare
+  l'intera pipeline. Utile per iterare sul prompt agente.
 - **v0.6.0** (16/04/2026): strumento compositivo step 1. Refactor
   narrative.py per-finestra delta-based (fix bug feature globali
   ripetute identiche, riduzione PDF da 10 a 3-5 pagine). Nuovo modulo

@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.5.2)
+# Prompt per soundscape-composer-analyst (v0.5.3)
 
 Hai ricevuto due input:
 
@@ -15,20 +15,50 @@ Hai ricevuto due input:
 Leggi subito il payload con Read. Usa la descrizione segmentata come spina dorsale
 della tua interpretazione, senza ripeterla letteralmente.
 
-## Identificazione preliminare (v0.5.2)
+## Identificazione preliminare (v0.5.3, passo obbligatorio)
 
-**Prima** di procedere con l'analisi compositiva, valuta se il materiale potrebbe
-essere un brano noto del repertorio acusmatico, di musica concreta, soundscape
-storico o field recording pubblicato. Indizi utili: durata, combinazione di
-metadati (titolo del file, artista, album se presenti in `meta`), scena sonora
-coerente con un'opera documentata (per esempio porto peschereccio mediterraneo
-con voci di bambini suggerisce Luc Ferrari, `Presque Rien N°1`). Se riconosci
-un brano con ragionevole confidenza, esplicitalo in testa a "Osservazioni
-critiche" con frase: "Il materiale appare riconducibile a [Autore], *[Titolo]*
-([anno se noto]). L'analisi tecnica che segue va letta come lettura di
-un'opera gia' in forma, non di materiale grezzo." Se non riconosci nulla,
-**non inventare attribuzioni**: procedi con l'analisi del materiale come
-registrazione anonima. Non citare autori per somiglianza empirica debole.
+**PRIMA di scrivere qualsiasi sezione del report**, esegui mentalmente questo
+passo in modo esplicito. Non e' opzionale.
+
+**Step 1** — Leggi il campo `signature` del payload, che contiene: durata
+MM:SS, dynamic range, flatness media, Krause dominante, top-5 PANNs frame
+dominanti, top-5 CLAP prompts, presenza di parlato. Leggi anche il nome del
+file e, se presenti, i metadati ID3 in `file.name`.
+
+**Step 2** — Elenca internamente 2-3 ipotesi di attribuzione nel formato:
+
+```
+[Autore, Titolo, anno, confidence: low|medium|high, motivazione in una riga]
+```
+
+Esempi (solo per illustrare il formato, non copiare):
+
+- `[Luc Ferrari, Presque Rien N°1, 1967-70, confidence: high, "20 min porto peschereccio mediterraneo con voci di bambini e arco crepuscolare: firma inconfondibile dell'opera"]`
+- `[Bernie Krause, soundscape crepuscolare anonimo, n.d., confidence: medium, "registrazione di field naturale con transizione giorno-notte, tipica del suo campionario ma non univoca"]`
+- `[anonimo, soundscape urbano italiano, contemporaneo, confidence: low, "scena urbana con campane e parlato, compatibile con molte registrazioni generiche"]`
+
+**Step 3** — Decidi:
+
+- Se **almeno una ipotesi raggiunge confidence: high o medium**, aprila in
+  prima frase di "Osservazioni critiche" con formula: "Il materiale appare
+  riconducibile a [Autore], *[Titolo]* ([anno]). L'analisi tecnica che segue
+  va letta come lettura di un'opera gia' in forma, non di materiale grezzo
+  di field recording." Questo cambia radicalmente il senso di "Gesti
+  compositivi suggeriti": diventano riflessioni analitiche su come l'autore
+  ha costruito il gesto (descrivendo l'opera gia' compiuta), non interventi
+  di post-produzione da applicare.
+- Se **tutte le ipotesi restano confidence: low**, scrivi come prima frase
+  di "Osservazioni critiche" la frase esatta: "Nessuna attribuzione
+  plausibile dai dati disponibili: il materiale e' trattato come registrazione
+  anonima." Poi procedi con l'analisi. Questo rende esplicito che hai
+  considerato il problema.
+
+**Vietato**:
+- Inventare attribuzioni per similarita' debole o suggestione.
+- Saltare lo step e trattare il materiale come anonimo senza dichiararlo.
+- Citare autori "a titolo di parentela estetica" in assenza di evidenza
+  empirica. Le parentele estetiche vanno in "Collocazione estetica", non in
+  attribuzione.
 
 ## Tag CLAP con flag `geo_specific` (v0.5.2)
 

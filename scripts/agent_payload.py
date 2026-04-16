@@ -16,12 +16,75 @@ v0.5.0: aggiunto campo `speech` quando la trascrizione e' attiva.
 Contiene lingua rilevata, durate, trascritto italiano capped a 3000 char
 e top-15 segmenti VAD. Se speech non abilitato o skipped, il campo resta
 compatto con solo enabled=False + skipped_reason.
+
+v0.5.3: aggiunto campo `signature` (feature di alto livello sintetizzate
+per facilitare il riconoscimento di brani noti del repertorio): durata
+MM:SS, dynamic range, flatness, Krause dominante, top-5 PANNs frame
+dominanti, top-5 CLAP prompts, presenza di parlato. L'agente usa la
+signature nel primo passo "Identificazione preliminare" (v0.5.3
+obbligatorio).
 """
 from __future__ import annotations
 from pathlib import Path
 
 from . import config
 from .serialization import dump as dump_json
+
+
+def _build_signature(
+    meta: dict,
+    tech: dict,
+    spec: dict,
+    classifier: dict,
+    clap: dict,
+    speech: dict,
+) -> dict:
+    """Feature di alto livello sintetizzate per il riconoscimento brani (v0.5.3).
+
+    Non inventa etichette (es. "porto peschereccio"): fornisce all'agente
+    dati grezzi ordinati in modo leggibile. Il riconoscimento del brano e'
+    responsabilita' del ragionamento LLM, non della skill.
+    """
+    duration_s = float(meta.get("duration_s", 0) or 0)
+    mins = int(duration_s // 60)
+    secs = int(round(duration_s % 60))
+    duration_mmss = f"{mins}:{secs:02d}"
+
+    levels = (tech or {}).get("levels", {}) or {}
+    timbre = (spec or {}).get("timbre", {}) or {}
+
+    top_frames = (classifier.get("top_dominant_frames", []) or [])[:5]
+    top_clap = (clap.get("top_global", []) or [])[:5]
+
+    academic = clap.get("academic_hints") or {}
+    krause_dom = None
+    if isinstance(academic, dict) and academic.get("available"):
+        krause_dom = ((academic.get("krause") or {}).get("dominant") or {}).get("value")
+
+    return {
+        "duration_mmss": duration_mmss,
+        "duration_s": duration_s,
+        "dynamic_range_db": levels.get("dynamic_range_db"),
+        "integrated_lufs": (tech or {}).get("lufs", {}).get("integrated_lufs"),
+        "flatness_mean": timbre.get("spectral_flatness"),
+        "krause_dominant": krause_dom,
+        "top_panns_dominant_frames": [
+            {"name": f.get("name"), "pct": f.get("pct")} for f in top_frames
+        ],
+        "top_clap_prompts": [
+            {
+                "prompt": t.get("prompt", ""),
+                "category": t.get("category", ""),
+                "score": round(float(t.get("score", 0) or 0), 3),
+            }
+            for t in top_clap
+        ],
+        "speech_presence": {
+            "enabled": bool(speech.get("enabled", False)),
+            "duration_speech_s": float(speech.get("duration_speech_s", 0) or 0),
+            "language_detected": speech.get("language_detected", ""),
+        },
+    }
 
 
 def build_agent_payload(summary: dict, narrative_md: str) -> dict:
@@ -44,6 +107,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "channels": meta.get("channels", 0),
             "layout": (mc or {}).get("layout") or "stereo",
         },
+        "signature": _build_signature(meta, tech, spec, classifier, clap, speech),
         "technical": {
             "peak_dbfs": tech.get("levels", {}).get("peak_dbfs"),
             "rms_dbfs": tech.get("levels", {}).get("rms_dbfs"),

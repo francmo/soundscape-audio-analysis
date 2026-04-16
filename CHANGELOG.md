@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.5.3] - 2026-04-16
+
+Hotfix agente: riconoscimento di brani noti del repertorio come passo
+obbligatorio prima dell'analisi compositiva. Driver: rilettura completa di
+`audio5_report.pdf` (Presque Rien N°1 di Luc Ferrari rilanciato con v0.5.2)
+ha mostrato che l'agente produce una lettura compositiva di qualita' alta
+ma tratta il materiale come "registrazione anonima", nonostante 20 minuti
+di porto peschereccio mediterraneo e arco crepuscolare siano firma
+riconoscibilissima dell'opera. L'istruzione v0.5.2 "Identificazione
+preliminare" era formulata come suggerimento opzionale e l'agente la
+saltava. Due interventi non breaking.
+
+### Added
+
+- **`signature` nel payload agente**: campo di alto livello in
+  `scripts/agent_payload.py::_build_signature()` che aggrega durata MM:SS,
+  dynamic range, flatness media, Krause dominante, top-5 PANNs frame
+  dominanti, top-5 CLAP prompts, presenza di parlato. Non inventa
+  etichette: fornisce all'agente i dati grezzi aggregati per facilitare
+  il ragionamento di attribuzione. Il riconoscimento del brano resta
+  responsabilita' del ragionamento LLM.
+
+### Changed
+
+- **Identificazione preliminare da suggerimento a passo obbligatorio**:
+  in `templates/agent_prompt.md` e
+  `~/.claude/agents/soundscape-composer-analyst.md` il paragrafo e' stato
+  riscritto in tre step espliciti: (1) leggi `signature`, (2) formula 2-3
+  ipotesi in formato `[Autore, Titolo, anno, confidence, motivazione]`,
+  (3) decidi: se almeno una ipotesi raggiunge confidence medium o high,
+  apri "Osservazioni critiche" con attribuzione esplicita che cambia il
+  senso di "Gesti compositivi suggeriti" (da intervento post-produzione a
+  lettura analitica dell'opera compiuta); se tutte low, scrivi frase
+  esatta "Nessuna attribuzione plausibile dai dati disponibili: il
+  materiale e' trattato come registrazione anonima" prima di procedere.
+  Cosi' l'agente non puo' piu' saltare il passo: o attribuisce o
+  dichiara esplicitamente di non poter attribuire.
+
+### Fixed
+
+- **Refuso label "Hint accademici aggregati"** in `scripts/report_pdf.py`:
+  rimosso versioning "(v0.5.1)" fuori aggiornamento. Versioning ora solo
+  nel footer/colofone.
+
+### Internal
+
+- Bump 0.5.2 → 0.5.3 in `scripts/__init__.py`, `scripts/cli.py`
+  (3 callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py`
+  (3 stringhe user-facing), `pyproject.toml`.
+
+### Feedback sources
+
+- `references/user_feedback/Presque_Rien_N1.md`: la seconda osservazione
+  dell'utente sul report audio5 ha mostrato l'efficacia parziale della
+  v0.5.2 (flag `geo_specific` e prompt mediterranei generici funzionano,
+  agente li applica correttamente) e il gap residuo del riconoscimento
+  brani noti. L'agente GIA' identifica autonomamente le hallucination CLAP
+  in "Evidenza contraddittoria": il plausibility check CLAP automatico
+  pianificato per v0.5.3 e' quindi stato rinviato a v0.7.0 come
+  nice-to-have (documentato in `ROADMAP.md`).
+
 ## [0.5.2] - 2026-04-15
 
 Hotfix mirato al feedback raccolto analizzando *Presque Rien N°1* di Luc

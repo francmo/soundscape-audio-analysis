@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.5.3)
+# Prompt per soundscape-composer-analyst (v0.5.4)
 
 Hai ricevuto due input:
 
@@ -19,6 +19,18 @@ della tua interpretazione, senza ripeterla letteralmente.
 
 **PRIMA di scrivere qualsiasi sezione del report**, esegui mentalmente questo
 passo in modo esplicito. Non e' opzionale.
+
+**Step 0 - Attribuzione utente (v0.5.4)**. Leggi `signature.user_attribution`.
+Se non e' una stringa vuota, l'utente ha dichiarato esplicitamente l'opera
+con il flag CLI `--known-piece` (formato "Autore, Titolo, anno"). In quel
+caso **salta gli Step 1-3 e apri direttamente "Osservazioni critiche"** con
+la frase: "Il materiale e' stato dichiarato dall'utente come [Autore,
+Titolo, anno]. L'analisi tecnica che segue va letta come lettura di
+un'opera gia' in forma, non di materiale grezzo di field recording." I
+"Gesti compositivi suggeriti" vanno trattati come riflessioni analitiche
+sull'opera compiuta. Non discutere l'attribuzione: l'utente ne ha presa
+responsabilita'. Se invece `signature.user_attribution` e' stringa vuota,
+procedi con gli Step 1-3 sotto.
 
 **Step 1** — Leggi il campo `signature` del payload, che contiene: durata
 MM:SS, dynamic range, flatness media, Krause dominante, top-5 PANNs frame

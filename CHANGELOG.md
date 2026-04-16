@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.5.4] - 2026-04-16
+
+Hotfix CLI: flag `--known-piece` per bypassare l'auto-attribuzione quando
+l'utente conosce gia' l'opera. Driver: rilettura di `audio6_report.pdf`
+(audio5 rinominato per evitare cache) ha mostrato che la v0.5.3 funziona
+tecnicamente (l'agente esegue i 3 step e dichiara esplicitamente "Nessuna
+attribuzione plausibile") ma fallisce semanticamente sul caso Presque Rien:
+opus propone N°2 (1977, voce della nonna) e lo rifiuta correttamente, ma
+non considera N°1 (1967-70, porto Vela Luka) probabilmente perche' nel
+knowledge del modello N°2 e' piu' rappresentato. Il flag `--known-piece`
+risolve il problema dando all'utente la possibilita' di dichiarare
+esplicitamente l'opera quando la conosce.
+
+### Added
+
+- **CLI `--known-piece "Autore, Titolo, anno"`**: nuovo flag opzionale
+  in `analyze_cmd`. Se fornito, viene propagato a
+  `summary.metadata.user_known_piece` e poi a `signature.user_attribution`
+  nel payload agente. Esempio:
+  ```
+  ./bin/soundscape analyze audio6.mp3 --known-piece "Luc Ferrari, Presque Rien N°1, 1967-70"
+  ```
+- **Step 0 nel prompt agente** (in `templates/agent_prompt.md` e
+  `~/.claude/agents/soundscape-composer-analyst.md`): se
+  `signature.user_attribution` non e' vuoto, l'agente salta gli Step 1-3
+  di indovinare e apre direttamente "Osservazioni critiche" con frase:
+  "Il materiale e' stato dichiarato dall'utente come [valore]. L'analisi
+  tecnica che segue va letta come lettura di un'opera gia' in forma, non
+  di materiale grezzo di field recording." L'attribuzione e' responsabilita'
+  dell'utente: l'agente non discute.
+- **Campo `signature.user_attribution`** in `agent_payload._build_signature`:
+  legge `meta.get("user_known_piece", "")` e lo espone all'agente.
+
+### Fixed
+
+- **Timeout agente troppo basso per prompt v0.5.3 esteso**: `AGENT_TIMEOUT_S`
+  in `scripts/config.py` aumentato da 120 a 300 s. Il prompt v0.5.3 con
+  identificazione preliminare obbligatoria (3 step) richiede piu' tempo
+  di ragionamento iniziale e su file lunghi (~20 min audio con timeline
+  densa) il timeout 120 s saltava entrambi i tentativi, lasciando il PDF
+  senza sezione "Lettura compositiva". Documentato come fix puntuale
+  necessario alla calibrazione della v0.5.3.
+
+### Internal
+
+- Bump 0.5.3 → 0.5.4 in `scripts/__init__.py`, `scripts/cli.py`
+  (3 callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py`
+  (3 stringhe user-facing), `pyproject.toml`.
+
+### Feedback sources
+
+- `audio6_report.pdf` (Presque Rien N°1 di Luc Ferrari rilanciato con
+  v0.5.3): l'agente ha eseguito correttamente i 3 step di identificazione
+  preliminare ma ha proposto N°2 invece di N°1 (knowledge gap del modello
+  opus), respingendolo con motivazione corretta ("manca l'impronta
+  drammaturgica della voce-narratore"). Ha anche identificato
+  autonomamente le hallucination CLAP in "Evidenza contraddittoria" e il
+  bug `narrative.py` (centroide globale ripetuto identico in 40 blocchi),
+  confermando che il plausibility check CLAP automatico (v0.7.0
+  pianificato) e' duplicazione e che il refactor `narrative.py`
+  delta-based (v0.6.0 punto 3) e' urgente.
+
 ## [0.5.3] - 2026-04-16
 
 Hotfix agente: riconoscimento di brani noti del repertorio come passo

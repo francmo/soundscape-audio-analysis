@@ -113,15 +113,13 @@ def _extract_centroid_hz(narrative_text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-@pytest.mark.xfail(reason="prima del Commit 2 v0.6.0 narrative.py usa feature globali, il centroide e' lo stesso per ogni finestra")
 def test_narrative_centroid_varies_per_window_after_fix():
-    """DOPO il refactor delta-based v0.6.0, il centroide spettrale
-    stampato nella narrativa deve cambiare fra finestra silenzio
-    (centroide ~0), tono puro 440 Hz (centroide ~440), rumore bianco
-    (centroide ~5000+ Hz).
+    """v0.6.0: il centroide spettrale stampato nella narrativa deve
+    cambiare fra finestra silenzio (centroide ~0), tono puro 440 Hz
+    (centroide ~440), rumore bianco (centroide ~5000+ Hz).
 
-    Marker per Commit 2: rimuovere `@pytest.mark.xfail`. Test mirato sul
-    bug delle feature globali ripetute identiche.
+    Verifica che le feature timbriche siano calcolate per finestra,
+    non lette dal dict globale (bug v0.5.x).
     """
     sr = 22050
     waveform = _make_synthetic_waveform(sr)
@@ -141,15 +139,13 @@ def test_narrative_centroid_varies_per_window_after_fix():
     )
 
 
-@pytest.mark.xfail(reason="prima del Commit 2 v0.6.0 non esiste logica plateau")
 def test_narrative_delta_based_collapses_homogeneous_windows_after_fix():
-    """DOPO il refactor delta-based v0.6.0, su file omogeneo (3 finestre
-    identiche di rumore bianco) la narrativa deve collassare le finestre
-    senza variazione in un plateau, producendo meno paragrafi del numero
-    di finestre.
+    """v0.6.0: su file omogeneo (3 finestre identiche di rumore bianco)
+    la narrativa deve collassare le finestre senza variazione in un
+    plateau, producendo meno paragrafi del numero di finestre.
 
-    Marker per Commit 2: rimuovere `@pytest.mark.xfail`. Verifica che
-    la logica delta-based riconosca l'assenza di variazione e accumuli.
+    Verifica che la logica delta-based riconosca l'assenza di variazione
+    e accumuli.
     """
     sr = 22050
     n_window = 30 * sr

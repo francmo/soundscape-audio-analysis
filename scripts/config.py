@@ -197,7 +197,12 @@ PDF_PAGE_SIZE_MM = (210, 297)  # A4
 PDF_MARGINS_MM = {"top": 22, "right": 20, "bottom": 20, "left": 22}
 
 # Timeouts
-AGENT_TIMEOUT_S = 120
+# v0.5.3: prompt agente esteso con identificazione preliminare obbligatoria
+# (3 step: leggi signature, formula 2-3 ipotesi attribuzione, decidi).
+# Il ragionamento iniziale + lettura del file JSON puo' richiedere oltre 120 s
+# su file lunghi (~20 min audio con timeline densa). Aumentato a 300 s per
+# evitare timeout su Presque Rien e simili.
+AGENT_TIMEOUT_S = 300
 AGENT_RETRIES = 1
 
 # Testo output

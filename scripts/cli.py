@@ -161,7 +161,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.5.4",
+        "version": "0.6.0",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -184,6 +184,15 @@ def _analyze_single(
         window_seconds=config.STRUCTURE_WINDOW_S,
     )
     summary["structure"] = structure_res
+    # Timeline grafica strutturale per il PDF
+    if structure_res.get("enabled") and structure_res.get("sections"):
+        timeline_path = graphics_dir / f"{base}_structure_timeline.png"
+        plotting.plot_structure_timeline(
+            structure_res["sections"],
+            total_duration_s=duration_s,
+            out_path=timeline_path,
+        )
+        plot_paths["structure_timeline"] = timeline_path
 
     # Narrativa segmentata (v0.2.2): prosa italiana 30s
     narrative_res = {"enabled": False}
@@ -271,7 +280,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.5.4", prog_name="soundscape")
+@click.version_option(version="0.6.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -495,7 +504,7 @@ def report_merge_command(pdf_path, markdown_path):
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.5.4")
+    click.echo("soundscape-audio-analysis 0.6.0")
 
 
 def main():

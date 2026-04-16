@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.5.4 (16 aprile 2026)
-**Test suite**: 117 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.6.0 (16 aprile 2026)
+**Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.5.4)
+## Stato corrente (v0.6.0)
 
 ### Capabilities attive
 
@@ -106,65 +106,6 @@ misurare la qualita' descrittiva. Tre conseguenze sulla pianificazione:
    Comando `soundscape benchmark <audio> --against <golden.md>`.
 5. **Soundscapy/ISO 12913-3** (era v0.7.0) scivola a v0.8.0: dimensione
    perceptive interessante ma meno urgente del riconoscimento eventi.
-
-### v0.6.0 — Narrativa per-finestra + segmentazione strutturale + tassonomie estese (18-26 h, prossima sessione Plan Mode)
-
-Ricomposizione del nucleo descrittivo della skill in chiave compositiva.
-Tre blocchi correlati che condividono lo stesso refactor di
-`narrative.py`. **Driver**: il bug delle feature globali ripetute identiche
-in 40+ blocchi (visibile in `audio5_report.pdf` pp. 14-21, identificato
-autonomamente dall'agente in "Criticita' tecniche") rende il PDF illeggibile
-nel cuore semantico. Inoltre la terminologia compositiva attuale e'
-limitata a poche classi Schaeffer/Smalley quando i due autori hanno
-tassonomie molto piu' ricche.
-
-**Blocco 1 - `narrative.py` delta-based** [URGENTE]:
-- Audit di `narrative.py` per isolare dove le feature globali del file
-  intero vengono passate al formatter come fossero locali.
-- Ricomputo per finestra di 30 s con cache (centroide, rolloff, flatness,
-  ZCR, RMS, peak, top-3 PANNs locali, top-3 CLAP locali).
-- Logica delta-based: prima finestra descrizione completa, finestre
-  successive solo se delta significativi (centroide +/- 15%, flatness
-  +/- 30%, RMS +/- 6 dB, top-3 cambia). Riduzione attesa del PDF da 10 a
-  3-4 pagine di narrativa.
-
-**Blocco 2 - `scripts/structure.py` (nuovo) - segmentazione strutturale**:
-- Changepoint detection su RMS envelope + flatness + ZCR + categoria
-  PANNs dominante per finestre.
-- Output: lista di sezioni con confini temporali e firma caratterizzante
-  (es. "00:00-03:00 quasi-silenzio notturno; 03:00-07:00 sezione
-  antropofonica diurna; 07:00-10:00 transizione veicolare; 10:00-20:46
-  crescendo biofonico crepuscolare").
-- Sostituisce il taglio fisso 30 s con sezioni significative.
-
-**Blocco 3 - Tassonomie compositive estese** (assorbite da v0.8.0):
-- **TARTYP Schaeffer (28 classi)**: lattice tipologico/morfologico in
-  `references/clap_academic_mapping_it.json` con tutte le categorie del
-  *Solfege des Objets Sonores* (Schaeffer 1966, trad. UCal Press 2017).
-  Sostituisce gli attuali 8 tipi schaeferiani.
-- **Sotto-tassonomia Smalley motion + growth processes**: 12 sub-categorie
-  (unidirectional/reciprocal/cyclic/centric/convolution + dilation/
-  accumulation/dissipation/exogeny/endogeny) da Smalley *Organised Sound*
-  1997. Sostituisce gli attuali turbulence/flow.
-- **Categoria *utterance* (Wishart 1996)**: nuova in
-  `clap_vocabulary_it.json` per gesti vocali umani e non-umani trattati
-  come oggetti sonori (urlo, riso, pianto, vocalizzazione animale
-  stilizzata, sussurro, lallazione).
-
-**Blocco 4 - Timeline grafica simbolica nel PDF**:
-- Rendering matplotlib stile VB2.pdf: barre orizzontali per sezione con
-  icone derivate da feature dominanti (cerchio per articolati, onde per
-  fruscii, frecce per glissandi/crescendo, triangoli per acuti).
-- Ogni sezione ha una "firma visiva" sintetica.
-
-**File da creare**: `scripts/structure.py`, `tests/test_structure.py`.
-**File da modificare**: `scripts/narrative.py`,
-`references/clap_academic_mapping_it.json` (mapping v1.2),
-`references/clap_vocabulary_it.json` (utterance category),
-`scripts/clap_mapping.py`, `scripts/report_pdf.py`,
-`scripts/agent_payload.py`, `templates/agent_prompt.md`.
-
-**Prerequisito**: Plan Mode con `/plan` per design dettagliato.
 
 ### v0.6.1 — Patch indici ecoacustici (3-4 h)
 
@@ -362,6 +303,16 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.0** (16/04/2026): strumento compositivo step 1. Refactor
+  narrative.py per-finestra delta-based (fix bug feature globali
+  ripetute identiche, riduzione PDF da 10 a 3-5 pagine). Nuovo modulo
+  scripts/structure.py per segmentazione strutturale via changepoint
+  detection deterministico. Tassonomie compositive estese: Schaeffer
+  TARTYP 22 sotto-tipi, Smalley 6 growth processes, Wishart utterance
+  10 prompt nuovi. Timeline grafica matplotlib nel PDF. 14 test nuovi.
+  Driver: chiarimento di scopo 16/04/2026 sera (riconoscimento eventi
+  con terminologia accademica). Ricerca testi 16/04/2026 sui canoni
+  Schaeffer/Smalley/Wishart/Landy.
 - **v0.5.4** (16/04/2026): flag CLI `--known-piece` per attribuzione
   utente esplicita (bypassa l'auto-attribuzione del modello quando
   l'utente conosce gia' l'opera). Plus aumento AGENT_TIMEOUT_S 120 -> 300

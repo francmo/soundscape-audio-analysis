@@ -483,6 +483,69 @@ def _format_academic_hints(hints: dict) -> str:
     return ". ".join(parts) + "." if parts else ""
 
 
+def _build_structure_block(structure: dict, timeline_path: Path | None, styles) -> list:
+    """Sezione PDF "Sezioni strutturali" (v0.6.0).
+
+    Contenuto:
+    - Header con numero sezioni e finestra di analisi.
+    - Immagine timeline grafica (bande colorate per Krause, da
+      plotting.plot_structure_timeline) se `timeline_path` esiste.
+    - Tabella sezioni: id, range, durata, signature_label, dominant
+      PANNs, RMS medio, centroide medio.
+
+    Ritorna [] se structure non popolato.
+    """
+    story = []
+    if not structure or not structure.get("enabled"):
+        return story
+    sections = structure.get("sections") or []
+    if not sections:
+        return story
+
+    n = len(sections)
+    win = float(structure.get("window_seconds", config.STRUCTURE_WINDOW_S))
+    header = (
+        f"Identificate <b>{n}</b> sezioni significative via changepoint "
+        f"detection deterministico su gradiente RMS, centroide, flatness "
+        f"e categorie dominanti, finestra di analisi {win:.0f} s. La "
+        f"signature di ciascuna sezione e' derivata da Krause dominante + "
+        f"caratteristiche dinamiche e timbriche, non dall'agente. "
+        f"L'agente compositivo riceve queste sezioni come ossatura per "
+        f"organizzare la propria lettura."
+    )
+    story.append(Paragraph(header, styles["body"]))
+    story.append(Spacer(1, 6))
+
+    # Timeline grafica
+    if timeline_path is not None and Path(timeline_path).exists():
+        try:
+            img = Image(str(timeline_path), width=170 * mm, height=24 * mm)
+            story.append(img)
+            story.append(Spacer(1, 6))
+        except Exception:
+            pass
+
+    # Tabella sezioni
+    rows = [["ID", "Inizio", "Fine", "Durata", "Signature", "Krause", "RMS dB", "Centroide Hz"]]
+    for s in sections:
+        rows.append([
+            s.get("id", ""),
+            _fmt_time(s.get("t_start_s", 0)),
+            _fmt_time(s.get("t_end_s", 0)),
+            f"{s.get('duration_s', 0):.0f} s",
+            (s.get("signature_label") or "")[:28],
+            s.get("krause", ""),
+            _fmt(s.get("mean_rms_db"), "{:+.1f}"),
+            _fmt(s.get("mean_centroid_hz"), "{:.0f}"),
+        ])
+    story.append(report_styles.styled_table(
+        rows,
+        [12 * mm, 16 * mm, 16 * mm, 16 * mm, 50 * mm, 22 * mm, 18 * mm, 22 * mm],
+        styles,
+    ))
+    return story
+
+
 def _build_multichannel_block(mc: dict, styles) -> list:
     story = []
     if not mc:
@@ -721,6 +784,14 @@ def build_report(
         ))
         story.append(Spacer(1, 6))
         story.extend(_build_confronto_grm_block(rank_grm, styles))
+        story.append(PageBreak())
+
+    # SEZIONI STRUTTURALI (v0.6.0): timeline grafica + tabella
+    structure = summary.get("structure") or {}
+    if structure.get("enabled") and structure.get("sections"):
+        timeline_path = (plot_paths or {}).get("structure_timeline")
+        story.append(Paragraph(INTESTAZIONI["sezioni_strutturali"], styles["h1"]))
+        story.extend(_build_structure_block(structure, timeline_path, styles))
         story.append(PageBreak())
 
     # DESCRIZIONE SEGMENTATA (v0.2.2)
@@ -978,7 +1049,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.5.4",
+        "Skill soundscape-audio-analysis v0.6.0",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -990,7 +1061,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.5.4: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.6.0: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1071,7 +1142,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.5.4 di "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.0 di "
         "Francesco Mariano. Font Libre Baskerville e Source Sans Pro "
         "(licenza SIL OFL). Pipeline analitica: librosa + soundfile per il "
         "carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "

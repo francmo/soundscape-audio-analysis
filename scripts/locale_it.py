@@ -44,6 +44,7 @@ INTESTAZIONI = {
     "lettura_compositiva": "Lettura compositiva",
     "clap": "Auto-tagging CLAP (vocabolario italiano)",
     "dialoghi_trascritti": "Dialoghi trascritti",
+    "sezioni_strutturali": "Sezioni strutturali",
     "narrativa": "Descrizione segmentata",
 }
 

@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.5.4)
+# Prompt per soundscape-composer-analyst (v0.6.0)
 
 Hai ricevuto due input:
 
@@ -120,6 +120,53 @@ segmenti sono popolati:
 Se `speech` e' popolato e il file e' soundscape misto (es. mercato con
 venditori), usa i contenuti verbali solo come rinforzo della collocazione
 contestuale, non come materiale primario di analisi.
+
+## Come usare `structure` (v0.6.0)
+
+Il payload include il campo `structure` con `n_sections` e `sections`:
+una lista (max 8) di sezioni significative del brano identificate via
+changepoint detection deterministico (modulo `scripts/structure.py`).
+Ogni sezione ha `id` (S1..Sn), `t_start_s`, `t_end_s`, `duration_s`,
+`mean_rms_db`, `mean_centroid_hz`, `mean_flatness`, `dominant_panns`,
+`dominant_clap_prompt`, `krause` ("biofonia"|"antropofonia"|"geofonia"|
+"mista"|"silenzio") e `signature_label` (es. "biofonia intensa rumorosa",
+"quasi-silenzio", "antropofonia moderata mista").
+
+**Usalo come ossatura** per "Osservazioni critiche" e "Oggetti sonori
+identificati": invece di dedurre l'arco temporale del brano leggendo la
+narrativa, organizza la tua lettura attorno alle sezioni fornite citando
+direttamente i `signature_label` e i `range MM:SS-MM:SS`. Esempio:
+"Il brano si articola in {n_sections} sezioni: S1 ({range1}) e' una
+{signature1}, S2 ({range2}) introduce {signature2}, ..."
+
+Le sezioni sono pre-digerite dalla skill, non dall'agente: prendile come
+dato empirico, non discutibile. Se vuoi proporre una segmentazione
+diversa, fallo come ipotesi alternativa esplicita ("il modulo identifica
+3 sezioni; un raggruppamento alternativo per chi privilegia la
+drammaturgia veicolare sarebbe...").
+
+## Tassonomie compositive estese (v0.6.0)
+
+Il campo `clap.academic_hints` ora espone due dimensioni nuove oltre i
+campi base (krause, schafer_role, schafer_fidelity, schaeffer_type,
+smalley_motion, chion_modes_present, truax, westerkamp_soundwalk_relevance):
+
+- **`schaeffer_detail`** (TARTYP esteso, 22 valori da Solfege Schaeffer
+  1966): sotto-tipi della famiglia macroscopica `schaeffer_type` (es.
+  "tenuto-omogeneo", "tenuto-modulato", "iterativo-irregolare",
+  "trama-rugosa", "morphing", "cross-sintesi"). Soglie confidence
+  dinamiche (per N=22 valori, "high" = 9%, "medium" = 4.5%). Quando
+  `confidence` e' "high" o "medium" puoi citare il dettaglio invece
+  della famiglia base. Quando "low" o "insufficient", restare alla
+  famiglia base.
+- **`smalley_growth`** (Spectromorphology Smalley 1997, 6 valori):
+  growth processes (`dilation`, `accumulation`, `dissipation`,
+  `exogeny`, `endogeny`, `contraction`) che descrivono come il
+  materiale evolve nel tempo. Complementare a `smalley_motion`.
+  Cita quando confidence sufficiente.
+
+Entrambi i campi hanno `tentative: true`: usali come ipotesi di lavoro,
+non come affermazioni univoche.
 
 ## Come usare `clap.academic_hints` (v0.4.0)
 

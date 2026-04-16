@@ -1,5 +1,106 @@
 # Changelog
 
+## [0.6.0] - 2026-04-16
+
+Strumento compositivo step 1: refactor narrativa per-finestra delta-based,
+nuovo modulo di segmentazione strutturale, tassonomie compositive estese
+(Schaeffer TARTYP, Smalley growth processes, Wishart utterance), timeline
+grafica nel PDF. Cinque commit isolati. 134 test passed pre-esistenti +
+14 nuovi (test_narrative, test_structure, test_clap_academic_mapping
+estesi) = 148 passed + 2 skipped. Driver del riorientamento di scopo
+del 16/04/2026 sera: la skill serve a riconoscere eventi sonori e
+descriverli con terminologia compositiva accademica, usando opere note
+(Presque Rien di Ferrari, Westerkamp, ecc.) come gold standard di
+riferimento contro cui misurare la qualita' descrittiva.
+
+### Added
+
+- **`scripts/structure.py` (nuovo)**: segmentazione strutturale via
+  changepoint detection deterministico su gradiente RMS + centroide +
+  flatness + cambio top-1 PANNs/CLAP, soglia adattiva mediana + K*MAD.
+  Output: lista di sezioni con id, range, mean_rms_db, mean_centroid_hz,
+  Krause dominante e signature_label italiana ("biofonia intensa
+  rumorosa", "quasi-silenzio", "antropofonia moderata mista", ecc.).
+  Vincoli min/max sezioni e min duration configurabili. Costo
+  computazionale trascurabile (~0.5 s su 20 min audio).
+- **Sezione PDF "Sezioni strutturali"**: timeline grafica matplotlib
+  (bande orizzontali colorate per Krause dominante con label
+  signature_label + range MM:SS) + tabella sezioni dettagliate. Inserita
+  prima di "Descrizione segmentata".
+- **`plotting.plot_structure_timeline()`**: nuova funzione matplotlib
+  con palette colori per Krause (biofonia=verde scuro, antropofonia=
+  arancio, geofonia=blu, mista=viola, silenzio=grigio).
+- **Vocabolario CLAP v1.4**: nuova categoria `utterance` con 10 prompt
+  (utt_01..utt_10) per gesti vocali umani e non-umani come oggetti
+  sonori (Wishart 1996): urlo, risata, pianto, sussurro, lallazione,
+  vocalizzazione animale stilizzata, singhiozzo, sospiro, voce
+  manipolata acusmatica, coro vocale non semantico. 193 -> 203 prompt.
+- **Mapping accademico v1.2**: nuovo enum `schaeffer_detail` con 22
+  valori (sotto-tipi del Solfege Schaeffer 1966 + transversali:
+  crescendo, decrescendo, morphing, cross-sintesi); nuovo enum
+  `smalley_growth` con 6 valori (Spectromorphology 1997: dilation,
+  accumulation, dissipation, exogeny, endogeny, contraction);
+  category_defaults per "utterance"; override prompt opzionali per i 10
+  utterance.
+- **Soglie confidence dinamiche**: `dominant_with_confidence` accetta
+  parametro `enum_size`. Per N grande (es. 22) le soglie high/medium
+  sono ricalcolate come 2/N e 1/N invece di 0.5/0.33 statiche, evitando
+  diluzione del segnale.
+- **Campo `structure` nel payload agente**: lista delle sezioni (cap 8)
+  con signature_label per organizzare la lettura compositiva.
+- **Sezioni nuove nel prompt agente** (`templates/agent_prompt.md` e
+  `~/.claude/agents/soundscape-composer-analyst.md`): "Come usare
+  `structure` (v0.6.0)" e "Tassonomie compositive estese (v0.6.0)" per
+  guidare l'uso della nuova ossatura strutturale e delle tassonomie
+  estese.
+
+### Fixed
+
+- **Bug `narrative.py` feature globali ripetute identiche fra finestre**
+  (visibile in audio6_report.pdf pp. 14-21: centroide 3029 Hz,
+  flatness 0.040, onset 86 con 2.9/s ripetuti in 40+ blocchi). L'agente
+  compositivo aveva identificato autonomamente il problema in
+  "Criticita' tecniche". Refactor: nuova funzione
+  `_compute_per_window_timbre` che ricalcola centroide/flatness/density
+  per finestra via `spectral.compute_timbre(waveform[a:b], sr)` e
+  `spectral.onset_analysis(waveform[a:b], sr)`. Costo trascurabile
+  (~0.1 s totali per 40 finestre da 30 s).
+- **Logica delta-based**: la prima finestra ha descrizione completa,
+  le successive vengono descritte solo se almeno una feature cambia
+  significativamente (centroide +/-15%, flatness +/-30%, RMS +/-6 dB,
+  top-1 PANNs cambia, top-1 CLAP cambia). Le finestre senza variazione
+  sono accumulate in plateau, descritto da una riga compatta. Riduzione
+  attesa del PDF da 10 a 3-5 pagine di narrativa.
+
+### Internal
+
+- 5 commit isolati per testabilita' incrementale.
+- 14 test nuovi: `tests/test_narrative.py` (6, di cui 2 documentano il
+  fix del bug delle feature globali e della logica plateau),
+  `tests/test_structure.py` (7), 4 test estesi in
+  `tests/test_clap_academic_mapping.py` (schaeffer_detail,
+  smalley_growth, utterance category_defaults, aggregate_hints estesi).
+- Aggiornati `tests/test_clap_tagging.py` per asserire vocabolario v1.4
+  e categoria utterance presente; `tests/test_clap_academic_mapping.py`
+  per asserire mapping v1.2.
+- Bump 0.5.4 -> 0.6.0 in `scripts/__init__.py`, `scripts/cli.py` (3
+  callsite), `scripts/report_cmd.py`, `scripts/report_pdf.py` (3
+  stringhe user-facing), `pyproject.toml`.
+
+### Feedback sources
+
+- Rilettura completa di `audio6_report.pdf` (Presque Rien N°1 Ferrari)
+  che ha mostrato (a) bug narrative.py feature globali ripetute
+  identiche; (b) mancanza di una segmentazione strutturale che alleggerisse
+  l'agente dal dover dedurre l'arco temporale a mano; (c) limitatezza
+  delle tassonomie compositive (6 valori schaeffer vs 28 del TARTYP
+  completo, solo motion vs motion+growth Smalley, mancanza categoria
+  utterance Wishart per gesti vocali come oggetti sonori).
+- Ricerca testi soundscape composition 16/04/2026
+  (`references/external_feedback/research_2026-04-16_soundscape_texts.md`)
+  che ha identificato Schaeffer 1966, Smalley 1997, Wishart 1996,
+  Landy 2007 come fonti canoniche per estensione tassonomie.
+
 ## [0.5.4] - 2026-04-16
 
 Hotfix CLI: flag `--known-piece` per bypassare l'auto-attribuzione quando

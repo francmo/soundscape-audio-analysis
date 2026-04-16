@@ -138,6 +138,63 @@ def plot_radar_profiles(summary_vec: dict, profile_vecs: dict[str, dict],
     return out_path
 
 
+def plot_structure_timeline(sections: list[dict], total_duration_s: float,
+                             out_path: Path,
+                             title: str = "Sezioni strutturali") -> Path:
+    """Visualizza le sezioni strutturali (Blocco 2 v0.6.0) come bande
+    orizzontali colorate per Krause dominante. Etichetta in alto:
+    signature_label + range MM:SS-MM:SS. Per sezioni < 5% del totale,
+    omette il range nella label per evitare sovrapposizioni."""
+    fig, ax = plt.subplots(figsize=(12, 1.6))
+    ax.set_xlim(0, total_duration_s)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    def _fmt(t: float) -> str:
+        m = int(t) // 60
+        s = int(t) % 60
+        return f"{m:02d}:{s:02d}"
+
+    palette = config.STRUCTURE_TIMELINE_COLORS
+    # Banda colorata per ogni sezione
+    for s in sections:
+        t0 = float(s["t_start_s"])
+        t1 = float(s["t_end_s"])
+        krause = s.get("krause", "mista")
+        color = palette.get(krause, palette["mista"])
+        ax.axvspan(t0, t1, ymin=0.10, ymax=0.70, color=color, alpha=0.85)
+        # Linea verticale come confine sezione (eccetto inizio file)
+        if t0 > 0.5:
+            ax.axvline(t0, color=config.PALETTE["dark"], linewidth=0.7, alpha=0.6)
+
+    # Etichette sopra le bande
+    for s in sections:
+        t0 = float(s["t_start_s"])
+        t1 = float(s["t_end_s"])
+        mid = (t0 + t1) / 2.0
+        sig = (s.get("signature_label") or "")[:30]
+        pct = (t1 - t0) / max(total_duration_s, 1e-6)
+        if pct < 0.05:
+            label = sig
+        else:
+            label = f"{sig}\n{_fmt(t0)}-{_fmt(t1)}"
+        ax.text(mid, 0.85, label, ha="center", va="center",
+                 fontsize=7, color=config.PALETTE["dark"], wrap=True)
+
+    # Asse temporale schematico in basso
+    ax.text(0, 0.02, "00:00", ha="left", va="bottom",
+             fontsize=7, color=config.PALETTE["muted_gray"])
+    ax.text(total_duration_s, 0.02, _fmt(total_duration_s),
+             ha="right", va="bottom",
+             fontsize=7, color=config.PALETTE["muted_gray"])
+    ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def generate_all_plots(y: np.ndarray, sr: int, spectrum: np.ndarray, freqs: np.ndarray,
                       bands: dict, hum_result: dict, out_dir: Path, base: str) -> dict:
     """Genera tutti i grafici standard e ritorna mapping nome -> path."""

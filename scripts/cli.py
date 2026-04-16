@@ -45,6 +45,7 @@ def _analyze_single(
     do_clap: bool = True,
     narrative_mode: str = "full",
     do_transcribe_speech: bool = False,
+    known_piece: str = "",
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     from . import io_loader, technical, hum, spectral, ecoacoustic, semantic
@@ -155,8 +156,12 @@ def _analyze_single(
         y, sr, spectrum, freqs, spec["bands_schafer"], hum_res, graphics_dir, base
     )
 
+    if known_piece:
+        meta = dict(meta)
+        meta["user_known_piece"] = known_piece.strip()
+
     summary = {
-        "version": "0.5.3",
+        "version": "0.5.4",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -255,7 +260,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.5.3", prog_name="soundscape")
+@click.version_option(version="0.5.4", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -287,10 +292,16 @@ def cli():
               default="full", help="Descrizione segmentata italiana (v0.2.2)")
 @click.option("--speech", is_flag=True, default=False,
               help="Trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana via claude -p (opt-in, v0.5.0)")
+@click.option("--known-piece", "known_piece", type=str, default="",
+              help="Attribuzione nota dell'opera nel formato 'Autore, Titolo, anno' "
+                   "(es. 'Luc Ferrari, Presque Rien N°1, 1967-70'). Se fornito, l'agente "
+                   "compositivo la usa come hint forte e salta la fase di indovinare. "
+                   "v0.5.4: utile quando si analizza un brano di repertorio noto e si "
+                   "vuole evitare attribuzioni errate del modello.")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
-                speech, lang):
+                speech, known_piece, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
@@ -331,6 +342,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, com
                 do_clap=clap,
                 narrative_mode=narrative_mode,
                 do_transcribe_speech=speech,
+                known_piece=known_piece,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))
@@ -472,7 +484,7 @@ def report_merge_command(pdf_path, markdown_path):
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.5.3")
+    click.echo("soundscape-audio-analysis 0.5.4")
 
 
 def main():

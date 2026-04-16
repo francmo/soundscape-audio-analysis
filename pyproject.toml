@@ -1,6 +1,6 @@
 [project]
 name = "soundscape-audio-analysis"
-version = "0.5.3"
+version = "0.5.4"
 description = "Analisi tecnica e compositiva di file audio per soundscape, field recording, musica elettroacustica"
 requires-python = ">=3.12"
 authors = [{name = "Francesco Mariano"}]

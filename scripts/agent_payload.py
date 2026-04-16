@@ -84,6 +84,7 @@ def _build_signature(
             "duration_speech_s": float(speech.get("duration_speech_s", 0) or 0),
             "language_detected": speech.get("language_detected", ""),
         },
+        "user_attribution": meta.get("user_known_piece", ""),
     }
 
 

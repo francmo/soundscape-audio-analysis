@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.5.3 (16 aprile 2026)
+**Versione corrente**: 0.5.4 (16 aprile 2026)
 **Test suite**: 117 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.5.3)
+## Stato corrente (v0.5.4)
 
 ### Capabilities attive
 
@@ -244,6 +244,12 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.5.4** (16/04/2026): flag CLI `--known-piece` per attribuzione
+  utente esplicita (bypassa l'auto-attribuzione del modello quando
+  l'utente conosce gia' l'opera). Plus aumento AGENT_TIMEOUT_S 120 -> 300
+  s per sostenere il prompt v0.5.3 esteso. Feedback source: audio6
+  rilanciato con v0.5.3 (opus propone Ferrari N°2 invece di N°1 per
+  knowledge gap).
 - **v0.5.3** (16/04/2026): hotfix agente (riconoscimento brani noti da
   suggerimento a passo obbligatorio, nuovo campo `signature` nel payload).
   Feedback source: rilettura di audio5_report.pdf (Presque Rien N°1

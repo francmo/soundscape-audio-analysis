@@ -34,6 +34,9 @@ _REQUIRED_ENUMS = (
     "smalley_motion",
     "chion",
     "truax",
+    # v0.6.0: enum nuovi per tassonomie compositive estese
+    "schaeffer_detail",  # 22 valori (sotto-tipi del Solfege Schaeffer 1966)
+    "smalley_growth",  # 6 valori (growth processes Spectromorphology 1997)
 )
 
 
@@ -210,8 +213,20 @@ def aggregate_academic_hints(
         return {k: round(v / total, 3) for k, v in by_value.items()}
 
     def dominant_with_confidence(
-        dist: dict[str, float], high: float = 0.5, medium: float = 0.33
+        dist: dict[str, float], high: float = 0.5, medium: float = 0.33,
+        enum_size: int | None = None,
     ) -> dict:
+        """Estrae il valore dominante con label di confidence.
+
+        v0.6.0: se `enum_size` viene passato, le soglie high/medium sono
+        ricalcolate dinamicamente come `2.0/N` e `1.0/N`. Necessario per
+        enum molto grandi (es. schaeffer_detail con 22 valori) dove le
+        soglie statiche 0.5/0.33 producono sempre confidence=low anche
+        quando il valore dominante e' chiaramente interpretabile.
+        """
+        if enum_size is not None and enum_size > 0:
+            high = max(2.0 / enum_size, 0.10)
+            medium = max(1.0 / enum_size, 0.05)
         if not dist:
             return {"value": None, "confidence": "insufficient"}
         top_value, top_pct = max(dist.items(), key=lambda kv: kv[1])
@@ -237,6 +252,11 @@ def aggregate_academic_hints(
     smalley_dist = weighted_distribution("smalley_motion")
     chion_dist = weighted_distribution("chion")
     truax_dist = weighted_distribution("truax")
+    # v0.6.0: nuovi enum tassonomie compositive estese
+    schaeffer_detail_dist = weighted_distribution("schaeffer_detail")
+    smalley_growth_dist = weighted_distribution("smalley_growth")
+    schaeffer_detail_size = len(mapping.get("enums", {}).get("schaeffer_detail", []))
+    smalley_growth_size = len(mapping.get("enums", {}).get("smalley_growth", []))
 
     soundwalk_w = 0.0
     total_w = 0.0
@@ -282,6 +302,24 @@ def aggregate_academic_hints(
         "westerkamp_soundwalk_relevance": {
             "value": soundwalk_pct >= 0.4,
             "pct": soundwalk_pct,
+            "tentative": True,
+        },
+        # v0.6.0: tassonomie compositive estese (TARTYP completo Schaeffer
+        # 1966, growth processes Smalley 1997). Soglie confidence dinamiche
+        # per cardinalita' alta degli enum.
+        "schaeffer_detail": {
+            **dominant_with_confidence(
+                schaeffer_detail_dist, enum_size=schaeffer_detail_size
+            ),
+            "distribution": schaeffer_detail_dist,
+            "top_2": top_n(schaeffer_detail_dist, 2),
+            "tentative": True,
+        },
+        "smalley_growth": {
+            **dominant_with_confidence(
+                smalley_growth_dist, enum_size=smalley_growth_size
+            ),
+            "distribution": smalley_growth_dist,
             "tentative": True,
         },
     }

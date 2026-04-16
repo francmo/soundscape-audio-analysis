@@ -16,7 +16,7 @@ from scripts.semantic_clap import load_vocabulary
 
 def test_mapping_loads_and_has_required_keys():
     m = load_academic_mapping()
-    assert m["version"] == "1.1"
+    assert m["version"] == "1.2"
     assert "enums" in m and "category_defaults" in m and "prompts" in m
     for name, values in m["enums"].items():
         assert isinstance(values, list) and len(values) > 0, (
@@ -240,3 +240,70 @@ def test_mark_geo_specific_no_flag_on_generic():
     out = mark_geo_specific_tags(top_global)
     assert out[0]["geo_specific"] is False
     assert out[1]["geo_specific"] is False
+
+
+def test_schaeffer_detail_enum_present_v060():
+    """v0.6.0: nuovo enum schaeffer_detail con 22 valori (TARTYP esteso)."""
+    m = load_academic_mapping()
+    assert "schaeffer_detail" in m["enums"]
+    detail = m["enums"]["schaeffer_detail"]
+    assert isinstance(detail, list)
+    assert len(detail) >= 20, f"schaeffer_detail con solo {len(detail)} valori"
+    # Famiglie attese presenti come prefisso o esattamente
+    expected_families = ["impulsivo", "iterativo", "tenuto", "trama", "campione"]
+    families_present = set()
+    for value in detail:
+        for fam in expected_families:
+            if value.startswith(fam):
+                families_present.add(fam)
+    assert len(families_present) >= 4, (
+        f"famiglie schaeffer presenti in detail: {families_present}, "
+        f"attese almeno 4 di {expected_families}"
+    )
+
+
+def test_smalley_growth_enum_present_v060():
+    """v0.6.0: nuovo enum smalley_growth con 6 valori (Spectromorphology 1997)."""
+    m = load_academic_mapping()
+    assert "smalley_growth" in m["enums"]
+    growth = m["enums"]["smalley_growth"]
+    assert set(growth) == {
+        "dilation", "accumulation", "dissipation",
+        "exogeny", "endogeny", "contraction",
+    }
+
+
+def test_utterance_category_defaults_present_v060():
+    """v0.6.0: nuova categoria utterance ha category_defaults coerenti
+    con la teoria di Wishart (sound-object, ridotto, search)."""
+    m = load_academic_mapping()
+    assert "utterance" in m["category_defaults"]
+    defaults = m["category_defaults"]["utterance"]
+    assert defaults["krause"] == "antropofonia"
+    assert defaults["schafer_role"] == "sound-object"
+    assert defaults["chion"] == "ridotto"
+    assert defaults["truax"] == "search"
+
+
+def test_aggregate_hints_includes_schaeffer_detail_and_smalley_growth_v060():
+    """v0.6.0: aggregate_academic_hints espone i due nuovi campi."""
+    vocab = load_vocabulary()
+    mapping = load_academic_mapping()
+    # 5 prompt utterance pertinenti per popolare i nuovi enum
+    fake_top = [
+        {"id": "utt_01", "score": 0.45},
+        {"id": "utt_02", "score": 0.38},
+        {"id": "utt_03", "score": 0.35},
+        {"id": "utt_04", "score": 0.28},
+        {"id": "utt_05", "score": 0.22},
+    ]
+    h = aggregate_academic_hints(fake_top, vocab, mapping)
+    assert h["available"] is True
+    assert "schaeffer_detail" in h
+    assert "smalley_growth" in h
+    assert h["schaeffer_detail"]["tentative"] is True
+    assert h["smalley_growth"]["tentative"] is True
+    # Soglie dinamiche: per N=22 enum, high = 2/22 = 0.09. Distribuzione
+    # su prompt utterance multiformi, almeno un valore dominante con
+    # confidence non insufficient.
+    assert h["schaeffer_detail"]["confidence"] in ("high", "medium", "low")

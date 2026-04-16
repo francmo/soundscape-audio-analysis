@@ -219,6 +219,68 @@ def _aggregate_timeline_for_window(timeline: list[dict], t_start: float, t_end: 
     return out[:5]
 
 
+def _compute_per_window_timbre(waveform: np.ndarray, sr: int,
+                                segments: list[tuple]) -> list[dict]:
+    """Per ogni finestra in `segments` calcola centroide, flatness, density
+    sulle sue stesse campioni. Sostituisce le feature globali del bug v0.5.x
+    (audio6_report.pdf pp. 14-21 mostrava centroide 3029 Hz e flatness 0.040
+    identici in 40+ blocchi).
+
+    Costo: ~0.1 s totali per 40 finestre da 30 s su file 20 min (validato).
+    Su finestre piu' corte di 0.1 s ritorna feature di default a zero.
+    """
+    from . import spectral as spec_mod
+    out: list[dict] = []
+    for t_start, t_end, _, _ in segments:
+        a = int(t_start * sr)
+        b = int(t_end * sr)
+        chunk = waveform[a:b]
+        if len(chunk) < int(sr * 0.1):
+            out.append({"centroid_hz": 0.0, "flatness": 0.0, "density": 0.0})
+            continue
+        timbre = spec_mod.compute_timbre(chunk, sr)
+        onsets = spec_mod.onset_analysis(chunk, sr, duration_s=t_end - t_start)
+        out.append({
+            "centroid_hz": float(timbre["spectral_centroid_hz"]),
+            "flatness": float(timbre["spectral_flatness"]),
+            "density": float(onsets["events_per_sec"]),
+        })
+    return out
+
+
+def _has_significant_delta(prev: dict, curr: dict,
+                            prev_rms_db: float, curr_rms_db: float,
+                            prev_panns_top1: str, curr_panns_top1: str,
+                            prev_clap_top1: str, curr_clap_top1: str) -> bool:
+    """True se almeno una feature cambia oltre soglia rispetto alla finestra
+    precedente. Usata dalla logica delta-based v0.6.0 per accumulare
+    finestre senza variazione in plateau."""
+    # Centroide spettrale
+    if prev["centroid_hz"] > 0:
+        delta_centroid = abs(curr["centroid_hz"] - prev["centroid_hz"]) / prev["centroid_hz"]
+        if delta_centroid > config.NARRATIVE_DELTA_CENTROID_PCT:
+            return True
+    elif curr["centroid_hz"] > 0:
+        return True
+    # Flatness
+    if prev["flatness"] > 0:
+        delta_flatness = abs(curr["flatness"] - prev["flatness"]) / prev["flatness"]
+        if delta_flatness > config.NARRATIVE_DELTA_FLATNESS_PCT:
+            return True
+    elif curr["flatness"] > 0:
+        return True
+    # RMS
+    if abs(curr_rms_db - prev_rms_db) > config.NARRATIVE_DELTA_RMS_DB:
+        return True
+    # Cambio top-1 PANNs
+    if prev_panns_top1 != curr_panns_top1:
+        return True
+    # Cambio top-1 CLAP
+    if prev_clap_top1 != curr_clap_top1:
+        return True
+    return False
+
+
 def build_full_narrative(
     summary: dict,
     waveform: np.ndarray,
@@ -227,55 +289,109 @@ def build_full_narrative(
 ) -> list[SegmentNarrative]:
     """Costruisce la narrativa segmentata per tutto il file.
 
+    v0.6.0: feature timbriche calcolate per finestra (non globali) e logica
+    delta-based: la prima finestra ha descrizione completa, le successive
+    vengono descritte solo se almeno una feature (centroide +/-15%,
+    flatness +/-30%, RMS +/-6 dB, top-1 PANNs, top-1 CLAP) cambia
+    significativamente. Le finestre senza variazione vengono accumulate
+    in un "plateau" descritto da una sola riga compatta.
+
     `waveform` e `sr` devono essere coerenti (tipicamente la mono 22050 Hz
     usata nella pipeline tecnica).
     """
     bands = summary.get("spectral", {}).get("bands_schafer", {})
     dominant_band_global = _classify_bands_dominant(bands)
-    timbre = summary.get("spectral", {}).get("timbre", {})
-    centroid_global = timbre.get("spectral_centroid_hz", 0)
-    flatness_global = timbre.get("spectral_flatness", 0)
-    onsets = summary.get("spectral", {}).get("onsets", {})
-    density_global = onsets.get("events_per_sec", 0)
+    # Nota: dominant_band resta globale perche' deriva da bands_schafer
+    # del file intero, non e' una feature timbrica diretta.
 
     classifier_timeline = (summary.get("semantic", {}).get("classifier") or {}).get("timeline", [])
     clap_timeline = (summary.get("clap") or {}).get("timeline", [])
 
     segments = _rms_per_segment(waveform, sr, window_seconds)
+    if not segments:
+        return []
+
+    per_window_features = _compute_per_window_timbre(waveform, sr, segments)
+
     narratives: list[SegmentNarrative] = []
+    plateau_buffer: list[int] = []
+    prev_state: tuple | None = None  # (feat, rms_db, panns_top1, clap_top1)
+
+    def _emit_plateau() -> None:
+        """Emette una sola SegmentNarrative compatta per il plateau corrente."""
+        if not plateau_buffer:
+            return
+        first_idx = plateau_buffer[0]
+        last_idx = plateau_buffer[-1]
+        t_start_p, _, _, _ = segments[first_idx]
+        _, t_end_p, _, _ = segments[last_idx]
+        duration_p = t_end_p - t_start_p
+        avg_rms = sum(segments[i][2] for i in plateau_buffer) / len(plateau_buffer)
+        avg_centroid = sum(per_window_features[i]["centroid_hz"] for i in plateau_buffer) / len(plateau_buffer)
+        text = (
+            f"Plateau di {duration_p:.0f} s con stessa firma timbrica "
+            f"del segmento precedente (centroide medio {avg_centroid:.0f} Hz, "
+            f"RMS medio {avg_rms:.1f} dBFS, {len(plateau_buffer)} finestre accorpate)."
+        )
+        text = sanitize_italiano(text)
+        narratives.append(SegmentNarrative(
+            t_start_s=round(t_start_p, 2),
+            t_end_s=round(t_end_p, 2),
+            t_start_str=_fmt_time(t_start_p),
+            t_end_str=_fmt_time(t_end_p),
+            narrative_it=text,
+        ))
+        plateau_buffer.clear()
+
     for idx, (t_start, t_end, rms_db, peak_db) in enumerate(segments):
         seed_key = f"{idx}_{int(t_start)}"
-
-        lev = _describe_levels(rms_db, peak_db, seed_key)
-        spec = _describe_spectrum(centroid_global, flatness_global,
-                                   dominant_band_global, seed_key)
-        ev = _describe_events(
-            int((t_end - t_start) * density_global),
-            density_global, seed_key,
-        )
+        feat = per_window_features[idx]
 
         panns_win = _aggregate_timeline_for_window(classifier_timeline, t_start, t_end, key="top")
-        panns_desc = _describe_panns(panns_win)
-
         clap_win = _aggregate_timeline_for_window(clap_timeline, t_start, t_end, key="tags")
-        clap_desc = _describe_clap(clap_win)
+        panns_top1 = panns_win[0]["name"] if panns_win else ""
+        clap_top1 = clap_win[0]["prompt"] if clap_win else ""
 
-        pieces = [lev, spec, ev]
-        if panns_desc:
-            pieces.append(panns_desc)
-        if clap_desc:
-            pieces.append(clap_desc)
-        paragraph = ". ".join(pieces) + "."
-        paragraph = sanitize_italiano(paragraph)
+        if prev_state is None:
+            describe = True
+        else:
+            prev_feat, prev_rms, prev_panns_top1, prev_clap_top1 = prev_state
+            describe = _has_significant_delta(
+                prev_feat, feat, prev_rms, rms_db,
+                prev_panns_top1, panns_top1,
+                prev_clap_top1, clap_top1,
+            )
 
-        narratives.append(SegmentNarrative(
-            t_start_s=round(t_start, 2),
-            t_end_s=round(t_end, 2),
-            t_start_str=_fmt_time(t_start),
-            t_end_str=_fmt_time(t_end),
-            narrative_it=paragraph,
-        ))
+        if describe:
+            _emit_plateau()
+            lev = _describe_levels(rms_db, peak_db, seed_key)
+            spec = _describe_spectrum(feat["centroid_hz"], feat["flatness"],
+                                       dominant_band_global, seed_key)
+            ev = _describe_events(
+                int((t_end - t_start) * feat["density"]),
+                feat["density"], seed_key,
+            )
+            panns_desc = _describe_panns(panns_win)
+            clap_desc = _describe_clap(clap_win)
+            pieces = [lev, spec, ev]
+            if panns_desc:
+                pieces.append(panns_desc)
+            if clap_desc:
+                pieces.append(clap_desc)
+            paragraph = ". ".join(pieces) + "."
+            paragraph = sanitize_italiano(paragraph)
+            narratives.append(SegmentNarrative(
+                t_start_s=round(t_start, 2),
+                t_end_s=round(t_end, 2),
+                t_start_str=_fmt_time(t_start),
+                t_end_str=_fmt_time(t_end),
+                narrative_it=paragraph,
+            ))
+            prev_state = (feat, rms_db, panns_top1, clap_top1)
+        else:
+            plateau_buffer.append(idx)
 
+    _emit_plateau()
     return narratives
 
 

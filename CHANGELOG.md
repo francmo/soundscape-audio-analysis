@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.6.3] - 2026-04-17
+
+Cambio di paradigma della lettura compositiva dell'agente.
+Driver: confronto con analisi manuale di *Air Piece* di John Heineman
+(1970), salvata in `references/user_feedback/Air_Piece.md` come gold
+interpretativo. Feedback utente: la lettura v0.6.2 era troppo
+frammentata, troppo tecnica, mancava di interpretazione concettuale
+e costruiva gesti compositivi come catene DSP (Q, dB, ms, plugin)
+anziche' come suggerimenti drammaturgici.
+
+### Changed (breaking change nel formato output agente)
+
+Riscrittura di `templates/agent_prompt.md` e
+`~/.claude/agents/soundscape-composer-analyst.md` con nuova struttura a
+sei sezioni invece delle cinque precedenti:
+
+- **Lettura drammaturgica** (nuova, apertura obbligatoria): metafora
+  interpretativa globale in 80-150 parole. Sostituisce la vecchia
+  "Osservazioni critiche" che tendeva all'elenco tecnico.
+- **Scene sonore** (rinominata da "Oggetti sonori identificati"): 3-7
+  scene con **titoli evocativi in italiano** (2-6 parole) invece delle
+  signature_label automatiche Krause. La scansione non e' piu' 1:1 con
+  le sezioni `structure`: l'agente aggrega o spezza secondo la
+  drammaturgia. Prosa descrittiva invece di bullet tecnici. Citazioni
+  letterali dei testi parlati (se `speech` attivo) integrate come
+  appigli drammaturgici.
+- **Binomi concettuali** (nuova): 2-4 coppie concettuali (es.
+  `uomo – ambiente`, `velocita` (tecnologia) – ambiente`,
+  `musica – tecnologia`) che organizzano il senso dell'opera.
+- **Parentele stilistiche** (sostituisce "Collocazione estetica"):
+  1-3 riferimenti motivati a scuole/autori (GRM, Schaeffer, Ferrari,
+  Westerkamp, Wishart, Truax, Krause), ciascuno con appoggio empirico.
+- **Criticita' tecniche** (invariata).
+- **Suggerimenti compositivi** (rinominata da "Gesti compositivi
+  suggeriti"): 3-6 suggerimenti **drammaturgici, performativi,
+  produttivi**. Vietato assoluto: numeri tecnici (Q, dB, ms, Hz cutoff,
+  ratio, pre-delay, RT60), nomi di plugin, catene DSP, terminologia
+  da ingegnere del suono. Accettabili: diffusione concertistica
+  (acousmonium), remix concettuali, performance live, installazioni,
+  riprese alternative, accostamenti cinematografici, proposte
+  didattiche.
+
+### Added
+
+- Regola dei numeri: max 1-2 per paragrafo, sempre preceduti o seguiti
+  da interpretazione compositiva. I numeri nudi sono rumore.
+- Vietato "Nessuna attribuzione plausibile dai dati disponibili" come
+  frase esplicita nell'output: se Step 3 non attribuisce, l'agente
+  procede comunque con la lettura drammaturgica e sposta le parentele
+  nella sezione dedicata.
+- Vietate percentuali distributive nude ("Krause antropofonia 49.9%,
+  mista 45.1%"): vanno tradotte in interpretazione.
+- `references/user_feedback/Air_Piece.md`: analisi manuale di
+  Francesco Mariano del brano di Heineman, con timeline A/B/C +
+  sotto-sezioni a1-a6, b1-b15, c1-c5; binomi concettuali; arco
+  drammaturgico; parentele stilistiche; note libere che identificano i
+  gap tra analisi umana e agente v0.6.2. Diventa gold interpretativo
+  per i test di regressione futuri.
+
+### Internal
+
+- Bump 0.6.2 -> 0.6.3 in `scripts/__init__.py`, `pyproject.toml`,
+  `scripts/report_cmd.py`, `scripts/report_pdf.py` (3 stringhe).
+- ROADMAP: shift delle voci successive. La v0.6.3 (FADI + caveat Kane)
+  diventa v0.6.4; v0.6.4 (Hotfix feedback continuo) diventa v0.6.5.
+
+### Non cambiato
+
+- Pipeline tecnica (PANNs, CLAP, narrative, structure, technical,
+  hum, ecoacoustic): invariata.
+- `config.AGENT_TIMEOUT_S = 600` invariato.
+- Rendering PDF: invariato (il nuovo markdown si rende con i
+  Paragraph/h3 esistenti, nessuna modifica a `report_pdf.py` oltre al
+  bump versione).
+
 ## [0.6.2] - 2026-04-16
 
 Hotfix PDF/agente scaturito dalla validazione visuale di

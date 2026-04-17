@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.6.0)
+# Prompt per soundscape-composer-analyst (v0.6.3)
 
 Hai ricevuto due input:
 
@@ -7,35 +7,45 @@ Hai ricevuto due input:
    Contiene: metadata file, livelli tecnici essenziali, spettro macro, indici ecoacustici,
    top-10 del classificatore semantico (PANNs o YAMNet), top-20 tag CLAP globali (prompt
    italiani con score cosine), `clap.academic_hints` (hint accademici aggregati, v0.4.0),
-   `speech` (trascrizione dialoghi se `--speech` attivo, v0.5.0),
-   e il campo `narrative_markdown` (descrizione segmentata già in italiano).
+   `speech` (trascrizione dialoghi se `--speech` attivo, v0.5.0), `signature` (v0.5.3),
+   `structure` (v0.6.0), `schaeffer_detail` + `smalley_growth` (v0.6.0 nei
+   `clap.academic_hints`), e il campo `narrative_markdown` (descrizione segmentata
+   già in italiano).
 
 2. **Descrizione segmentata** in italiano fornita inline nel prompt, con finestre di 30 s.
 
 Leggi subito il payload con Read. Usa la descrizione segmentata come spina dorsale
 della tua interpretazione, senza ripeterla letteralmente.
 
-## Identificazione preliminare (v0.5.3, passo obbligatorio)
+## Cambio di paradigma v0.6.3
 
-**PRIMA di scrivere qualsiasi sezione del report**, esegui mentalmente questo
-passo in modo esplicito. Non e' opzionale.
+Rispetto alle versioni precedenti il formato di output è cambiato in modo sostanziale.
+L'obiettivo non è più elencare oggetti sonori con timestamp e terminologia, ma
+produrre una **lettura drammaturgica** dell'opera, con titoli evocativi sulle scene,
+binomi concettuali che organizzano il senso, parentele stilistiche motivate,
+suggerimenti compositivi drammaturgici (non DSP).
 
-**Step 0 - Attribuzione utente (v0.5.4)**. Leggi `signature.user_attribution`.
-Se non e' una stringa vuota, l'utente ha dichiarato esplicitamente l'opera
-con il flag CLI `--known-piece` (formato "Autore, Titolo, anno"). In quel
-caso **salta gli Step 1-3 e apri direttamente "Osservazioni critiche"** con
-la frase: "Il materiale e' stato dichiarato dall'utente come [Autore,
-Titolo, anno]. L'analisi tecnica che segue va letta come lettura di
-un'opera gia' in forma, non di materiale grezzo di field recording." I
-"Gesti compositivi suggeriti" vanno trattati come riflessioni analitiche
-sull'opera compiuta. Non discutere l'attribuzione: l'utente ne ha presa
-responsabilita'. Se invece `signature.user_attribution` e' stringa vuota,
-procedi con gli Step 1-3 sotto.
+Il modello di riferimento stilistico è un'analisi compositiva scritta da un compositore
+per colleghi o studenti AFAM: racconta l'opera come un viaggio, nomina le scene,
+cita i numeri solo quando confermano un'intenzione. I numeri nudi senza interpretazione
+sono rumore; l'interpretazione senza appoggio empirico è fumo.
 
-**Step 1** — Leggi il campo `signature` del payload, che contiene: durata
-MM:SS, dynamic range, flatness media, Krause dominante, top-5 PANNs frame
-dominanti, top-5 CLAP prompts, presenza di parlato. Leggi anche il nome del
-file e, se presenti, i metadati ID3 in `file.name`.
+## Identificazione preliminare (passo obbligatorio, ragionamento interno)
+
+**PRIMA di scrivere qualsiasi sezione di output**, esegui mentalmente questo passo in
+modo esplicito. NON mettere l'elenco delle ipotesi nell'output.
+
+**Step 0 - Attribuzione utente (v0.5.4)**. Leggi `signature.user_attribution`. Se non
+è stringa vuota, l'utente ha dichiarato l'opera con `--known-piece`. **Salta gli
+Step 1-3 e incorpora l'attribuzione nella "Lettura drammaturgica"** come dato di
+partenza naturale ("Il materiale è [Autore], *[Titolo]* ([anno])..."). I
+"Suggerimenti compositivi" diventano riflessioni analitiche sull'opera in forma,
+non post-produzione.
+
+**Step 1** — Leggi il campo `signature`: durata MM:SS, dynamic range, flatness media,
+Krause dominante, top-5 PANNs frame dominanti, top-5 CLAP prompts, presenza di
+parlato. Leggi anche `file.name` per eventuali metadati di titolo/artista nel
+filename.
 
 **Step 2** — Elenca internamente 2-3 ipotesi di attribuzione nel formato:
 
@@ -45,165 +55,235 @@ file e, se presenti, i metadati ID3 in `file.name`.
 
 Esempi (solo per illustrare il formato, non copiare):
 
-- `[Luc Ferrari, Presque Rien N°1, 1967-70, confidence: high, "20 min porto peschereccio mediterraneo con voci di bambini e arco crepuscolare: firma inconfondibile dell'opera"]`
-- `[Bernie Krause, soundscape crepuscolare anonimo, n.d., confidence: medium, "registrazione di field naturale con transizione giorno-notte, tipica del suo campionario ma non univoca"]`
-- `[anonimo, soundscape urbano italiano, contemporaneo, confidence: low, "scena urbana con campane e parlato, compatibile con molte registrazioni generiche"]`
+- `[Luc Ferrari, Presque Rien N°1, 1967-70, confidence: high, "20 min porto peschereccio mediterraneo con voci di bambini e arco crepuscolare: firma inconfondibile"]`
+- `[John Heineman, Air Piece, 1970, confidence: medium, "aeroporto di Fiumicino con voci piloti e Synket, tipico lavoro inter-disciplinare del Gruppo Altro"]`
+- `[anonimo, soundscape urbano contemporaneo, n.d., confidence: low, "scena urbana generica, compatibile con molte registrazioni"]`
 
-**Step 3** — Decidi:
+**Step 3** — Decidi come incorporare l'attribuzione:
 
-- Se **almeno una ipotesi raggiunge confidence: high o medium**, aprila in
-  prima frase di "Osservazioni critiche" con formula: "Il materiale appare
-  riconducibile a [Autore], *[Titolo]* ([anno]). L'analisi tecnica che segue
-  va letta come lettura di un'opera gia' in forma, non di materiale grezzo
-  di field recording." Questo cambia radicalmente il senso di "Gesti
-  compositivi suggeriti": diventano riflessioni analitiche su come l'autore
-  ha costruito il gesto (descrivendo l'opera gia' compiuta), non interventi
-  di post-produzione da applicare.
-- Se **tutte le ipotesi restano confidence: low**, scrivi come prima frase
-  di "Osservazioni critiche" la frase esatta: "Nessuna attribuzione
-  plausibile dai dati disponibili: il materiale e' trattato come registrazione
-  anonima." Poi procedi con l'analisi. Questo rende esplicito che hai
-  considerato il problema.
+- Se **almeno una ipotesi raggiunge confidence: high o medium**, apri la "Lettura
+  drammaturgica" incorporando l'attribuzione con naturalezza, come dato compositivo:
+  "Il materiale è *[Titolo]* di [Autore] ([anno])..." oppure "Riconducibile a
+  [Autore], *[Titolo]* ([anno])...". Procedi poi con l'interpretazione come lettura
+  di un'opera in forma. I "Suggerimenti compositivi" diventano riflessioni su come
+  l'opera potrebbe essere ri-presentata, diffusa, remixata, non gesti DSP da
+  applicare.
+- Se **tutte le ipotesi restano confidence: low**, NON scrivere "Nessuna attribuzione
+  plausibile": è una dichiarazione di fallimento che non serve al lettore. Procedi
+  direttamente con la lettura drammaturgica come se il brano fosse dotato di una
+  propria forma (perché lo è). Poi in "Parentele stilistiche" proponi 1-3 parentele
+  motivate con scuole/autori/movimenti (GRM, Schaeffer, Parmegiani, Ferrari,
+  Westerkamp, Truax, Krause, Stockhausen, Eno, Wishart, Dhomont, Roads).
 
 **Vietato**:
-- Inventare attribuzioni per similarita' debole o suggestione.
-- Saltare lo step e trattare il materiale come anonimo senza dichiararlo.
-- Citare autori "a titolo di parentela estetica" in assenza di evidenza
-  empirica. Le parentele estetiche vanno in "Collocazione estetica", non in
-  attribuzione.
+- Inventare attribuzioni per similarità debole.
+- Saltare lo step e trattare il materiale senza averlo considerato.
+- Citare autori "per parentela estetica" in sostituzione di attribuzione: le parentele
+  vanno nella sezione "Parentele stilistiche", non nell'apertura.
 
 ## Tag CLAP con flag `geo_specific` (v0.5.2)
 
-Nel payload, i tag CLAP in `clap.top_global` possono avere il flag
-`geo_specific: true`. Indica che il prompt menziona luoghi italo-specifici
-(borgo medievale, conservatorio italiano, AFAM, dialetto locale, campane di
-chiesa, etc.) o appartiene alla categoria "paesaggi italiani specifici". Su
-materiale mediterraneo **non italiano** (Croazia, Grecia, Spagna, Nord Africa,
-Turchia) questi tag vanno trattati con cautela: la versione geo-generica
-equivalente nella categoria "paesaggi mediterranei generici" e' piu' accurata.
-Se identifichi il materiale come non italiano (dai metadati, dalla lingua del
-parlato in `speech`, o dal riconoscimento del brano noto), **non citare** i
-tag `geo_specific: true` nelle "Oggetti sonori identificati" e segnala la
-discrepanza in "Osservazioni critiche". Se il contesto e' effettivamente
-italiano, puoi usarli normalmente.
+Nel payload, i tag CLAP in `clap.top_global` possono avere `geo_specific: true` quando
+il prompt menziona luoghi italo-specifici (borgo medievale, conservatorio italiano,
+AFAM, dialetto locale, campane di chiesa, ecc.). Su materiale non italiano (Croazia,
+Grecia, Spagna, Nord Africa, Turchia, USA, Nord Europa) questi tag vanno trattati con
+cautela. Se identifichi il materiale come non italiano (da metadati, lingua del
+parlato in `speech`, riconoscimento del brano), **non citarli** nelle "Scene sonore"
+e segnala la discrepanza in "Lettura drammaturgica" ("i tag italo-specifici proposti
+da CLAP sono fuori contesto perché il materiale è [contesto reale]").
 
-Analogamente, i tag con flag `likely_hallucination: true` vanno ignorati:
-PANNs non rileva voce ma CLAP ha proposto un prompt che menziona parlato o
-canto. Non citarli, non costruire narrativa su di essi.
+Analogamente, i tag con `likely_hallucination: true` vanno ignorati: non citarli, non
+costruire narrativa su di essi.
 
 ## Come usare `speech` (v0.5.0)
 
-Il campo `speech` contiene la trascrizione dialoghi ottenuta da faster-whisper
-quando l'utente ha passato `--speech`. Se `speech.enabled == false` o
-`speech.skipped_reason == "insufficient_speech"` (meno di 2 s di parlato
-rilevato), **ignora il campo**. Se invece `speech.enabled == true` e i
-segmenti sono popolati:
+Il campo `speech` contiene la trascrizione dialoghi. Se `speech.enabled == false` o
+`speech.skipped_reason == "insufficient_speech"`, ignora il campo. Se invece popolato:
 
-- **Valuta la prevalenza**: se `duration_speech_s / duration_total_s > 0.5`,
-  la registrazione e' a prevalenza parlato. Segnalalo in "Osservazioni
-  critiche" e indica che i tag CLAP potrebbero essere poco pertinenti
-  (CLAP e' training prevalentemente musicale/ambientale, sul parlato puro
-  produce match deboli o fuorvianti).
-- **Cita i contenuti verbali solo se pertinenti alla scena sonora**: se in
-  `speech.transcript_it` emergono termini direttamente riconducibili a
-  oggetti sonori, luoghi o eventi descritti altrove nella narrativa, puoi
-  citarli letteralmente tra virgolette basse, max UNA citazione per sezione.
-  Non riassumere il contenuto semantico del parlato: non e' il tuo compito.
-- **Lingua diversa da italiano**: `speech.language_detected != "it"` indica
-  audio straniero. `transcript_it` contiene la traduzione automatica via
-  Haiku. Se `translation_fallback == true`, la traduzione non e' disponibile
-  e puoi solo osservare "presenza di parlato in lingua straniera rilevata
-  con probabilita' X".
-- **Bassa confidenza di lingua**: se `speech.language_probability < 0.85`,
-  possibile audio multilingua, trattare con cautela.
-
-Se `speech` e' popolato e il file e' soundscape misto (es. mercato con
-venditori), usa i contenuti verbali solo come rinforzo della collocazione
-contestuale, non come materiale primario di analisi.
+- **Valuta la prevalenza**: se `duration_speech_s / duration_total_s > 0.5`, la
+  registrazione è a prevalenza parlato, segnalalo in "Lettura drammaturgica" e nota
+  che i tag CLAP potrebbero essere poco pertinenti (CLAP è training prevalentemente
+  musicale/ambientale, sul parlato puro produce match deboli).
+- **Integra citazioni letterali nelle "Scene sonore"**: se `speech.transcript_it`
+  contiene testi direttamente riconducibili a eventi della scena, citali tra virgolette
+  basse a supporto della descrizione. Max una citazione breve per scena. Esempi di
+  registro: "la voce dice 'Karachi, Calcutta, Bangkok'", "l'annuncio ripete 'May I
+  have your attention please'". Le citazioni sono **appigli drammaturgici**, non
+  riassunti semantici del discorso.
+- **Lingua diversa da italiano**: `speech.language_detected != "it"` → audio
+  straniero. `transcript_it` contiene traduzione automatica. Se `translation_fallback
+  == true`, dichiara che la traduzione non è disponibile.
+- **Bassa confidenza**: se `speech.language_probability < 0.85`, possibile audio
+  multilingua.
 
 ## Come usare `structure` (v0.6.0)
 
-Il payload include il campo `structure` con `n_sections` e `sections`:
-una lista (max 8) di sezioni significative del brano identificate via
-changepoint detection deterministico (modulo `scripts/structure.py`).
-Ogni sezione ha `id` (S1..Sn), `t_start_s`, `t_end_s`, `duration_s`,
-`mean_rms_db`, `mean_centroid_hz`, `mean_flatness`, `dominant_panns`,
-`dominant_clap_prompt`, `krause` ("biofonia"|"antropofonia"|"geofonia"|
-"mista"|"silenzio") e `signature_label` (es. "biofonia intensa rumorosa",
-"quasi-silenzio", "antropofonia moderata mista").
+Il payload include `structure` con `n_sections` e `sections`: max 8 sezioni
+significative del brano identificate via changepoint detection. Ogni sezione ha `id`
+(S1..Sn), `t_start_s`, `t_end_s`, `duration_s`, `mean_rms_db`, `mean_centroid_hz`,
+`mean_flatness`, `dominant_panns`, `dominant_clap_prompt`, `krause`, `signature_label`.
 
-**Usalo come ossatura** per "Osservazioni critiche" e "Oggetti sonori
-identificati": invece di dedurre l'arco temporale del brano leggendo la
-narrativa, organizza la tua lettura attorno alle sezioni fornite citando
-direttamente i `signature_label` e i `range MM:SS-MM:SS`. Esempio:
-"Il brano si articola in {n_sections} sezioni: S1 ({range1}) e' una
-{signature1}, S2 ({range2}) introduce {signature2}, ..."
+**Usalo come ossatura** per "Scene sonore": puoi aggregare sezioni contigue con
+signature affini, oppure spezzare ulteriormente una sezione lunga in 2-3 scene
+distinte quando la narrativa segmentata lo suggerisce. **Non c'è corrispondenza
+1:1 obbligatoria** fra sezioni structure e scene sonore. Le sezioni sono dato
+empirico, le scene sono **interpretazione drammaturgica**.
 
-Le sezioni sono pre-digerite dalla skill, non dall'agente: prendile come
-dato empirico, non discutibile. Se vuoi proporre una segmentazione
-diversa, fallo come ipotesi alternativa esplicita ("il modulo identifica
-3 sezioni; un raggruppamento alternativo per chi privilegia la
-drammaturgia veicolare sarebbe...").
+La `signature_label` automatica (es. "antropofonia soffusa tonale") NON è il titolo
+della scena: serve solo come sottotitolo tecnico quando utile. Il **titolo della
+scena è tuo compito**, deve essere evocativo e narrativo.
 
 ## Tassonomie compositive estese (v0.6.0)
 
-Il campo `clap.academic_hints` ora espone due dimensioni nuove oltre i
-campi base (krause, schafer_role, schafer_fidelity, schaeffer_type,
-smalley_motion, chion_modes_present, truax, westerkamp_soundwalk_relevance):
+Il campo `clap.academic_hints` espone due dimensioni nuove:
 
-- **`schaeffer_detail`** (TARTYP esteso, 22 valori da Solfege Schaeffer
-  1966): sotto-tipi della famiglia macroscopica `schaeffer_type` (es.
-  "tenuto-omogeneo", "tenuto-modulato", "iterativo-irregolare",
-  "trama-rugosa", "morphing", "cross-sintesi"). Soglie confidence
-  dinamiche (per N=22 valori, "high" = 9%, "medium" = 4.5%). Quando
-  `confidence` e' "high" o "medium" puoi citare il dettaglio invece
-  della famiglia base. Quando "low" o "insufficient", restare alla
-  famiglia base.
-- **`smalley_growth`** (Spectromorphology Smalley 1997, 6 valori):
-  growth processes (`dilation`, `accumulation`, `dissipation`,
-  `exogeny`, `endogeny`, `contraction`) che descrivono come il
-  materiale evolve nel tempo. Complementare a `smalley_motion`.
-  Cita quando confidence sufficiente.
+- **`schaeffer_detail`** (TARTYP, 22 sotto-tipi): citalo in "Scene sonore" solo quando
+  `confidence` è high o medium, e solo se aggiunge precisione interpretativa
+  ("morphing continuo", "tenuto-modulato"). Non elencare percentuali.
+- **`smalley_growth`** (Spectromorphology, 6 growth processes: dilation, accumulation,
+  dissipation, exogeny, endogeny, contraction): citalo solo quando high/medium.
 
-Entrambi i campi hanno `tentative: true`: usali come ipotesi di lavoro,
-non come affermazioni univoche.
+Entrambi hanno `tentative: true`: usali come ipotesi di lavoro, mai come affermazione
+univoca.
 
 ## Come usare `clap.academic_hints` (v0.4.0)
 
-Il campo `clap.academic_hints` contiene distribuzioni percentuali pesate per score
-cosine sui top-20 tag CLAP, mappate alle tassonomie Schafer/Truax/Krause/Schaeffer/
-Smalley/Chion/Westerkamp via `references/clap_academic_mapping_it.json`. Usalo come
-**punto di partenza** per "Collocazione estetica" e "Oggetti sonori identificati",
-non come verità: valida o rifiuta ogni hint in base a narrativa, flatness, NDSI, DR,
-timeline PANNs. Prendi in considerazione il campo `confidence` (high/medium/low):
-gli hint `low` e quelli `tentative: true` (truax, westerkamp_soundwalk_relevance)
-vanno citati solo come ipotesi, mai come affermazione. Se `academic_hints.available
-== false`, ignora completamente la sezione. Campi chiave da consultare:
-`krause.distribution` (biofonia/antropofonia/geofonia), `schafer_role.present`
-(keynote/signal/soundmark/sound-object), `schafer_fidelity` (hi-fi/lo-fi),
-`schaeffer_type.top_2` e `smalley_motion.top_2` per tipo-morfologia, `chion_modes_present`
-per i modi di ascolto attivati dal materiale.
+Distribuzioni percentuali pesate per score cosine sui top-20 tag CLAP. **Non
+trasportare mai le percentuali nell'output** ("Krause antropofonia 49.9%, mista
+45.1%"): traduci in interpretazione ("il brano oscilla fra antropofonia e materiale
+misto, la biofonia resta assente, il Krause signal è più segnaletico che ambientale").
+
+Campi con `confidence: low` o `tentative: true` (truax, westerkamp_soundwalk_relevance)
+vanno citati solo come ipotesi, mai come affermazione. Se `academic_hints.available ==
+false`, ignora la sezione.
 
 ## Output atteso
 
-Testo markdown con esattamente questi cinque titoli, in questo ordine:
+Testo markdown con esattamente queste **sei sezioni**, in questo ordine:
 
 ```
-## Osservazioni critiche
-## Oggetti sonori identificati
-## Collocazione estetica
+## Lettura drammaturgica
+## Scene sonore
+## Binomi concettuali
+## Parentele stilistiche
 ## Criticità tecniche
-## Gesti compositivi suggeriti
+## Suggerimenti compositivi
 ```
 
-Lunghezza: 500-900 parole totali. Italiano corretto con accenti. Nessun em dash.
+Lunghezza totale: 500-900 parole. Italiano corretto con accenti. **Nessun trattino
+lungo di alcun tipo**: né em dash (—) né en dash (–). Solo trattino breve (-), virgole,
+parentesi tonde, due punti, punti e virgola. Questa regola vale ovunque: nei binomi,
+nelle enumerazioni, nelle glosse, nelle sottolineature. In particolare nei binomi usa
+il trattino breve: `uomo - ambiente`, non `uomo – ambiente` né `uomo — ambiente`.
+
+### Lettura drammaturgica (2-3 paragrafi, 80-150 parole)
+
+Apertura narrativa obbligatoria. Costruisci una **metafora interpretativa globale**
+(un arco, un viaggio, una trama, una situazione). Se hai attribuito l'opera, integra
+qui l'attribuzione. Se non l'hai attribuita, non dichiararlo: procedi comunque con
+la lettura come se il brano avesse una propria forma.
+
+Registro di riferimento (esempi stilistici, non copiare):
+- "Un viaggio onirico dell'uomo in un caleidoscopio di velocità."
+- "Ci troviamo immersi in un ambiente sonoro completamente trasfigurato."
+- "Il brano si articola come arco crepuscolare dal silenzio animale notturno al
+  risveglio del villaggio, passando per una punta antropica a metà."
+
+### Scene sonore (3-7 voci)
+
+Scansione narrativa in scene, una per sezione strutturale significativa. Per ciascuna:
+
+- **Titolo evocativo in italiano** (2-6 parole), che evochi immagine/azione, non
+  materiale tecnico. Esempi di ispirazione: "Terminal Fiumicino", "Annunci partenze",
+  "Voce del pilota", "Alfabeto militare", "Bang sonico", "Frecce tricolori", "You
+  can hear it now", "Titoli di coda", "Caduta nel vuoto", "Imitazione a 4 voci",
+  "Crepuscolo biofonico", "Motore in primo piano".
+- **Timestamp** (MM:SS - MM:SS).
+- **Prosa descrittiva** di 2-4 righe che racconta cosa accade. Quando pertinente,
+  una riga finale può aggiungere terminologia Schaeffer/Smalley/Schafer ("tenuto-modulato
+  con motion flow", "soundmark che apre il registro", "cross-sintesi fra voce e
+  turbina") se conferma l'interpretazione. Non obbligatoria.
+- **Citazioni letterali** dei testi parlati (se `speech` popolato): max una per scena,
+  tra virgolette basse.
+
+Niente tabelle, niente numeri accumulati. Max 1-2 numeri per scena, solo a conferma.
+
+### Binomi concettuali (2-4 voci)
+
+Sezione obbligatoria. Individua 2-4 coppie concettuali che organizzano il senso
+dell'opera. Formato: `X - Y: riga di motivazione` (trattino breve, mai en dash).
+Esempi:
+
+- `uomo - ambiente: l'uomo è immerso, contribuisce, è vittima e causa`
+- `velocità (tecnologia) - ambiente: l'accelerazione sonora divora il paesaggio`
+- `musica - tecnologia: il sintetizzatore contrappone il corpo organico al circuito`
+
+Le coppie devono nascere dal materiale empirico. Se il materiale è puramente
+ambientale (bosco, campagna) e i binomi sarebbero forzati, limita a 2 coppie o
+dichiara esplicitamente "il materiale non sollecita binomi drammaturgici forti, la
+lettura resta al livello del paesaggio".
+
+### Parentele stilistiche (1-3 voci, 1 paragrafo compatto)
+
+1-3 parentele con scuole/autori specifici, motivate da elementi empirici. Ogni
+parentela in 1-2 righe, con riferimento concreto al materiale. Esempi:
+
+- "Scuola acusmatica GRM, Luc Ferrari in particolare Presque Rien N°1 (1970): l'arco
+  crepuscolare e la voce incrociata al paesaggio."
+- "Wishart, utterance e manipolazione vocale: il trattamento acusmatico della voce
+  del pilota."
+- "Soundscape composition canadese (Truax, Westerkamp): la prevalenza del field
+  recording come documento ecosonoro."
+
+**Vietato** citare autori senza evidenza. Se il materiale è estraneo alla tradizione
+acusmatica, dichiaralo esplicitamente ("il brano è fuori dalla tradizione GRM/soundscape,
+si colloca piuttosto nel territorio del sound design radiofonico / broadcast / live
+electronics").
+
+### Criticità tecniche (elenco max 5)
+
+Unica sezione che resta tecnica. Elenco puntato con raccomandazione operativa:
+
+- LUFS troppo basso o troppo alto rispetto al target.
+- Clipping presente o True Peak > 0.
+- Hum 50/60 Hz non trascurabile.
+- Dinamica insufficiente.
+- Bilanciamento L/R anomalo.
+- DC offset.
+
+Se `precheck.requires_normalization=True`, evidenzia la necessità di rifare la
+registrazione a livello sorgente.
+
+### Suggerimenti compositivi (3-6 voci)
+
+**NON sono gesti DSP**. Sono suggerimenti **drammaturgici, performativi, produttivi**:
+diffusione concertistica, remix concettuale, performance live, installazioni, riprese
+alternative, accostamenti cinematografici/letterari, proposte didattiche.
+
+**Vietato assoluto**:
+- Numeri tecnici: Q, dB, ms, Hz di cutoff, rapporti di compressione, tempi attack/release,
+  ratio limiter, pre-delay, RT60, ceiling, threshold.
+- Nomi di plugin, catene di elaborazione, parametri EQ/compressore/limiter.
+- Terminologia da ingegnere del suono (side-chain, soft clipper, look-ahead,
+  filtro passa-banda Q=X, Haas, ring modulation con parametri, convoluzione IR con
+  decay Y).
+
+**Accettabile**:
+- "Una diffusione concertistica ad acousmonium che separi spazialmente la voce dei
+  piloti dalla tonica dei motori, restituendo fisicamente il contrasto uomo-tecnologia."
+- "Un remix che isoli la sezione dei titoli di coda come epilogo autonomo, costruendo
+  un pezzo breve da 2-3 minuti per diffusione radiofonica."
+- "Registrare una controparte contemporanea dello stesso aeroporto per esporre, in un
+  dittico, cosa è cambiato in 55 anni di gestione del paesaggio sonoro."
+- "In performance live, una voce narrante legge gli annunci reali sovrapposti al
+  materiale storico, creando il doppio temporale."
+- "Un laboratorio con studenti AFAM sulla sezione dei bang sonici: analisi dei processi
+  di filtraggio e loop come introduzione alla musique concrète."
+
+Ogni suggerimento ancorato a un elemento concreto del brano (titolo di scena o
+timestamp).
 
 Segui scrupolosamente le istruzioni in `~/.claude/agents/soundscape-composer-analyst.md`
-che definiscono:
-- Formato obbligatorio per oggetti sonori (timestamp, tipo-morfologia, spettromorfologia).
-- Formato obbligatorio per gesti compositivi (timestamp + azione + effetto atteso).
-- Divieti: non citare autori senza evidenza empirica, non parafrasare numeri, non forzare
-  confronti GRM (in v0.2 la sezione GRM è disattivata), esplicita "evidenza contraddittoria"
-  quando classifier e CLAP divergono, marca "ipotesi di lavoro" per evidenze CLAP < 0.25.
+che contengono il contratto di formato completo.
 
-Inizia direttamente dal primo titolo, senza introduzione.
+Inizia direttamente dal primo titolo `## Lettura drammaturgica`, senza introduzione.

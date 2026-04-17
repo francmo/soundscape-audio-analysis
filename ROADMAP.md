@@ -3,7 +3,7 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.2 (16 aprile 2026)
+**Versione corrente**: 0.6.3 (17 aprile 2026)
 **Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
@@ -107,7 +107,7 @@ misurare la qualita' descrittiva. Tre conseguenze sulla pianificazione:
 5. **Soundscapy/ISO 12913-3** (era v0.7.0) scivola a v0.8.0: dimensione
    perceptive interessante ma meno urgente del riconoscimento eventi.
 
-### v0.6.3 — Patch indici ecoacustici (3-4 h)
+### v0.6.4 — Patch indici ecoacustici (3-4 h)
 
 Driver: ricerca web 16/04/2026
 (`references/external_feedback/research_2026-04-16_soundscape_texts.md`)
@@ -128,7 +128,7 @@ di soundscape predice il *cambiamento* di community.
   di soundscape, non di valore assoluto."
 - Test su fixture corte gia' esistenti.
 
-### v0.6.4 — Hotfix dipendenti dal feedback utente (continuo)
+### v0.6.5 — Hotfix dipendenti dal feedback utente (continuo)
 
 Traduzione di ogni nuovo `references/user_feedback/<brano>.md` in patch
 concrete: prompt CLAP aggiunti/rimossi, soglie ricalibrate. Cicli da 2-4 h
@@ -303,6 +303,23 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.3** (17/04/2026): cambio di paradigma della lettura compositiva
+  dell'agente. Riscrittura di `templates/agent_prompt.md` e
+  `~/.claude/agents/soundscape-composer-analyst.md` con nuova struttura a 6
+  sezioni: "Lettura drammaturgica" (apertura narrativa obbligatoria con
+  metafora globale), "Scene sonore" (3-7 scene con titoli evocativi, non
+  signature_label automatiche), "Binomi concettuali" (2-4 coppie che
+  organizzano il senso), "Parentele stilistiche" (1-3 riferimenti motivati
+  empiricamente, sostituisce Collocazione estetica), "Criticità tecniche"
+  (invariata), "Suggerimenti compositivi" (drammaturgici e performativi,
+  niente gesti DSP). Nuove regole: numeri solo a conferma interpretativa
+  (max 1-2 per paragrafo), niente percentuali distributive nude, niente
+  "Nessuna attribuzione plausibile" come frase esplicita, niente Q/dB/ms/
+  plugin nei suggerimenti. Driver: confronto con analisi manuale di Air
+  Piece di John Heineman (1970), salvata come
+  `references/user_feedback/Air_Piece.md` come gold interpretativo.
+  Feedback utente: lettura precedente troppo frammentata e tecnica,
+  mancava interpretazione concettuale.
 - **v0.6.2** (16/04/2026): hotfix PDF/agente emerso dalla validazione
   visuale di `audio7_report.pdf`. Tre regressori fixati in blocco: (a)
   celle timeline CLAP troncate a 35 char in `report_pdf.py::_build_clap_block`

@@ -228,11 +228,85 @@ def mark_plausibility_deterministic(
     return out
 
 
+def krause_from_panns_frames(
+    classifier: dict | None,
+) -> dict:
+    """Stima la distribuzione Krause dai PANNs frame dominanti (v0.6.6).
+
+    Usa `classifier.top_dominant_frames` (lista di {name, pct}) mappando
+    ogni label AudioSet a una categoria Krause via
+    `config.PANNS_LABEL_TO_KRAUSE`. Le pct dei frame vengono sommate per
+    categoria e normalizzate a 1.0. Label non mappate contribuiscono a
+    "unknown" (non a "mista"). Se frame totale < 50% o classifier
+    assente, ritorna `{"available": False, ...}`.
+
+    Ritorna dict con:
+    - `distribution` (dict cat -> pct normalizzato)
+    - `dominant` ({"value": cat, "pct": float, "confidence": high|medium|low})
+    - `coverage` (frazione dei frame mappati su categorie Krause note)
+    """
+    if not classifier:
+        return {"available": False, "reason": "classifier assente"}
+    frames = classifier.get("top_dominant_frames") or []
+    if not frames:
+        return {"available": False, "reason": "nessun frame dominante"}
+
+    by_cat: dict[str, float] = {"biofonia": 0.0, "antropofonia": 0.0,
+                                 "geofonia": 0.0, "unknown": 0.0}
+    total = 0.0
+    for f in frames:
+        name = f.get("name")
+        pct = float(f.get("pct", 0))
+        if pct <= 0:
+            continue
+        total += pct
+        cat = config.PANNS_LABEL_TO_KRAUSE.get(name, "unknown")
+        by_cat[cat] += pct
+
+    if total < 50.0:
+        return {
+            "available": False,
+            "reason": f"copertura frame troppo bassa ({total:.1f}%)",
+            "total_pct": round(total, 2),
+        }
+
+    mapped_total = sum(v for k, v in by_cat.items() if k != "unknown")
+    if mapped_total < 1e-6:
+        return {
+            "available": False,
+            "reason": "nessun frame mappato su Krause",
+            "total_pct": round(total, 2),
+        }
+
+    distribution = {
+        cat: round(pct / mapped_total, 3)
+        for cat, pct in by_cat.items()
+        if cat != "unknown" and pct > 0
+    }
+    dom_cat, dom_pct = max(distribution.items(), key=lambda kv: kv[1])
+    if dom_pct >= 0.60:
+        conf = "high"
+    elif dom_pct >= 0.40:
+        conf = "medium"
+    else:
+        conf = "low"
+
+    coverage = round(mapped_total / total, 3) if total > 0 else 0.0
+    return {
+        "available": True,
+        "distribution": distribution,
+        "dominant": {"value": dom_cat, "pct": dom_pct, "confidence": conf},
+        "coverage": coverage,
+        "source_total_pct": round(total, 2),
+    }
+
+
 def aggregate_academic_hints(
     top_global: list[dict],
     vocabulary: dict,
     mapping: dict,
     min_score: float = 0.15,
+    classifier: dict | None = None,
 ) -> dict:
     """Aggrega hint accademici dai top-K tag CLAP, pesando per score cosine.
 
@@ -338,6 +412,12 @@ def aggregate_academic_hints(
         sum(r["_score"] for r in resolved) / len(resolved), 3
     )
 
+    # v0.6.6: cross-check Krause da PANNs frame dominanti, indipendente
+    # dal Krause CLAP-based. Serve a rilevare inconsistenze (caso Sud Risset:
+    # NDSI +0.516, ma Krause CLAP 4% biofonia per dominanza di prompt
+    # antropofonici nella top-20 CLAP).
+    krause_panns = krause_from_panns_frames(classifier)
+
     return {
         "available": True,
         "n_tags_used": len(resolved),
@@ -347,6 +427,7 @@ def aggregate_academic_hints(
             "distribution": krause_dist,
             "dominant": dominant_with_confidence(krause_dist),
         },
+        "krause_cross_check": krause_panns,
         "schafer_role": {
             "distribution": schafer_role_dist,
             "present": present_values(schafer_role_dist, 0.10),

@@ -3,8 +3,8 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.5 (17 aprile 2026)
-**Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.6.6 (18 aprile 2026)
+**Test suite**: 147 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
@@ -303,6 +303,28 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.6** (18/04/2026): hotfix dalle 5 analisi blind del corpus
+  Nottoli (Truax Basilica, Truax Song of Songs I, Nono Fabbrica
+  illuminata, Risset Sud part 1, Nono Non consumiamo Marx). Quattro
+  patch atomiche: (a) vocabolario CLAP v1.7 con 5 categorie nuove e
+  33 prompt (ambienti industriali, soundscape politico urbano,
+  elektronische Musik storica, sintesi digitale storica, canto
+  liturgico e cantillazione) per coprire domini semantici
+  sistematicamente invisibili (Nono industriale, Nono politico,
+  Fonologia RAI, MUSIC V, canto monastico); (b) plausibility
+  pre-filter deterministico su 5 pattern di falso positivo
+  ricorrenti (rubinetto, preghiera, spiaggia mediterranea, biofonia
+  su elettronico, treno su bande basse stretched), embrione della
+  v0.7.0 completa; (c) prompt agente "lingua != scuola compositore"
+  con 4 casi documentati + indicatori tecnici per 4 scuole
+  (Fonologia RAI, GRM, WSP/SFU, WDR) per correggere il bias di
+  attribuzione emerso su Song of Songs I (EN ma canadese) e Non
+  consumiamo Marx (FR ma italiano Fonologia); (d) Krause cross-check
+  da PANNs frame dominanti tramite `config.PANNS_LABEL_TO_KRAUSE`
+  per rilevare inconsistenze col Krause CLAP-based (caso Sud: NDSI
+  +0.516 vs Krause CLAP 4% biofonia). 147 test passati. Driver:
+  5 file feedback in `references/user_feedback/` + research log in
+  `~/.claude/projects/.../memory/project_soundscape_research_log.md`.
 - **v0.6.5** (17/04/2026): correzione chirurgica della regressione
   v0.6.4. Il confronto blind di 4 brani (Truax Song of Songs I, Nono
   Fabbrica, Risset Sud, Nono Non consumiamo Marx) ha mostrato bias

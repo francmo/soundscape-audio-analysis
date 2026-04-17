@@ -1,5 +1,96 @@
 # Changelog
 
+## [0.6.6] - 2026-04-18
+
+Hotfix release che traduce in patch concrete i feedback del confronto
+blind del corpus Nottoli (5 brani in `references/user_feedback/`,
+commit `020c0cc`). Quattro patch atomiche, nessuna regressione,
+147 test passati + 2 skipped.
+
+### Added
+
+- **Vocabolario CLAP v1.7 (+5 categorie, +33 prompt)**: `ambienti
+  industriali` (laminatoio, altoforno, officina, macchinari, fiamma
+  ossidrica, catena di montaggio, nastro magnetico d'archivio),
+  `soundscape politico urbano` (slogan, contestazione studentesca,
+  scritte murali, sciopero, megafono, occupazione, archivio Sessantotto,
+  piazza politica), `elektronische Musik storica` (sinusoidi pure,
+  oscillatore sweep, rumore bianco filtrato, ring modulation, nastro
+  con voce processata, feedback Fonologia), `sintesi digitale storica`
+  (additiva percussiva, spettrale, campana sintetica di Risset,
+  cross-sintesi, MUSIC V envelope, granulare real-time), `canto
+  liturgico e cantillazione` (monastico maschile, salmodia latina,
+  cantillazione ebraica, gregoriano, coro liturgico, shofar). Totale
+  236 prompt, 24 categorie. `references/clap_academic_mapping_it.json`
+  v1.2 -> v1.3 con i 5 `category_defaults` associati.
+- **Plausibility pre-filter deterministico** (`scripts/clap_mapping.py::
+  mark_plausibility_deterministic`): marca `plausibility: low|medium|high`
+  sui tag CLAP in base al supporto PANNs. Copre 5 pattern di falso
+  positivo emersi dal confronto blind: `acqua` (rubinetto/fontana),
+  `preghiera` (collettiva sussurrata in chiesa), `spiaggia_mediterranea`
+  (onde e voci distanti), `biofonia_insetti` (grilli/cicale/gallo su
+  elettronico), `treno` (bande basse stretched). Soglie low/medium
+  per pattern in `config.PLAUSIBILITY_PATTERNS`. Embrione della
+  v0.7.0 plausibility check completa (ROADMAP).
+- **Krause cross-check da PANNs frame** (`scripts/clap_mapping.py::
+  krause_from_panns_frames`): stima indipendente della distribuzione
+  Krause (biofonia/antropofonia/geofonia) calcolata dai PANNs
+  `top_dominant_frames` via mapping deterministico
+  `config.PANNS_LABEL_TO_KRAUSE` (~70 label AudioSet). Esposto come
+  `clap.academic_hints.krause_cross_check` nel summary JSON. Serve
+  a rilevare inconsistenze col Krause CLAP-based (caso *Sud* Risset:
+  NDSI +0.516 ma Krause CLAP 4% biofonia).
+
+### Changed
+
+- **`templates/agent_prompt.md` v0.6.3 -> v0.6.6** e file subagent
+  `~/.claude/agents/soundscape-composer-analyst.md`:
+  - Nuova sezione "Tag CLAP con flag plausibility": ignora `low`,
+    tratta `medium` come ipotesi, usa `high` normalmente.
+  - Nuova sezione "Attribuzione stilistica: lingua del parlato non
+    implica scuola compositore". 4 casi documentati (Truax/Nono/
+    Berio/Stockhausen) + indicatori tecnici operativi per 4 scuole
+    (Fonologia RAI, GRM, WSP/SFU, WDR). Regola di risoluzione:
+    quando gli indicatori tecnici contraddicono la lingua, cita la
+    scuola tecnicamente corrispondente.
+- **`scripts/semantic_clap.py::clap_summary`**: accetta parametro
+  opzionale `classifier` per propagare i PANNs a
+  `aggregate_academic_hints` e calcolare `krause_cross_check`.
+- **`scripts/cli.py`**: dopo `mark_geo_specific_tags`, chiama
+  `mark_plausibility_deterministic`. Passa `classifier` a
+  `clap_summary`.
+
+### Internal
+
+- `scripts/__init__.py`, `pyproject.toml`, `scripts/report_cmd.py`,
+  `scripts/report_pdf.py`: bump 0.6.5 -> 0.6.6 (3 stringhe user-facing
+  in report_pdf).
+- Test suite: 147 passati + 2 skipped (141 v0.6.5 + 6 nuovi: 7 su
+  plausibility meno alcuni accorpamenti + 4 su krause_from_panns_frames
+  e aggregate con cross_check).
+
+### Driver
+
+Cinque feedback blind in `references/user_feedback/` (Truax_Basilica,
+Truax_SongOfSongs_I, Nono_FabbricaIlluminata, Risset_Sud_part1,
+Nono_NonConsumiamoMarx) hanno identificato 8 pattern trasversali
+documentati in `~/.claude/projects/-Users-francescomariano/memory/
+project_soundscape_research_log.md`. La v0.6.6 risponde a 4 dei pattern
+emersi:
+1. Gap del vocabolario su ambienti industriali + soundscape politico +
+   elektronische Musik + sintesi storica + canto liturgico (patch
+   vocabolario).
+2. 5 allucinazioni CLAP ricorrenti (patch plausibility).
+3. Bias lingua -> scuola compositore dell'agente (patch prompt).
+4. Inconsistenza interna Krause CLAP vs NDSI vs frame PANNs (patch
+   cross-check).
+
+Rimangono aperti per future patch:
+- Rendering PDF dei flag `plausibility` (terzo livello di markup).
+- Esecuzione di una nuova analisi blind dei 5 brani Nottoli con v0.6.6
+  per misurare empiricamente l'effetto delle patch (validazione prima
+  di v0.7.0 plausibility completa e v0.7.1 benchmark sistematico).
+
 ## [0.6.5] - 2026-04-17
 
 Correzione chirurgica della regressione v0.6.4. Il confronto blind

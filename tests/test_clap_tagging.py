@@ -20,11 +20,11 @@ def _fixtures():
 
 
 def test_vocabulary_load():
-    """v0.6.5: il vocabolario v1.6 ha almeno 200 prompt e 19 categorie."""
+    """v0.6.6: il vocabolario v1.7 ha almeno 230 prompt e 24 categorie."""
     vocab = load_vocabulary()
     assert "prompts" in vocab
-    assert vocab["version"] == "1.6"
-    assert len(vocab["prompts"]) >= 200
+    assert vocab["version"] == "1.7"
+    assert len(vocab["prompts"]) >= 230
     # Ogni prompt ha i campi obbligatori
     for p in vocab["prompts"]:
         assert "id" in p and "text" in p and "category" in p
@@ -40,6 +40,15 @@ def test_vocabulary_load():
     assert "utterance" in cats
     utt = [p for p in vocab["prompts"] if p["category"] == "utterance"]
     assert len(utt) >= 8, f"categoria utterance ha solo {len(utt)} prompt"
+    # v0.6.6: 5 nuove categorie dal confronto blind corpus Nottoli
+    for cat in (
+        "ambienti industriali",
+        "soundscape politico urbano",
+        "elektronische Musik storica",
+        "sintesi digitale storica",
+        "canto liturgico e cantillazione",
+    ):
+        assert cat in cats, f"categoria '{cat}' mancante nel vocabolario v1.7"
 
 
 @pytest.mark.skipif(not CLAP_CHECKPOINT_FILE.exists(),

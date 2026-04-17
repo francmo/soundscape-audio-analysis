@@ -1,9 +1,9 @@
 {
-  "version": "1.6",
+  "version": "1.7",
   "generated_at": "2026-04-17",
   "model": "LAION-CLAP music_audioset_epoch_15_esc_90",
   "language": "it",
-  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.3 (v0.5.2): espansione da 172 a 193 prompt sulla base del feedback Presque Rien N°1 di Luc Ferrari. Nuova categoria 'paesaggi mediterranei generici' (10 prompt) per affiancare 'paesaggi italiani specifici' su materiale mediterraneo non italiano (Croazia, Grecia, Spagna, Francia mediterranea). Estensioni: geofonia estesa +3 (mare calmo onde leggere, sciabordio molo, brezza marina alba), biofonia +3 (gallo all'alba villaggio costiero, gabbiani in volo distante, coro rane mare), antropofonia urbana +3 (pescatori dalle barche, bambini in lingua straniera, mercato pesce), antropofonia meccanica +2 (peschereccio diesel piccolo cabotaggio, catene di barca). Schema invariato. v1.4 (16/04/2026): aggiunta categoria utterance (10 prompt utt_01..utt_10) per gesti vocali umani e non-umani trattati come oggetti sonori (Wishart 1996). v1.5 (17/04/2026): aggiunti 4 prompt elx_14..elx_17 per materiali tonali campanari processati con time-stretch estremo (emerso da confronto blind con Truax 'Basilica' 1992: PANNs/CLAP precedenti non riconoscevano campane trasformate al 20x). v1.6 (17/04/2026, regressione): rimossi elx_14..elx_17 perche' matchavano troppo largo su materiali tonali non-campanari (risonanze metalliche industriali di Nono 'La fabbrica illuminata' Italsider, sintesi additiva MUSIC V di Risset 'Sud'), provocando falsi positivi sistemici tipo 'campane trasfigurate in drone armonico' con attribuzione errata a Truax Basilica. Ritorno a 203 prompt come in v1.4. La descrizione di campane trasformate e' demandata alla narrativa di narrative.py e all'agente compositivo, non a tag CLAP dedicati.",
+  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.3 (v0.5.2): espansione da 172 a 193 prompt sulla base del feedback Presque Rien N°1 di Luc Ferrari. Nuova categoria 'paesaggi mediterranei generici' (10 prompt) per affiancare 'paesaggi italiani specifici' su materiale mediterraneo non italiano (Croazia, Grecia, Spagna, Francia mediterranea). Estensioni: geofonia estesa +3 (mare calmo onde leggere, sciabordio molo, brezza marina alba), biofonia +3 (gallo all'alba villaggio costiero, gabbiani in volo distante, coro rane mare), antropofonia urbana +3 (pescatori dalle barche, bambini in lingua straniera, mercato pesce), antropofonia meccanica +2 (peschereccio diesel piccolo cabotaggio, catene di barca). Schema invariato. v1.4 (16/04/2026): aggiunta categoria utterance (10 prompt utt_01..utt_10) per gesti vocali umani e non-umani trattati come oggetti sonori (Wishart 1996). v1.5 (17/04/2026): aggiunti 4 prompt elx_14..elx_17 per materiali tonali campanari processati con time-stretch estremo (emerso da confronto blind con Truax 'Basilica' 1992: PANNs/CLAP precedenti non riconoscevano campane trasformate al 20x). v1.6 (17/04/2026, regressione): rimossi elx_14..elx_17 perche' matchavano troppo largo su materiali tonali non-campanari (risonanze metalliche industriali di Nono 'La fabbrica illuminata' Italsider, sintesi additiva MUSIC V di Risset 'Sud'), provocando falsi positivi sistemici tipo 'campane trasfigurate in drone armonico' con attribuzione errata a Truax Basilica. Ritorno a 203 prompt come in v1.4. La descrizione di campane trasformate e' demandata alla narrativa di narrative.py e all'agente compositivo, non a tag CLAP dedicati. v1.7 (17/04/2026, v0.6.6): aggiunte 5 categorie (33 prompt nuovi) dal confronto blind corpus Nottoli: 'ambienti industriali' (ind_01..ind_07) per Nono 'La fabbrica illuminata' (laminatoio, altoforno, officina, macchinari, fiamma ossidrica, catena di montaggio, nastro magnetico d'archivio); 'soundscape politico urbano' (pol_01..pol_08) per Nono 'Non consumiamo Marx' (slogan, contestazione studentesca, scritte murali, sciopero, megafono, occupazione, archivio Sessantotto, piazza politica); 'elektronische Musik storica' (elk_01..elk_06) per Studio Fonologia RAI e WDR (sinusoidi pure, oscillatore sweep, rumore bianco filtrato, ring modulation, nastro con voce processata, feedback controllato); 'sintesi digitale storica' (sdg_01..sdg_06) per Risset 'Sud' e MUSIC V/Csound (additiva percussiva metallica, spettrale con partials decrescenti, campana sintetica a spettro modulato, cross-sintesi field recording/strumento, MUSIC V envelope esponenziale, granulare parametrica); 'canto liturgico e cantillazione' (lit_01..lit_06) per Truax 'Song of Songs I' (canto monastico maschile, salmodia latina, cantillazione ebraica, gregoriano in abbazia, coro liturgico con eco, shofar rituale). Totale prompt 203 -> 236, categorie 19 -> 24.",
   "prompts": [
     {
       "id": "geo_01",
@@ -1019,6 +1019,171 @@
       "id": "utt_10",
       "category": "utterance",
       "text": "Coro vocale non semantico denso"
+    },
+    {
+      "id": "ind_01",
+      "category": "ambienti industriali",
+      "text": "Laminatoio in acciaieria a caldo"
+    },
+    {
+      "id": "ind_02",
+      "category": "ambienti industriali",
+      "text": "Altoforno con ventilazione e colata"
+    },
+    {
+      "id": "ind_03",
+      "category": "ambienti industriali",
+      "text": "Officina meccanica con martelli pneumatici"
+    },
+    {
+      "id": "ind_04",
+      "category": "ambienti industriali",
+      "text": "Fabbrica con macchinari pesanti in funzione"
+    },
+    {
+      "id": "ind_05",
+      "category": "ambienti industriali",
+      "text": "Acciaio tagliato con fiamma ossidrica"
+    },
+    {
+      "id": "ind_06",
+      "category": "ambienti industriali",
+      "text": "Catena di montaggio con pressa idraulica"
+    },
+    {
+      "id": "ind_07",
+      "category": "ambienti industriali",
+      "text": "Nastro magnetico storico con rumore di fondo"
+    },
+    {
+      "id": "pol_01",
+      "category": "soundscape politico urbano",
+      "text": "Slogan di manifestazione politica in corteo"
+    },
+    {
+      "id": "pol_02",
+      "category": "soundscape politico urbano",
+      "text": "Cortina di voci da contestazione studentesca"
+    },
+    {
+      "id": "pol_03",
+      "category": "soundscape politico urbano",
+      "text": "Scritte murali di protesta declamate"
+    },
+    {
+      "id": "pol_04",
+      "category": "soundscape politico urbano",
+      "text": "Sciopero generale con cori di piazza"
+    },
+    {
+      "id": "pol_05",
+      "category": "soundscape politico urbano",
+      "text": "Megafono di manifestazione in ambiente urbano"
+    },
+    {
+      "id": "pol_06",
+      "category": "soundscape politico urbano",
+      "text": "Occupazione di spazio pubblico con voci militanti"
+    },
+    {
+      "id": "pol_07",
+      "category": "soundscape politico urbano",
+      "text": "Registrazione d'archivio di manifestazione del Sessantotto"
+    },
+    {
+      "id": "pol_08",
+      "category": "soundscape politico urbano",
+      "text": "Piazza politica con folla e slogan sovrapposti"
+    },
+    {
+      "id": "elk_01",
+      "category": "elektronische Musik storica",
+      "text": "Generatore di sinusoidi a frequenza pura"
+    },
+    {
+      "id": "elk_02",
+      "category": "elektronische Musik storica",
+      "text": "Oscillatore elettronico con sweep di frequenza"
+    },
+    {
+      "id": "elk_03",
+      "category": "elektronische Musik storica",
+      "text": "Rumore bianco filtrato a banda stretta"
+    },
+    {
+      "id": "elk_04",
+      "category": "elektronische Musik storica",
+      "text": "Modulazione ad anello di due sinusoidi"
+    },
+    {
+      "id": "elk_05",
+      "category": "elektronische Musik storica",
+      "text": "Nastro magnetico con voce processata elettronicamente"
+    },
+    {
+      "id": "elk_06",
+      "category": "elektronische Musik storica",
+      "text": "Feedback controllato di Studio di Fonologia anni Sessanta"
+    },
+    {
+      "id": "sdg_01",
+      "category": "sintesi digitale storica",
+      "text": "Sintesi additiva di suoni percussivi metallici"
+    },
+    {
+      "id": "sdg_02",
+      "category": "sintesi digitale storica",
+      "text": "Sintesi strumentale spettrale con parziali decrescenti"
+    },
+    {
+      "id": "sdg_03",
+      "category": "sintesi digitale storica",
+      "text": "Campana sintetica a spettro modulato di Risset"
+    },
+    {
+      "id": "sdg_04",
+      "category": "sintesi digitale storica",
+      "text": "Cross-sintesi timbrica fra field recording e strumento sintetico"
+    },
+    {
+      "id": "sdg_05",
+      "category": "sintesi digitale storica",
+      "text": "Suono digitale con envelope esponenziale di MUSIC V"
+    },
+    {
+      "id": "sdg_06",
+      "category": "sintesi digitale storica",
+      "text": "Iterazione granulare parametrica di sintesi real-time"
+    },
+    {
+      "id": "lit_01",
+      "category": "canto liturgico e cantillazione",
+      "text": "Canto monastico maschile in risonanza di chiesa"
+    },
+    {
+      "id": "lit_02",
+      "category": "canto liturgico e cantillazione",
+      "text": "Salmodia liturgica in latino"
+    },
+    {
+      "id": "lit_03",
+      "category": "canto liturgico e cantillazione",
+      "text": "Cantillazione ebraica tradizionale"
+    },
+    {
+      "id": "lit_04",
+      "category": "canto liturgico e cantillazione",
+      "text": "Canto gregoriano in abbazia"
+    },
+    {
+      "id": "lit_05",
+      "category": "canto liturgico e cantillazione",
+      "text": "Coro liturgico con eco di navata"
+    },
+    {
+      "id": "lit_06",
+      "category": "canto liturgico e cantillazione",
+      "text": "Shofar in atmosfera rituale"
     }
   ]
 }

@@ -160,6 +160,74 @@ def mark_geo_specific_tags(top_global: list[dict]) -> list[dict]:
     return out
 
 
+def mark_plausibility_deterministic(
+    top_global: list[dict],
+    classifier: dict | None,
+) -> list[dict]:
+    """Marca i tag CLAP sistematicamente allucinati con `plausibility`
+    a tre livelli (low|medium|high), in base al supporto PANNs (v0.6.6).
+
+    Embrione della v0.7.0 plausibility check completa. Copre 5 pattern
+    emersi dal confronto blind corpus Nottoli: acqua del rubinetto,
+    preghiera collettiva sussurrata, spiaggia mediterranea, biofonia
+    su brani elettronici/processati, treno su bande basse stretched.
+
+    Per ogni pattern in `config.PLAUSIBILITY_PATTERNS`, se il prompt
+    matcha una delle keywords, si prende il max score PANNs fra le label
+    `panns_any` e lo si confronta con `threshold_low` e `threshold_medium`:
+
+    - `max_panns < threshold_low` -> `plausibility: "low"` (falso positivo
+      probabile: il pattern evoca un referente concreto che PANNs non vede).
+    - `threshold_low <= max_panns < threshold_medium` -> `plausibility: "medium"`
+      (c'e' qualche supporto empirico, ma debole).
+    - `max_panns >= threshold_medium` -> `plausibility: "high"` (supporto
+      empirico presente).
+
+    Tag che non matchano nessun pattern non ricevono il flag `plausibility`
+    (equivalente a supporto non valutato, non a "high").
+
+    Non rimuove tag (li lascia visibili). Il flag e' propagato al payload
+    dell'agente e puo' essere reso dal PDF come terzo livello di markup.
+    """
+    panns_by_label: dict[str, float] = {}
+    if classifier:
+        for t in classifier.get("top_global", []) or []:
+            name = t.get("name")
+            if not isinstance(name, str):
+                continue
+            panns_by_label[name] = float(t.get("score", 0))
+
+    out = []
+    for tag in top_global:
+        new_tag = dict(tag)
+        prompt_lower = (tag.get("prompt") or "").lower()
+        for pattern in config.PLAUSIBILITY_PATTERNS:
+            if not any(kw in prompt_lower for kw in pattern["keywords"]):
+                continue
+            max_support = max(
+                (panns_by_label.get(lbl, 0.0) for lbl in pattern["panns_any"]),
+                default=0.0,
+            )
+            if max_support < pattern["threshold_low"]:
+                level = "low"
+            elif max_support < pattern["threshold_medium"]:
+                level = "medium"
+            else:
+                level = "high"
+            new_tag["plausibility"] = level
+            new_tag["plausibility_pattern"] = pattern["name"]
+            new_tag["plausibility_support_score"] = round(max_support, 4)
+            new_tag["plausibility_reason"] = (
+                f"{pattern['reason']}: max PANNs fra "
+                f"{list(pattern['panns_any'])} = {max_support:.3f} "
+                f"(soglie low={pattern['threshold_low']}, "
+                f"medium={pattern['threshold_medium']})"
+            )
+            break  # Un tag puo' matchare un solo pattern
+        out.append(new_tag)
+    return out
+
+
 def aggregate_academic_hints(
     top_global: list[dict],
     vocabulary: dict,

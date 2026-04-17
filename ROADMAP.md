@@ -3,7 +3,7 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.3 (17 aprile 2026)
+**Versione corrente**: 0.6.5 (17 aprile 2026)
 **Test suite**: 148 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
@@ -107,7 +107,7 @@ misurare la qualita' descrittiva. Tre conseguenze sulla pianificazione:
 5. **Soundscapy/ISO 12913-3** (era v0.7.0) scivola a v0.8.0: dimensione
    perceptive interessante ma meno urgente del riconoscimento eventi.
 
-### v0.6.4 — Patch indici ecoacustici (3-4 h)
+### v0.6.5 — Patch indici ecoacustici (3-4 h)
 
 Driver: ricerca web 16/04/2026
 (`references/external_feedback/research_2026-04-16_soundscape_texts.md`)
@@ -128,7 +128,7 @@ di soundscape predice il *cambiamento* di community.
   di soundscape, non di valore assoluto."
 - Test su fixture corte gia' esistenti.
 
-### v0.6.5 — Hotfix dipendenti dal feedback utente (continuo)
+### v0.6.6 — Hotfix dipendenti dal feedback utente (continuo)
 
 Traduzione di ogni nuovo `references/user_feedback/<brano>.md` in patch
 concrete: prompt CLAP aggiunti/rimossi, soglie ricalibrate. Cicli da 2-4 h
@@ -303,6 +303,31 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.5** (17/04/2026): correzione chirurgica della regressione
+  v0.6.4. Il confronto blind di 4 brani (Truax Song of Songs I, Nono
+  Fabbrica, Risset Sud, Nono Non consumiamo Marx) ha mostrato bias
+  sistematico verso Truax Basilica: due brani su quattro (Fabbrica,
+  Sud) attribuiti erroneamente perche' i prompt CLAP elx_14..17
+  matchavano largo su risonanze metalliche tonali (laminatoi
+  industriali, sintesi additiva MUSIC V) e la regola WSP-vs-GRM
+  forzava Truax come alternativa. Rimossi elx_14..17 (vocabolario
+  1.5 -> 1.6, 207 -> 203 prompt). Rimossa la regola di discriminazione
+  WSP-vs-GRM dal prompt (WSP resta voce paritetica, non alternativa
+  preferita). Mantenuta patch #1 "tag PANNs marginali" che aveva
+  funzionato. Lezione: prompt CLAP troppo specifici matchano casi
+  analoghi e producono bias.
+- **v0.6.4** (17/04/2026): patch dal primo test blind del corpus
+  Nottoli (Truax Basilica). Tre interventi: (a) regola PANNs marginali
+  contraddittori (score < 0.40 su eventi concreti in contesto
+  astratto vanno trattati come ipotesi, non fatti); (b) vocabolario
+  CLAP v1.4 -> v1.5 con 4 prompt elx_14..elx_17 per campane
+  trasformate/risonanze metalliche dilatate/oggetti tonali campanari;
+  (c) tassonomia parentele stilistiche estesa con GRM/WSP-SFU/Fonologia
+  RAI/WDR/ambient/granular/broadcast + regola di discriminazione
+  WSP-vs-GRM per materiali granulari dilatati non-acusmatici-francesi.
+  Driver: confronto track_01 Basilica in blind (prompt v0.6.3 aveva
+  accettato PANNs "Train" come dato, perso attribuzione a Truax,
+  ricaduto su parentele GRM).
 - **v0.6.3** (17/04/2026): cambio di paradigma della lettura compositiva
   dell'agente. Riscrittura di `templates/agent_prompt.md` e
   `~/.claude/agents/soundscape-composer-analyst.md` con nuova struttura a 6

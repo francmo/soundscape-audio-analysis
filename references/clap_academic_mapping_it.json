@@ -5,7 +5,7 @@
   "language": "it",
   "vocabulary_ref": {
     "path": "references/clap_vocabulary_it.json",
-    "min_version": "1.4"
+    "min_version": "1.6"
   },
   "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping. v1.2 (16/04/2026): aggiunto enum schaeffer_detail (22 valori, sotto-tipi del Solfege Schaeffer 1966), enum smalley_growth (6 valori, growth processes Smalley 1997), category_defaults per nuova categoria utterance Wishart 1996.",
   "enums": {

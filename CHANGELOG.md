@@ -1,5 +1,137 @@
 # Changelog
 
+## [0.6.5] - 2026-04-17
+
+Correzione chirurgica della regressione v0.6.4. Il confronto blind
+di 4 brani del corpus Nottoli (Truax Song of Songs I, Nono La
+fabbrica illuminata, Risset Sud, Nono Non consumiamo Marx) ha
+mostrato che v0.6.4 aveva introdotto un **bias sistematico** verso
+l'attribuzione a Truax *Basilica*/*Song of Songs*: due brani su
+quattro (Fabbrica, Sud) venivano attribuiti erroneamente a Truax
+WSP/SFU perche' i nuovi prompt CLAP elx_14..elx_17 matchavano largo
+su qualunque risonanza metallica tonale dilatata (laminatoi
+industriali di Nono, sintesi additiva MUSIC V di Risset), facendo
+scattare "campane trasfigurate" come top-CLAP. Combinato con la
+regola "WSP come alternativa al GRM su granular dilatato", l'agente
+andava sistematicamente su Truax.
+
+### Reverted
+
+- **`references/clap_vocabulary_it.json` v1.5 -> v1.6**: rimossi i 4
+  prompt elx_14..elx_17 introdotti in v0.6.4 (campane processate con
+  time-stretch). Totale prompt 207 -> 203 (come v1.4). Motivo: troppo
+  generici, creavano falsi positivi sistemici su materiali
+  tonali-risonanti non-campanari. La descrizione di campane
+  trasformate resta demandata a narrative.py e all'agente compositivo.
+- **`references/clap_academic_mapping_it.json`**: bump
+  `vocabulary_ref.min_version` 1.5 -> 1.6.
+- **`templates/agent_prompt.md` + subagent file**: rimossa la "Regola
+  di discriminazione WSP-vs-GRM" introdotta in v0.6.4 che incitava
+  esplicitamente a considerare Truax su granular dilatato. La
+  tassonomia delle parentele resta con WSP/SFU come voce paritetica
+  (non come alternativa "preferita") fra GRM, Studio Fonologia RAI,
+  WDR, ambient/drone, granular/microsound, broadcast.
+- **Esempi di parentele troppo specifici** ("Basilica 1992", "Riverrun
+  1986", "Song of Songs 1992") rimossi dai prompt per non indurre
+  fissazione su quei brani.
+
+### Kept from v0.6.4
+
+- **Patch #1 "Tag PANNs marginali contraddittori"**: regola per
+  cautela su tag PANNs score < 0.40 che suggeriscono eventi concreti
+  in contesto astratto. Ha funzionato su Basilica (niente piu' "treno"
+  falso positivo come dato drammaturgico). Nessuna regressione
+  osservata.
+
+### Internal
+
+- Bump 0.6.4 -> 0.6.5 in `scripts/__init__.py`, `pyproject.toml`,
+  `scripts/report_cmd.py`, `scripts/report_pdf.py` (3 stringhe).
+- `tests/test_clap_tagging.py::test_vocabulary_load`: assertion
+  `vocab["version"] == "1.6"`.
+- Test suite: 134 passed, 2 skipped.
+
+### Driver
+
+Confronto blind di 4 brani Nottoli con v0.6.4 (track_02 Truax Song
+of Songs I, track_03 Nono Fabbrica, track_04 Risset Sud, track_05
+Nono Non consumiamo Marx). Tre attribuzioni errate (Fabbrica -> Truax
+Basilica, Sud -> Truax Basilica/Pacific, Song of Songs -> no
+attribuzione ma stile OK), un fallimento subprocess (track_05, return
+code 1 dopo 4 claude -p in parallelo, probabile rate limit).
+
+### Lezione
+
+Quando si aggiungono prompt CLAP per coprire un caso specifico, se il
+testo del prompt e' semanticamente sovrapponibile a casi comuni (es.
+"campana processata" vs "risonanza metallica generica"), CLAP matcha
+anche i casi comuni. Meglio lasciare che l'agente componga la
+descrizione fine da tag base piuttosto che da tag super-specifici.
+
+## [0.6.4] - 2026-04-17
+
+Patch derivata dal primo confronto del training blind. Track 01 del
+corpus Nottoli (Truax *Basilica* 1992) rivelava tre gap sistematici:
+
+1. L'agente ha accettato un tag PANNs marginale "Train"/"Rail"
+   (probabilmente falso positivo dalla banda bassa di campane
+   trasposte di ottava sotto via time-stretch 20x) come evento
+   documentario reale, costruendoci una scena, un binomio e un
+   suggerimento compositivo.
+2. Il vocabolario CLAP non aveva prompt per "campane processate con
+   time-stretch" o simili: il materiale e' stato descritto come
+   "drone armonico generico" invece di "campane trasformate".
+3. La sezione "Parentele stilistiche" tendeva sistematicamente al GRM
+   francese (Parmegiani, Radigue) quando il materiale era granulare
+   dilatato, mancando l'alternativa WSP/SFU canadese (Truax) che era
+   la collocazione corretta.
+
+### Changed
+
+- **`templates/agent_prompt.md` + `~/.claude/agents/soundscape-composer-analyst.md`**:
+  nuova sezione "Tag PANNs marginali contraddittori" con regola di
+  cautela. Un tag PANNs con score < 0.40 che suggerisce un evento
+  concreto in un contesto prevalentemente astratto/acusmatico viene
+  promosso a fatto solo se almeno un CLAP top-20 o la narrativa
+  segmentata lo corroborano. Caso tipico: campane stretched 20x
+  attivano PANNs "Train" come falso positivo sistematico.
+- **`templates/agent_prompt.md` + subagent file**: sezione "Parentele
+  stilistiche" estesa con tassonomia esplicita delle scuole (GRM,
+  WSP/SFU, Studio Fonologia RAI, WDR Koln, ambient/drone,
+  granular/microsound, broadcast) + regola di discriminazione
+  WSP-vs-GRM. Se il materiale e' granulare dilatato ma manca
+  l'approccio acusmatico francese classico, considera WSP/SFU
+  canadese come alternativa (Truax granular real-time, Westerkamp).
+
+### Added
+
+- **`references/clap_vocabulary_it.json` v1.4 -> v1.5**: 4 prompt
+  nuovi nella categoria "trasformazioni elettroacustiche":
+  `elx_14` "Campana di chiesa processata con time-stretch estremo",
+  `elx_15` "Risonanza metallica tonale dilatata oltre dieci volte",
+  `elx_16` "Oggetto tonale campanario trasfigurato in drone armonico",
+  `elx_17` "Serie armonica di campana granulata in orbita tonale".
+  Totale prompt 203 -> 207. Categorie invariate (19). Gli elx_14..17
+  ereditano automaticamente da `category_defaults` della categoria
+  (krause=antropofonia, schafer_role=sound-object, chion=ridotto,
+  truax=search).
+- **`references/clap_academic_mapping_it.json` v1.2**: bump
+  `vocabulary_ref.min_version` 1.4 -> 1.5.
+
+### Internal
+
+- Bump 0.6.3 -> 0.6.4 in `scripts/__init__.py`, `pyproject.toml`,
+  `scripts/report_cmd.py`, `scripts/report_pdf.py` (3 stringhe).
+- `tests/test_clap_tagging.py::test_vocabulary_load`: aggiornata
+  assertion `vocab["version"] == "1.5"`.
+- Test suite: 134 passed, 2 skipped.
+
+### Driver
+
+Confronto gap-per-gap di `track_01_report.pdf` (Truax *Basilica* in
+blind) contro `Nottoli-01-Truax-Basilica/analisi-sfu.md` (scheda
+ufficiale sfu.ca/~truax/basilica.html).
+
 ## [0.6.3] - 2026-04-17
 
 Cambio di paradigma della lettura compositiva dell'agente.

@@ -16,7 +16,7 @@ from scripts.semantic_clap import load_vocabulary
 
 def test_mapping_loads_and_has_required_keys():
     m = load_academic_mapping()
-    assert m["version"] == "1.2"
+    assert m["version"] == "1.3"
     assert "enums" in m and "category_defaults" in m and "prompts" in m
     for name, values in m["enums"].items():
         assert isinstance(values, list) and len(values) > 0, (

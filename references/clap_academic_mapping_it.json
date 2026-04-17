@@ -1,13 +1,13 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "schema_version": "1.0",
-  "generated_at": "2026-04-15",
+  "generated_at": "2026-04-17",
   "language": "it",
   "vocabulary_ref": {
     "path": "references/clap_vocabulary_it.json",
-    "min_version": "1.6"
+    "min_version": "1.7"
   },
-  "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping. v1.2 (16/04/2026): aggiunto enum schaeffer_detail (22 valori, sotto-tipi del Solfege Schaeffer 1966), enum smalley_growth (6 valori, growth processes Smalley 1997), category_defaults per nuova categoria utterance Wishart 1996.",
+  "notes": "Mapping post-hoc dei prompt CLAP italiani (clap_vocabulary_it.json v1.2) verso tassonomie accademiche: Schafer 1977 (keynote/signal/soundmark/sound-object, Hi-Fi/Lo-Fi), Truax 1984 (listening modes: background/readiness/search), Krause 2012 (biofonia/antropofonia/geofonia), Schaeffer 1966 (critere d'entretien: impulsivo/iterativo/tenuto + varianti compositive), Smalley 1997 (motion processes della spettromorfologia), Chion (tre ascolti: causale/semantico/ridotto), Westerkamp (soundwalk relevance). Usato dall'agente soundscape-composer-analyst per orientare la lettura critica, NON come verita empirica. Ogni prompt eredita i valori da category_defaults[categoria] e puo sovrascrivere singoli campi tramite prompts[id]. Il merge e superficiale e avviene a query-time in scripts/clap_mapping.py::get_prompt_mapping. v1.2 (16/04/2026): aggiunto enum schaeffer_detail (22 valori, sotto-tipi del Solfege Schaeffer 1966), enum smalley_growth (6 valori, growth processes Smalley 1997), category_defaults per nuova categoria utterance Wishart 1996. v1.3 (17/04/2026, v0.6.6): aggiunti 5 category_defaults per le nuove categorie del vocabolario v1.7 (ambienti industriali, soundscape politico urbano, elektronische Musik storica, sintesi digitale storica, canto liturgico e cantillazione), emerse dal confronto blind corpus Nottoli. min_version vocabolario 1.6 -> 1.7.",
   "enums": {
     "schafer_role": [
       "keynote",
@@ -260,6 +260,58 @@
       "westerkamp_soundwalk_relevance": false,
       "schaeffer_type": "tenuto",
       "smalley_motion": "oscillation"
+    },
+    "ambienti industriali": {
+      "krause": "antropofonia",
+      "schafer_role": "signal",
+      "schafer_fidelity": "lo-fi",
+      "chion": "causale",
+      "truax": "background",
+      "westerkamp_soundwalk_relevance": false,
+      "schaeffer_type": "trama",
+      "smalley_motion": "turbulence"
+    },
+    "soundscape politico urbano": {
+      "krause": "antropofonia",
+      "schafer_role": "signal",
+      "schafer_fidelity": "lo-fi",
+      "chion": "semantico",
+      "truax": "readiness",
+      "westerkamp_soundwalk_relevance": true,
+      "schaeffer_type": "iterativo",
+      "smalley_motion": "turbulence"
+    },
+    "elektronische Musik storica": {
+      "krause": "antropofonia",
+      "schafer_role": "sound-object",
+      "schafer_fidelity": "n/a",
+      "chion": "ridotto",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": false,
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "oscillation",
+      "smalley_growth": "endogeny"
+    },
+    "sintesi digitale storica": {
+      "krause": "antropofonia",
+      "schafer_role": "sound-object",
+      "schafer_fidelity": "hi-fi",
+      "chion": "ridotto",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": false,
+      "schaeffer_type": "tenuto-evolutivo",
+      "smalley_motion": "flow",
+      "schaeffer_detail": "morphing"
+    },
+    "canto liturgico e cantillazione": {
+      "krause": "antropofonia",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "hi-fi",
+      "chion": "semantico",
+      "truax": "readiness",
+      "westerkamp_soundwalk_relevance": true,
+      "schaeffer_type": "tenuto",
+      "smalley_motion": "flow"
     }
   },
   "prompts": {

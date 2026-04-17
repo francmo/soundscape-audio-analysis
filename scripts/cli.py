@@ -111,7 +111,12 @@ def _analyze_single(
         # Waveform caricata a 48 kHz per CLAP
         from .semantic import prepare_waveform
         clap_waveform = prepare_waveform(audio_path, sr=48000)
-        clap_res = semantic_clap.clap_summary(clap_waveform, 48000, enable=True)
+        # v0.6.6: passa classifier (PANNs) per calcolare krause_cross_check
+        # dentro academic_hints.
+        clap_res = semantic_clap.clap_summary(
+            clap_waveform, 48000, enable=True,
+            classifier=semantic_res.get("classifier") if do_semantic else None,
+        )
         # v0.5.1: marca tag CLAP speech-related che PANNs non supporta
         # come likely_hallucination. Non rimuove, solo annota.
         # v0.5.2: marca anche i tag italo-specifici con flag geo_specific.

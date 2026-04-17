@@ -224,6 +224,93 @@ PLAUSIBILITY_PATTERNS = (
     },
 )
 
+# Mapping delle label AudioSet (PANNs) verso categorie Krause (v0.6.6).
+# Usato da `aggregate_academic_hints` per produrre `krause_cross_check`, stima
+# indipendente della distribuzione Krause derivata dai frame dominanti PANNs,
+# separata dal calcolo CLAP-based. Serve a rilevare inconsistenze fra le due
+# stime (es. Sud di Risset: NDSI +0.516 biofonico, ma Krause hint CLAP-based
+# 4% biofonia per dominanza di prompt antropofonici nella top-10). Le
+# categorie coprono solo label ad alto segnale: molte label AudioSet
+# ("Music", "Speech") sono genericamente antropofoniche ma vengono classificate
+# con cautela. Label sconosciute cadono in "mista" di default.
+PANNS_LABEL_TO_KRAUSE = {
+    # Biofonia (animali, insetti, uccelli, fauna)
+    "Animal": "biofonia",
+    "Bird": "biofonia",
+    "Bird vocalization, bird call, bird song": "biofonia",
+    "Chirp, tweet": "biofonia",
+    "Cricket": "biofonia",
+    "Insect": "biofonia",
+    "Owl": "biofonia",
+    "Crow": "biofonia",
+    "Wild animals": "biofonia",
+    "Dog": "biofonia",
+    "Cat": "biofonia",
+    "Horse": "biofonia",
+    "Cow": "biofonia",
+    "Chicken, rooster": "biofonia",
+    "Wolf": "biofonia",
+    "Pigeon, dove": "biofonia",
+    "Duck": "biofonia",
+    "Cattle, bovinae": "biofonia",
+    "Pig": "biofonia",
+    "Sheep": "biofonia",
+    "Frog": "biofonia",
+    "Bee, wasp, etc.": "biofonia",
+    "Mosquito": "biofonia",
+    "Fly, housefly": "biofonia",
+    "Whale vocalization": "biofonia",
+    "Goat": "biofonia",
+    # Geofonia (elementi naturali non biologici)
+    "Water": "geofonia",
+    "Stream": "geofonia",
+    "Ocean": "geofonia",
+    "Wind": "geofonia",
+    "Thunder": "geofonia",
+    "Thunderstorm": "geofonia",
+    "Rain": "geofonia",
+    "Rain on surface": "geofonia",
+    "Fire": "geofonia",
+    "Crackle": "geofonia",  # spesso fuoco
+    "Waves, surf": "geofonia",
+    "Waterfall": "geofonia",
+    "Gurgling": "geofonia",
+    "Drip": "geofonia",
+    # Antropofonia (voce umana + musica + macchine + urbano)
+    "Speech": "antropofonia",
+    "Male speech, man speaking": "antropofonia",
+    "Female speech, woman speaking": "antropofonia",
+    "Child speech, kid speaking": "antropofonia",
+    "Singing": "antropofonia",
+    "Choir": "antropofonia",
+    "Chant": "antropofonia",
+    "Humming": "antropofonia",
+    "Narration, monologue": "antropofonia",
+    "Shout": "antropofonia",
+    "Crowd": "antropofonia",
+    "Laughter": "antropofonia",
+    "Cheering": "antropofonia",
+    "Applause": "antropofonia",
+    "Music": "antropofonia",
+    "Musical instrument": "antropofonia",
+    "Vehicle": "antropofonia",
+    "Car": "antropofonia",
+    "Train": "antropofonia",
+    "Rail transport": "antropofonia",
+    "Boat, Water vehicle": "antropofonia",
+    "Aircraft": "antropofonia",
+    "Motor vehicle (road)": "antropofonia",
+    "Engine": "antropofonia",
+    "Traffic noise, roadway noise": "antropofonia",
+    "Machinery": "antropofonia",
+    "Inside, small room": "antropofonia",
+    "Inside, large room or hall": "antropofonia",
+    "Environmental noise": "antropofonia",
+    "Outside, urban or manmade": "antropofonia",
+    "Race car, auto racing": "antropofonia",
+    "Run": "antropofonia",
+}
+
 # Narrativa (v0.2.2)
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"

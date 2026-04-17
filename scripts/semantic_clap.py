@@ -221,6 +221,7 @@ def clap_summary(
     segment_seconds: float = config.CLAP_SEGMENT_S,
     top_k: int = config.CLAP_TOP_K,
     include_embeddings: bool = True,
+    classifier: dict | None = None,
 ) -> dict:
     """Pipeline CLAP completa: carica vocabolario, embed audio + prompts,
     tag per segmento + globale. Ritorna dict serializzabile."""
@@ -250,7 +251,10 @@ def clap_summary(
         mapping = load_academic_mapping()
         academic_mapping_version = mapping.get("version", "")
         top20 = global_top_tags(audio_emb, prompt_emb, prompts, top_k=20)
-        academic_hints = aggregate_academic_hints(top20, vocab, mapping)
+        # v0.6.6: passa classifier per cross-check Krause da PANNs frame
+        academic_hints = aggregate_academic_hints(
+            top20, vocab, mapping, classifier=classifier
+        )
     except Exception as e:
         import sys as _sys
         print(

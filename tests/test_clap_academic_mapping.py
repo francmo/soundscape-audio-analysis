@@ -331,6 +331,115 @@ def test_mark_plausibility_untouched_on_unrelated_prompts():
     assert "plausibility" not in out[0]
 
 
+def test_krause_from_panns_frames_biofonia_dominante_su_sud_like():
+    """v0.6.6: frame PANNs con Cricket/Insect/Bird/Water dominanti
+    producono Krause biofonia. Driver: caso Sud di Risset dove Krause
+    CLAP-based era 4% biofonia mentre i frame PANNs erano ~28% biofonici."""
+    from scripts.clap_mapping import krause_from_panns_frames
+    classifier = {
+        "top_dominant_frames": [
+            {"name": "Music", "pct": 36.7},
+            {"name": "Cricket", "pct": 13.3},
+            {"name": "Water", "pct": 6.7},
+            {"name": "Environmental noise", "pct": 5.0},
+            {"name": "Bird vocalization, bird call, bird song", "pct": 5.0},
+            {"name": "Boat, Water vehicle", "pct": 3.3},
+            {"name": "Speech", "pct": 3.3},
+            {"name": "Insect", "pct": 3.3},
+        ],
+    }
+    out = krause_from_panns_frames(classifier)
+    assert out["available"] is True
+    d = out["distribution"]
+    # Biofonia: Cricket + Bird voc + Insect = 21.6 su 71.0 mappati
+    # Antropofonia: Music + Env noise + Boat + Speech = 48.3 su 71.0
+    # Geofonia: Water = 6.7 su 71.0
+    assert d["antropofonia"] > d["biofonia"]
+    assert d["biofonia"] > d["geofonia"]
+    # Antropofonia domina ma non a schiacciamento assoluto
+    assert out["dominant"]["value"] == "antropofonia"
+
+
+def test_krause_from_panns_frames_pure_biofonia_bosco():
+    """Un ambiente naturale con uccelli/cricket dominanti produce biofonia
+    come Krause dominante."""
+    from scripts.clap_mapping import krause_from_panns_frames
+    classifier = {
+        "top_dominant_frames": [
+            {"name": "Bird", "pct": 45.0},
+            {"name": "Cricket", "pct": 20.0},
+            {"name": "Wind", "pct": 15.0},
+            {"name": "Insect", "pct": 10.0},
+            {"name": "Environmental noise", "pct": 10.0},
+        ],
+    }
+    out = krause_from_panns_frames(classifier)
+    assert out["available"] is True
+    assert out["dominant"]["value"] == "biofonia"
+    assert out["dominant"]["confidence"] in ("high", "medium")
+
+
+def test_krause_from_panns_frames_insufficient_coverage():
+    """Se il totale frame e' sotto 50%, ritorna available=False."""
+    from scripts.clap_mapping import krause_from_panns_frames
+    classifier = {
+        "top_dominant_frames": [{"name": "Music", "pct": 30.0}],
+    }
+    out = krause_from_panns_frames(classifier)
+    assert out["available"] is False
+    assert "copertura" in out["reason"].lower()
+
+
+def test_krause_from_panns_frames_safe_with_no_classifier():
+    from scripts.clap_mapping import krause_from_panns_frames
+    assert krause_from_panns_frames(None)["available"] is False
+    assert krause_from_panns_frames({})["available"] is False
+    assert krause_from_panns_frames(
+        {"top_dominant_frames": []}
+    )["available"] is False
+
+
+def test_aggregate_academic_hints_includes_krause_cross_check():
+    """v0.6.6: aggregate_academic_hints con classifier propaga
+    krause_cross_check nel dict ritornato."""
+    vocab = load_vocabulary()
+    mapping = load_academic_mapping()
+    fake_top = [
+        {"id": "geo_01", "prompt": "Acqua che scorre in un ruscello",
+         "score": 0.35},
+        {"id": "geo_03", "prompt": "Vento fra alberi", "score": 0.30},
+        {"id": "bio_01", "prompt": "Canto di uccelli al mattino", "score": 0.28},
+    ]
+    classifier = {
+        "top_dominant_frames": [
+            {"name": "Bird", "pct": 50.0},
+            {"name": "Wind", "pct": 30.0},
+        ],
+    }
+    h = aggregate_academic_hints(fake_top, vocab, mapping, classifier=classifier)
+    assert h["available"] is True
+    assert "krause_cross_check" in h
+    assert h["krause_cross_check"]["available"] is True
+    # Biofonia da PANNs frame
+    assert h["krause_cross_check"]["dominant"]["value"] == "biofonia"
+
+
+def test_aggregate_academic_hints_krause_cross_check_unavailable_without_classifier():
+    """Senza classifier, krause_cross_check ha available=False."""
+    vocab = load_vocabulary()
+    mapping = load_academic_mapping()
+    fake_top = [
+        {"id": "geo_01", "prompt": "Acqua che scorre in un ruscello",
+         "score": 0.35},
+        {"id": "geo_03", "prompt": "Vento fra alberi", "score": 0.30},
+        {"id": "bio_01", "prompt": "Canto di uccelli al mattino", "score": 0.28},
+    ]
+    h = aggregate_academic_hints(fake_top, vocab, mapping)
+    assert h["available"] is True
+    assert "krause_cross_check" in h
+    assert h["krause_cross_check"]["available"] is False
+
+
 def test_mark_plausibility_safe_with_no_classifier():
     """classifier=None o vuoto: pattern matcha ma max_support=0 -> low."""
     from scripts.clap_mapping import mark_plausibility_deterministic

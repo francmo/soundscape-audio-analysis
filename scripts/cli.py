@@ -116,12 +116,24 @@ def _analyze_single(
         # come likely_hallucination. Non rimuove, solo annota.
         # v0.5.2: marca anche i tag italo-specifici con flag geo_specific.
         if clap_res.get("enabled") and clap_res.get("top_global"):
-            from .clap_mapping import mark_speech_hallucinations, mark_geo_specific_tags
+            from .clap_mapping import (
+                mark_speech_hallucinations,
+                mark_geo_specific_tags,
+                mark_plausibility_deterministic,
+            )
             classifier_res = semantic_res.get("classifier") if do_semantic else None
             clap_res["top_global"] = mark_speech_hallucinations(
                 clap_res["top_global"], classifier_res
             )
             clap_res["top_global"] = mark_geo_specific_tags(clap_res["top_global"])
+            # v0.6.6: pre-filtro deterministico per 5 pattern di falso positivo
+            # ricorrenti emersi dal confronto blind corpus Nottoli (acqua del
+            # rubinetto, preghiera collettiva, spiaggia mediterranea, biofonia
+            # su elettronico, treno su bande basse). Marca plausibility low/
+            # medium/high in base al supporto PANNs sulle label correlate.
+            clap_res["top_global"] = mark_plausibility_deterministic(
+                clap_res["top_global"], classifier_res
+            )
 
     # Check suggerimento --speech (v0.5.0): se PANNs rileva Speech dominante
     # nel top_dominant_frames oltre soglia e il flag non e' attivo, raccogliamo

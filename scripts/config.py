@@ -150,6 +150,80 @@ LOCATION_SPECIFIC_KEYWORDS_IT = {
     "campane di chiesa", "piazza italiana", "via",
 }
 
+# CLAP plausibility check deterministico (v0.6.6): pre-filtro sui tag CLAP
+# sistematicamente allucinati emersi dal confronto blind corpus Nottoli.
+# Per ciascun pattern, se i PANNs "supporto" sono sotto le soglie, il tag
+# viene marcato `plausibility: "low"`; se sono moderati, `medium`; altrimenti
+# `high` (o nessun flag, che equivale a high). Differisce da
+# `likely_hallucination` (binario, specifico su voce) perche' usa una scala
+# a tre livelli. Embrione della v0.7.0 plausibility check completa, limitato
+# a 5 pattern ad alto tasso di falso positivo documentati.
+#
+# Ogni pattern e' una tupla: (keyword_any, panns_any, threshold_low,
+# threshold_medium, reason_template).
+# - keyword_any: sottostringhe case-insensitive da cercare nel prompt CLAP.
+#   Se almeno una matcha, il pattern si applica.
+# - panns_any: label AudioSet che fungono da "supporto empirico" per il
+#   pattern. Si prende il max score fra queste label in PANNs top_global
+#   e si confronta con le soglie.
+# - threshold_low: sotto questo score il tag e' plausibility=low.
+# - threshold_medium: fra low e medium. Sopra medium, plausibility=high.
+# - reason_template: stringa con placeholder {score} e {labels}.
+PLAUSIBILITY_PATTERNS = (
+    {
+        "name": "acqua",
+        "keywords": ("acqua del rubinetto", "rubinetto", "fontana pubblica",
+                     "sgorga da fontana", "goccia d'acqua che cade"),
+        "panns_any": ("Water", "Stream", "Liquid", "Gurgling",
+                      "Drip", "Pour", "Waterfall", "Ocean"),
+        "threshold_low": 0.03,
+        "threshold_medium": 0.08,
+        "reason": "prompt idrico specifico",
+    },
+    {
+        "name": "preghiera",
+        "keywords": ("preghiera collettiva", "processione religiosa",
+                     "liturgia", "preghiera sussurrata"),
+        "panns_any": ("Choir", "Chant", "Religious music",
+                      "Mantra", "Hymn", "Speech"),
+        "threshold_low": 0.02,
+        "threshold_medium": 0.08,
+        "reason": "prompt liturgico sacro",
+    },
+    {
+        "name": "spiaggia_mediterranea",
+        "keywords": ("spiaggia mediterranea", "onde leggere",
+                     "mare calmo con onde", "sciabordio"),
+        "panns_any": ("Ocean", "Water", "Wind", "Waves, surf"),
+        "threshold_low": 0.03,
+        "threshold_medium": 0.07,
+        "reason": "prompt costiero marino",
+    },
+    {
+        "name": "biofonia_insetti",
+        "keywords": ("insetti in texture densa", "grilli nella sera",
+                     "cicale in campagna", "canto di uccelli",
+                     "cinguettio", "cinghiale", "gallo che canta",
+                     "gufo notturno", "dawn chorus"),
+        "panns_any": ("Cricket", "Insect", "Animal", "Bird",
+                      "Bird vocalization, bird call, bird song",
+                      "Chirp, tweet", "Wild animals", "Owl", "Crow"),
+        "threshold_low": 0.03,
+        "threshold_medium": 0.08,
+        "reason": "prompt biofonico animale",
+    },
+    {
+        "name": "treno",
+        "keywords": ("treno regionale", "treno ad alta velocita",
+                     "stazione ferroviaria", "treno in arrivo"),
+        "panns_any": ("Train", "Rail transport", "Railroad car, train wagon",
+                      "Train horn", "Train whistle", "Train wheels squealing"),
+        "threshold_low": 0.04,
+        "threshold_medium": 0.10,
+        "reason": "prompt ferroviario",
+    },
+)
+
 # Narrativa (v0.2.2)
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"

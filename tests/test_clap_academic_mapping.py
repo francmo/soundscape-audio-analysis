@@ -242,6 +242,108 @@ def test_mark_geo_specific_no_flag_on_generic():
     assert out[1]["geo_specific"] is False
 
 
+def test_mark_plausibility_low_on_acqua_rubinetto_without_panns_water():
+    """v0.6.6: il prompt 'Acqua del rubinetto che scorre' deve essere
+    plausibility=low quando PANNs non ha Water/Stream/Liquid fra i top."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "dom_01", "prompt": "Acqua del rubinetto che scorre",
+         "category": "antropofonia domestica", "score": 0.24},
+    ]
+    classifier = {
+        "top_global": [
+            {"name": "Music", "score": 0.68},
+            {"name": "Speech", "score": 0.05},
+        ],
+    }
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "acqua"
+    assert out[0]["plausibility_support_score"] == 0.0
+
+
+def test_mark_plausibility_medium_on_spiaggia_with_some_ocean_support():
+    """Se PANNs Ocean ha score moderato (sopra low, sotto medium), il tag
+    'Spiaggia mediterranea' riceve plausibility=medium."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "pmd_02", "prompt": "Spiaggia mediterranea con onde leggere e voci distanti",
+         "category": "paesaggi mediterranei generici", "score": 0.22},
+    ]
+    classifier = {"top_global": [{"name": "Ocean", "score": 0.05}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "medium"
+    assert out[0]["plausibility_pattern"] == "spiaggia_mediterranea"
+
+
+def test_mark_plausibility_high_on_biofonia_with_strong_cricket():
+    """Prompt biofonico (grilli/cicale) con PANNs Cricket alto -> high."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "ita_xx", "prompt": "Cicale in campagna estiva del sud Italia",
+         "category": "paesaggi italiani specifici", "score": 0.23},
+    ]
+    classifier = {"top_global": [{"name": "Cricket", "score": 0.12},
+                                  {"name": "Insect", "score": 0.10}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "high"
+    assert out[0]["plausibility_pattern"] == "biofonia_insetti"
+
+
+def test_mark_plausibility_preghiera_without_choir():
+    """'Preghiera collettiva sussurrata in chiesa' senza PANNs Choir/Chant
+    -> low (caso ricorrente sui brani acusmatici con voci sovrapposte)."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "sac_xx", "prompt": "Preghiera collettiva sussurrata in chiesa",
+         "category": "sacralita sonora", "score": 0.22},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.40}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "preghiera"
+
+
+def test_mark_plausibility_treno_without_train_panns():
+    """'Treno regionale in arrivo' senza PANNs Train/Rail transport -> low
+    (falso positivo sistemico su bande basse stretched)."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "trs_xx", "prompt": "Treno regionale in arrivo a stazione di provincia",
+         "category": "trasporti e mobilita", "score": 0.20},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.68}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "treno"
+
+
+def test_mark_plausibility_untouched_on_unrelated_prompts():
+    """Tag che non matchano nessun pattern non devono ricevere il flag
+    plausibility (equivale a 'non valutato', non a 'high')."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "obj_01", "prompt": "Texture granulare densa",
+         "category": "qualita schaefferiane", "score": 0.35},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.5}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert "plausibility" not in out[0]
+
+
+def test_mark_plausibility_safe_with_no_classifier():
+    """classifier=None o vuoto: pattern matcha ma max_support=0 -> low."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "dom_01", "prompt": "Acqua del rubinetto che scorre",
+         "category": "antropofonia domestica", "score": 0.24},
+    ]
+    out = mark_plausibility_deterministic(top_global, None)
+    assert out[0]["plausibility"] == "low"
+    out2 = mark_plausibility_deterministic(top_global, {})
+    assert out2[0]["plausibility"] == "low"
+
+
 def test_schaeffer_detail_enum_present_v060():
     """v0.6.0: nuovo enum schaeffer_detail con 22 valori (TARTYP esteso)."""
     m = load_academic_mapping()

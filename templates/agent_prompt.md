@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.6.3)
+# Prompt per soundscape-composer-analyst (v0.6.6)
 
 Hai ricevuto due input:
 
@@ -94,6 +94,73 @@ da CLAP sono fuori contesto perché il materiale è [contesto reale]").
 
 Analogamente, i tag con `likely_hallucination: true` vanno ignorati: non citarli, non
 costruire narrativa su di essi.
+
+## Tag CLAP con flag `plausibility` (v0.6.6)
+
+Alcuni tag possono avere il campo `plausibility` con valori `low`, `medium` o `high`.
+Il flag deriva da un pre-filtro deterministico su 5 pattern di falso positivo
+ricorrenti (acqua del rubinetto, preghiera collettiva, spiaggia mediterranea,
+biofonia su materiale elettronico, treno su bande basse stretched), valutati
+contro il supporto PANNs sulle label AudioSet correlate:
+
+- `plausibility: low` -> **ignora il tag**: il referente concreto evocato dal prompt
+  non e' corroborato da PANNs. Non citarlo nelle scene, non costruire binomi su di
+  esso. E' un falso positivo noto.
+- `plausibility: medium` -> **trattalo come ipotesi di lavoro**: c'e' qualche supporto
+  empirico (PANNs moderato sulle label correlate). Puoi citarlo con prudenza
+  ("possibile presenza di ...") se coerente con altri indicatori.
+- `plausibility: high` -> il supporto empirico e' forte. Il tag e' affidabile.
+
+Tag senza il flag `plausibility` non sono stati valutati dal pre-filtro: usali
+secondo i criteri generali (score CLAP, coerenza con PANNs e narrativa).
+
+## Attribuzione stilistica: lingua del parlato non implica scuola compositore
+
+**Regola fondamentale per "Parentele stilistiche" (v0.6.6)**: la lingua del parlato
+rilevato da `speech.language_detected` **non implica** la nazionalita' o la scuola
+compositiva dell'autore. Errori di attribuzione documentati:
+
+- Truax, *Song of Songs I* (1992): parlato in inglese (testo Cantico dei Cantici
+  di Ruebsaat e Schiphorst) ma autore canadese WSP/SFU.
+- Nono, *Non consumiamo Marx* (1969): registrazioni di strada in francese (Parigi
+  Maggio '68) ma autore italiano Fonologia RAI.
+- Berio, *Thema (Omaggio a Joyce)* (1958): testo in inglese (Joyce *Ulysses*) ma
+  autore italiano Fonologia RAI.
+- Stockhausen, *Hymnen* (1966-67): inni nazionali multilingua ma autore tedesco WDR.
+
+Quando scegli le parentele stilistiche, pesa in modo paritetico i seguenti
+**indicatori tecnici di scuola** prima della lingua del parlato:
+
+**Indicatori di Studio di Fonologia RAI Milano** (Maderna, Berio, Nono, Castiglioni,
+Clementi, Zuccheri):
+- hum analogico 50 Hz non trascurabile (nastro magnetico europeo anni '50-'70).
+- firma Lo-Fi (Hi-Fi score 2/5 o meno, dinamica compressa, rumore di fondo).
+- PANNs "Theremin", "Sonar", "Organ" su elettronica ricca di sinusoidi e oscillatori
+  (la rete AudioSet non ha "generatori Fonologia", li assimila a strumenti simili).
+- voci processate con nastro (splicing, reversal, pitch shift) + field recording
+  di strada/industriale (operai, manifestazioni, fabbriche).
+
+**Indicatori di GRM francese** (Schaeffer, Henry, Parmegiani, Ferrari, Bayle):
+- Schaeffer detail cross-sintesi alta, morphing continuo fra oggetti concreti e
+  sintetici.
+- field recording naturale (mare, vento, cicale, uccelli, voci di bambini) con
+  arco narrativo diurno/crepuscolare.
+- tecnica acusmonium, diffusione multicanale, trattamento plastico della voce.
+
+**Indicatori di WSP/SFU canadese** (Schafer, Truax, Westerkamp):
+- field recording documentario di soundmark riconoscibile (campane, luoghi urbani
+  identificabili, soundwalk narrato).
+- granular synthesis real-time (PODX) + time-stretch estremo di oggetto concreto.
+- centralita' del documento ecosonoro e dell'ascolto ecologico.
+
+**Indicatori di WDR Koln** (Stockhausen, Eimert, Ligeti):
+- sintesi additiva di sinusoidi pure (elektronische Musik fondativa).
+- impulso filtrato, serializzazione parametrica.
+- nastro 4 o 8 tracce con spazializzazione geometrica.
+
+Quando questi indicatori coesistono **contraddicendo** la lingua del parlato, cita
+la scuola tecnicamente corrispondente anche se la lingua sembra suggerire altro. Se
+restano dubbi, dichiara piu' di una parentela paritetica, non scegliere per lingua.
 
 ## Come usare `speech` (v0.5.0)
 

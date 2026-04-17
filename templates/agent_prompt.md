@@ -157,6 +157,31 @@ Campi con `confidence: low` o `tentative: true` (truax, westerkamp_soundwalk_rel
 vanno citati solo come ipotesi, mai come affermazione. Se `academic_hints.available ==
 false`, ignora la sezione.
 
+## Tag PANNs marginali contraddittori (v0.6.4)
+
+I tag PANNs con score basso (< 0.40) che suggeriscono **eventi concreti**
+(treno, macchina, voci, motore, campana, animali specifici) in un contesto
+prevalentemente **astratto/acusmatico** (drone, texture granulare, morphing
+tonale, time-stretch estremo) vanno trattati come **ipotesi di lavoro**,
+non come fatti. Un tag PANNs da solo non autorizza a introdurre un evento
+concreto nel testo drammaturgico.
+
+Promuovi un tag PANNs marginale a fatto solo se **almeno uno** di questi
+corrobora:
+
+- Un tag CLAP top-20 consonante con lo stesso evento (es. PANNs "Train"
+  + CLAP "Treno regionale in arrivo a stazione di provincia").
+- La descrizione segmentata di `narrative.py` menziona l'evento in piu'
+  di una finestra.
+- Il materiale globale e' gia' documentario/field recording puro (NDSI
+  intermedio, flatness > 0.05, nessun time-stretch evidente).
+
+Se il tag resta isolato e il contesto e' astratto/trasformato, **non
+costruire scene o binomi su di esso**. Esempio concreto: su materiale
+100% campane processate con time-stretch 20x, le bande basse stretched
+possono attivare PANNs "Train" o "Engine" con score 0.30-0.40. Sono
+falsi positivi sistematici, non documenti sonori. Ignorare.
+
 ## Output atteso
 
 Testo markdown con esattamente queste **sei sezioni**, in questo ordine:
@@ -232,8 +257,26 @@ parentela in 1-2 righe, con riferimento concreto al materiale. Esempi:
   crepuscolare e la voce incrociata al paesaggio."
 - "Wishart, utterance e manipolazione vocale: il trattamento acusmatico della voce
   del pilota."
-- "Soundscape composition canadese (Truax, Westerkamp): la prevalenza del field
-  recording come documento ecosonoro."
+- "Soundscape composition canadese WSP/SFU (Truax, Westerkamp): la prevalenza del
+  field recording come documento ecosonoro."
+
+**Tassonomia delle parentele possibili** (non esaustiva, scegli in base
+al materiale):
+
+- **GRM francese**: Schaeffer, Henry, Parmegiani, Ferrari, Bayle (materiale
+  acusmatico studio, morphing timbrico, oggetto sonoro).
+- **WSP/SFU canadese**: Schafer, Truax, Westerkamp (field recording
+  ecologico, soundmark, ascolto acustico).
+- **Studio di Fonologia RAI Milano**: Maderna, Berio, Nono (materiale
+  seriale + voci processate + field recording politico).
+- **Koln WDR**: Stockhausen, Ligeti (elektronische Musik, sintesi
+  additiva).
+- **Ambient/drone**: Eno, Radigue, Lucier (dilatazione, micro-variazione
+  interna, drone tonale).
+- **Granular/microsound**: Roads, Wishart, Truax (grano come unita'
+  compositiva).
+- **Broadcast/radiofonia**: territorio sound design senza pretese
+  acusmatiche.
 
 **Vietato** citare autori senza evidenza. Se il materiale è estraneo alla tradizione
 acusmatica, dichiaralo esplicitamente ("il brano è fuori dalla tradizione GRM/soundscape,

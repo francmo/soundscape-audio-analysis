@@ -254,10 +254,16 @@ def _build_clap_block(clap: dict, styles) -> list:
             "<b>Tag globali (media di similarità sul file completo)</b>", styles["body"]))
         rows = [["Posizione", "Prompt italiano", "Categoria", "Similarità"]]
         for i, t in enumerate(top_global, 1):
-            # v0.5.1-0.5.2: tag con flag interpretativi vanno in corsivo
+            # v0.5.1-0.5.2: tag con flag interpretativi vanno in corsivo.
+            # v0.6.7: plausibility low aggiunge un marcatore testuale.
             prompt_text = t["prompt"]
-            if t.get("likely_hallucination") or t.get("geo_specific"):
+            plausibility = t.get("plausibility")
+            if t.get("likely_hallucination") or t.get("geo_specific") or plausibility == "low":
                 prompt_text = f"<i>{prompt_text}</i>"
+            if plausibility == "low":
+                prompt_text += " [plausibilita bassa]"
+            elif plausibility == "medium":
+                prompt_text += " [plausibilita media]"
             rows.append([str(i), prompt_text, t.get("category", ""), f"{t['score']:.3f}"])
         story.append(report_styles.styled_table(
             rows, [14 * mm, 90 * mm, 38 * mm, 24 * mm], styles
@@ -282,6 +288,25 @@ def _build_clap_block(clap: dict, styles) -> list:
                 f"materiale mediterraneo non italiano la categoria "
                 f"'paesaggi mediterranei generici' offre alternative piu' "
                 f"appropriate.</i>",
+                styles["caption"],
+            ))
+        # v0.6.7: nota su tag con plausibilita' bassa o media (pre-filtro
+        # deterministico su 5 pattern di falso positivo documentati).
+        n_low = sum(1 for t in top_global if t.get("plausibility") == "low")
+        n_med = sum(1 for t in top_global if t.get("plausibility") == "medium")
+        if n_low > 0 or n_med > 0:
+            parts = []
+            if n_low > 0:
+                parts.append(f"{n_low} tag marcato 'plausibilita bassa'")
+            if n_med > 0:
+                parts.append(f"{n_med} tag marcato 'plausibilita media'")
+            story.append(Paragraph(
+                f"<i>{', '.join(parts)}: il pre-filtro v0.6.6 ha rilevato "
+                f"che il referente concreto evocato dal prompt (acqua, "
+                f"preghiera, spiaggia, biofonia, treno) non e' corroborato "
+                f"da PANNs sulle label AudioSet correlate. I tag con "
+                f"plausibilita bassa vanno ignorati; quelli con plausibilita "
+                f"media possono essere usati come ipotesi di lavoro.</i>",
                 styles["caption"],
             ))
         story.append(Spacer(1, 8))
@@ -1072,7 +1097,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.6.6",
+        "Skill soundscape-audio-analysis v0.6.7",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -1084,7 +1109,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.6.6: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.6.7: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1165,7 +1190,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.6 di "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.7 di "
         "Francesco Mariano. Font Libre Baskerville e Source Sans Pro "
         "(licenza SIL OFL). Pipeline analitica: librosa + soundfile per il "
         "carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "

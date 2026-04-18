@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.7] - 2026-04-18
+
+Patch di rendering: il flag `plausibility` v0.6.6 (finora presente solo nel
+JSON summary e nel payload dell'agente) ora appare anche nel PDF di
+report singolo. Chiude un pezzo rimasto aperto in v0.6.6.
+
+### Changed
+
+- `scripts/report_pdf.py::_build_clap_block`: nel rendering dei top-10 tag
+  CLAP globali, i tag con `plausibility: low` vanno in corsivo (come gia'
+  accade per `likely_hallucination` e `geo_specific`) e ricevono il suffisso
+  testuale `[plausibilita bassa]`. I tag con `plausibility: medium`
+  ricevono il suffisso `[plausibilita media]` ma non il corsivo. Nuova
+  caption automatica sotto la tabella riassume il numero di tag con
+  plausibilita' bassa/media e rimanda alla lezione del pre-filtro v0.6.6
+  (acqua, preghiera, spiaggia, biofonia, treno).
+
+### Internal
+
+- `scripts/__init__.py`, `pyproject.toml`, `scripts/report_cmd.py`,
+  `scripts/report_pdf.py`: bump 0.6.6 -> 0.6.7 (3 stringhe user-facing).
+
+### Test
+
+- 147 passati + 2 skipped (zero regressioni).
+
 ## [0.6.6] - 2026-04-18
 
 Hotfix release che traduce in patch concrete i feedback del confronto

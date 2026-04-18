@@ -1,0 +1,48 @@
+Soundscape Audio Analysis
+Copyright 2026 Francesco Mariano
+
+Questo prodotto include software sviluppato da Francesco Mariano
+(https://francescomariano.art).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Il materiale analitico e documentale (vocabolari CLAP italiani,
+tassonomie accademiche, template, feedback su brani di riferimento,
+ROADMAP, CHANGELOG) e' distribuito sotto Creative Commons
+Attribution 4.0 International License (CC BY 4.0). Vedi `LICENSE-CC-BY-4.0`.
+
+Dipendenze runtime con licenze separate:
+
+- librosa (ISC)
+- numpy, scipy, matplotlib (BSD-3)
+- soundfile (BSD-3)
+- torch, torchaudio (BSD-3)
+- tensorflow, tensorflow-hub (Apache 2.0)
+- reportlab (BSD-3)
+- click (BSD-3)
+- rich (MIT)
+- pytest (MIT)
+- jsonschema (MIT)
+- mistune (BSD-3)
+- faster-whisper (MIT)
+- silero-vad (MIT)
+- panns-inference (Apache 2.0) -- modello pre-addestrato da Kong et al. (2020)
+- laion-clap (CC0) -- modello pre-addestrato da Wu et al. (2023)
+
+Asset tipografici:
+
+- Libre Baskerville e Source Sans Pro (SIL Open Font License 1.1)
+
+Modelli pre-addestrati scaricati al primo run:
+
+- PANNs CNN14 (Cnn14_mAP=0.431.pth) -- https://zenodo.org/records/3987831
+- LAION-CLAP music_audioset_epoch_15_esc_90 --
+  https://huggingface.co/lukewys/laion_clap
+
+Non sono inclusi in questo repository per ragioni di dimensione. Vengono
+scaricati automaticamente via urllib nella directory `~/panns_data/` e
+`~/.cache/clap/` del sistema dell'utente al primo utilizzo della skill.

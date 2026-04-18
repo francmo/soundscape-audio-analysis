@@ -1,0 +1,66 @@
+Creative Commons Attribution 4.0 International License
+=======================================================
+
+Copyright (c) 2026 Francesco Mariano
+
+Questa licenza si applica al materiale analitico e documentale di questo
+repository, specificamente al contenuto delle seguenti cartelle e file:
+
+- `references/clap_vocabulary_it.json`
+- `references/clap_academic_mapping_it.json`
+- `references/taxonomies/` (se presente)
+- `references/grm_profiles/` (se presente)
+- `references/user_feedback/` (feedback su brani del corpus di training)
+- `references/golden_reports/` (report analitici di riferimento)
+- `references/external_feedback/` (ricerche e letture critiche)
+- `references/clap_vocabulary_it.json` e altre tassonomie e vocabolari
+- `templates/` (template markdown e ReportLab)
+- `ROADMAP.md`
+- `CHANGELOG.md`
+- `SKILL.md`
+
+Il codice sorgente in `scripts/`, `tests/`, `bin/`, `assets/` e i file di
+configurazione root (`pyproject.toml`, `requirements.txt`) restano licenziati
+sotto Apache License 2.0 (vedi `LICENSE`).
+
+Questo materiale e' licenziato sotto la Creative Commons Attribution 4.0
+International License (CC BY 4.0).
+
+Sei libero di:
+
+- **Condividere**: copiare e ridistribuire il materiale in qualsiasi mezzo
+  o formato.
+- **Adattare**: remixare, trasformare il materiale e basarti su di esso per
+  qualsiasi scopo, anche commerciale.
+
+Il licenziante non puo' revocare queste liberta' se rispetti i termini
+della licenza.
+
+Alle seguenti condizioni:
+
+- **Attribuzione**: devi riconoscere una menzione di paternita' adeguata,
+  fornire un link alla licenza e indicare se sono state effettuate delle
+  modifiche. Puoi fare cio' in qualsiasi maniera ragionevole possibile,
+  ma non con modalita' tali da suggerire che il licenziante avalli te o
+  il tuo utilizzo del materiale.
+
+- **Niente restrizioni aggiuntive**: non puoi applicare termini legali o
+  misure tecnologiche che impongano ad altri soggetti dei vincoli giuridici
+  su quanto la licenza consente loro di fare.
+
+Testo completo della licenza: https://creativecommons.org/licenses/by/4.0/
+Versione leggibile: https://creativecommons.org/licenses/by/4.0/legalcode.it
+
+Come citare (formato BibTeX per riferimenti accademici):
+
+```bibtex
+@software{mariano2026soundscape,
+  author = {Mariano, Francesco},
+  title  = {Soundscape Audio Analysis: una skill Claude Code per
+            l'analisi tecnica e compositiva di soundscape e musica
+            elettroacustica},
+  year   = {2026},
+  url    = {https://github.com/francmo/soundscape-audio-analysis},
+  note   = {Codice Apache 2.0, vocabolari/tassonomie CC BY 4.0}
+}
+```

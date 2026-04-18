@@ -10,3 +10,25 @@ tests/fixtures/*.wav
 /tmp/
 *.log
 .DS_Store
+
+# Claude Code local settings (non condivisi)
+.claude/
+
+# Checkpoint modelli (scaricati al primo run: ~330 MB PANNs + ~2.2 GB CLAP)
+*.pth
+*.pt
+panns_data/
+clap_cache/
+
+# Environment / secret
+.env
+.env.*
+secrets/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/

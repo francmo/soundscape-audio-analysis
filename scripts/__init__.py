@@ -6,4 +6,4 @@ import os
 # fanno import lazy, quindi questo setdefault è la prima occasione utile).
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
-__version__ = "0.6.6"
+__version__ = "0.6.7"

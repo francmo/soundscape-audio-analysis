@@ -453,6 +453,104 @@ def test_mark_plausibility_safe_with_no_classifier():
     assert out2[0]["plausibility"] == "low"
 
 
+# v0.7.0: pattern estesi a 11 totali dal feedback Nottoli
+
+def test_mark_plausibility_aspirapolvere_low_on_industriale():
+    """'Aspirapolvere in uso domestico' su rumori industriali (Nono Fabbrica)
+    senza PANNs Vacuum/Machinery -> low."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "dom_xx", "prompt": "Aspirapolvere in uso domestico",
+         "category": "antropofonia domestica", "score": 0.22},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.30}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "aspirapolvere_domestico"
+
+
+def test_mark_plausibility_scrittura_tastiera_low():
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "dom_yy", "prompt": "Scrittura su tastiera di computer",
+         "category": "antropofonia domestica", "score": 0.20},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.40}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "scrittura_tastiera"
+
+
+def test_mark_plausibility_pianto_infantile_low_on_voce_manipolata():
+    """'Lallazione infantile spontanea' su voce acuta elaborata (Risset Sud
+    al minuto 02:30, dove manipola voci in alto) senza PANNs Baby cry ->
+    low."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "utt_xx", "prompt": "Lallazione infantile spontanea",
+         "category": "utterance", "score": 0.19},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.50}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "pianto_infantile"
+
+
+def test_mark_plausibility_pianto_infantile_high_when_baby_cry_present():
+    """Se PANNs Baby cry e' forte, il prompt pianto infantile diventa high."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "utt_xx", "prompt": "Pianto infantile prolungato",
+         "category": "utterance", "score": 0.21},
+    ]
+    classifier = {"top_global": [
+        {"name": "Baby cry, infant cry", "score": 0.15},
+        {"name": "Crying, sobbing", "score": 0.08},
+    ]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "high"
+
+
+def test_mark_plausibility_grandine_low_on_transitori_granulari():
+    """'Grandine che cade su superficie dura' matcha transitori granulari
+    densi (Basilica time-stretch) senza PANNs Hail -> low."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "geo_xx", "prompt": "Grandine che cade su superficie dura",
+         "category": "geofonia", "score": 0.22},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.68}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "grandine_impulsi"
+
+
+def test_mark_plausibility_porta_legno_low():
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "dom_zz", "prompt": "Porta di legno che si apre e si chiude",
+         "category": "antropofonia domestica", "score": 0.21},
+    ]
+    classifier = {"top_global": [{"name": "Music", "score": 0.55}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "porta_legno"
+
+
+def test_mark_plausibility_veicolo_motocicletta_low_on_urbano_generico():
+    """Motocicletta specifica senza PANNs Motorcycle -> low. Pattern matcha
+    solo su prompt VEICOLI SPECIFICI, non sul generico 'treno' / 'auto'."""
+    from scripts.clap_mapping import mark_plausibility_deterministic
+    top_global = [
+        {"id": "trs_xx", "prompt": "Motocicletta sportiva che accelera",
+         "category": "trasporti e mobilita", "score": 0.20},
+    ]
+    classifier = {"top_global": [{"name": "Speech", "score": 0.70}]}
+    out = mark_plausibility_deterministic(top_global, classifier)
+    assert out[0]["plausibility"] == "low"
+    assert out[0]["plausibility_pattern"] == "veicoli_specifici"
+
+
 def test_schaeffer_detail_enum_present_v060():
     """v0.6.0: nuovo enum schaeffer_detail con 22 valori (TARTYP esteso)."""
     m = load_academic_mapping()

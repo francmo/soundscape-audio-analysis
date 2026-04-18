@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.6.8] - 2026-04-18
+
+Estensione del pre-filtro plausibility da 5 a 11 pattern. Copre altre
+6 allucinazioni CLAP ricorrenti emerse dai feedback Nottoli oltre alle
+5 gia' presenti in v0.6.6. Embrione della v0.7.0 completa che estendera'
+ulteriormente copertura + refactor in modulo dedicato.
+
+### Added (6 nuovi pattern)
+
+- `aspirapolvere_domestico`: keyword `aspirapolvere`, `phon per capelli`,
+  `rasoio elettrico`, `trituratore`, `frullatore`. Supporto PANNs: Vacuum
+  cleaner, Mechanisms, Engine, Machinery, Domestic sounds. Driver: falso
+  positivo su rumori industriali (Nono *Fabbrica illuminata*) e su
+  transitori granulari (Risset *Sud*).
+- `scrittura_tastiera`: keyword `scrittura su tastiera`, `tastiera di
+  computer`, `digitazione su computer`. Supporto PANNs: Typing, Computer
+  keyboard, Keyboard (musical), Click. Driver: falso positivo su impulsi
+  rapidi densi (Nono *Fabbrica*, Risset *Sud*).
+- `pianto_infantile`: keyword `pianto infantile`, `lallazione infantile`,
+  `bambino che piange`, `neonato`. Supporto PANNs: Baby cry, Crying sobbing,
+  Child speech, Whimper, Wail moan. Driver: falso positivo su voce acuta
+  elaborata (Risset *Sud* 02:30, Nono *Fabbrica* 12:30).
+- `grandine_impulsi`: keyword `grandine che cade`, `grandinata`. Supporto
+  PANNs: Hail, Ice, Rain on surface, Patter, Pour. Driver: falso positivo
+  sistematico su transitori granulari densi (Truax *Basilica*, Nono
+  *Fabbrica*, Risset *Sud*).
+- `porta_legno`: keyword `porta di legno che si apre`, `porta che si
+  chiude`, `porta cigolante`, `uscio di legno`. Supporto PANNs: Door,
+  Creak, Squeak, Slam, Wood. Driver: allucinazione su click e transitori
+  brevi (Risset *Sud*, Nono *Non consumiamo Marx*).
+- `veicoli_specifici`: keyword `motocicletta sportiva`, `automobile che
+  frena`, `auto da corsa`, `clacson di auto`, `motorino che passa`.
+  Supporto PANNs: Motorcycle, Car, Race car, Motor vehicle (road),
+  Vehicle horn, Skidding, Tire squeal. Driver: falso positivo su
+  contesti urbani generici dove voci+rumore vengono assimilati a
+  veicoli specifici (Nono *Non consumiamo Marx*).
+
+### Test
+
+- 154 passati + 2 skipped (147 v0.6.7 + 7 nuovi test su pattern
+  estesi, incluso 1 test "pianto infantile high" quando Baby cry PANNs
+  presente per verificare che non tutti i match siano low).
+
+### Internal
+
+- `scripts/config.py::PLAUSIBILITY_PATTERNS`: da 5 a 11 tuple.
+- Bump 0.6.7 -> 0.6.8 in `__init__.py`, `pyproject.toml`,
+  `scripts/report_cmd.py`, `scripts/report_pdf.py` (3 stringhe).
+
+### Rimane a v0.7.0 (prossimo step)
+
+- Refactor dei pattern in modulo dedicato `scripts/clap_plausibility.py`.
+- Documentazione operativa per contributori (come aggiungere un pattern).
+- Copertura plausibility su tag segmentali (timeline CLAP), non solo top-10.
+- Eventuale file YAML per configurare i pattern senza modificare config.py.
+
 ## [0.6.7] - 2026-04-18
 
 Patch di rendering: il flag `plausibility` v0.6.6 (finora presente solo nel

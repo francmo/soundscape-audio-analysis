@@ -1097,7 +1097,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.6.7",
+        "Skill soundscape-audio-analysis v0.6.8",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -1109,7 +1109,7 @@ def build_corpus_report(
     story.append(Paragraph(
         f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.6.7: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v0.6.8: livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1190,7 +1190,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.7 di "
+        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.8 di "
         "Francesco Mariano. Font Libre Baskerville e Source Sans Pro "
         "(licenza SIL OFL). Pipeline analitica: librosa + soundfile per il "
         "carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "

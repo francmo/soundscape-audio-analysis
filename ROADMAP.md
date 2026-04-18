@@ -3,7 +3,7 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.7 (18 aprile 2026)
+**Versione corrente**: 0.6.8 (18 aprile 2026)
 **Test suite**: 147 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
@@ -303,6 +303,10 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.6.8** (18/04/2026): estensione pre-filtro plausibility da 5 a 11
+  pattern (aspirapolvere, scrittura tastiera, pianto infantile, grandine,
+  porta di legno, veicoli specifici). 154 test passati. Embrione
+  ulteriore della v0.7.0 completa.
 - **v0.6.7** (18/04/2026): rendering PDF del flag plausibility v0.6.6
   (corsivo + suffisso testuale "[plausibilita bassa/media]" + caption
   automatica sotto la tabella top-10 CLAP). Chiude il punto rimasto

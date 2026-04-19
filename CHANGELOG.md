@@ -1,5 +1,89 @@
 # Changelog
 
+## [0.8.2] - 2026-04-19 (sera)
+
+Prompt mediterranei geograficamente precisi (Adriatico/dalmato) per
+recuperare il fit su Ferrari *Presque Rien N°1* perso in v0.8.0 con la
+generalizzazione dei prompt mediterranei.
+
+### Changed
+
+- `references/clap_vocabulary_it.json` v1.8 -> v1.9: aggiunta categoria
+  `paesaggi dalmati e adriatici` (6 prompt dal_01..dal_06) con naming
+  geografico alternativo (Adriatico, Dalmazia, Korcula, Vela Luka,
+  Balcani) che non scatena il bias italo-specifico. Totale 245 -> 251,
+  categorie 29 -> 30.
+- `references/clap_academic_mapping_it.json`: category_defaults per la
+  categoria dalmata (krause: mista, schafer_role: soundmark, etc.).
+- `tests/test_clap_tagging.py`: version check e soglia prompt aggiornati.
+
+### Test
+
+- 182 passed + 2 skipped. Zero regressioni.
+
+### Impact (benchmark 9 brani corpus golden + 2 blind esterni)
+
+- Ferrari *Presque Rien N°1* (gold verificato): 49.1 -> 59.9/100
+  (+10.8, recupero del fit mediterraneo perso in v0.8.0).
+- Pp/Rp parentele Ferrari: 0.20 -> 0.80 (cita Ferrari stesso + Schaeffer
+  + Westerkamp + Truax + GRM + WSP-SFU).
+
+## [0.8.1] - 2026-04-19 (sera)
+
+Controllo deterministico dell'attribuzione alla Fonologia RAI: il
+payload agente ora include il flag `italian_context.is_italian_context`
+computato da co-occorrenza di almeno 2 indicatori (parlato italiano
+>=0.80 probabilita', hum 50Hz "presente", tag CLAP italo-specifici nei
+top-20, stopwords italiane nella trascrizione). Il prompt agente v0.8.1
+contiene la regola deterministica: se `is_italian_context == false`,
+NON attribuire alla Fonologia RAI. L'hum 50 Hz da solo (comune a
+qualunque catena analogica europea: Touch, Editions Mego, Raster) non
+basta per Fonologia.
+
+### Added
+
+- `scripts/agent_payload.py::_compute_italian_context()`: funzione
+  deterministica che ispeziona speech (language_detected, probabilita',
+  trascrizione), hum (peaks 50Hz + overall_verdict), CLAP (top-20 con
+  flag geo_specific) e restituisce `{is_italian_context: bool, reasons:
+  [str]}` con motivazione ispezionabile.
+- Campo `italian_context` aggiunto a `build_agent_payload`: l'agente ha
+  accesso al flag nel payload JSON.
+
+### Changed
+
+- `templates/agent_prompt.md`: nuova regola "hum != Fonologia"
+  condizionata al flag, con lista alternative (Touch dark ambient,
+  drone-field contemporaneo, Editions Mego).
+- `~/.claude/agents/soundscape-composer-analyst.md`: analogo.
+
+### Impact
+
+- Caso López *Buildings [New York]* 2001 (test blind esterno): l'agente
+  cita esplicitamente `italian_context: false` come indicatore per
+  escludere Fonologia e attribuire correttamente all'acusmatica
+  absolute di López + Radigue + GRM oggetto sonoro.
+- Caso Nilsen, Herbert (v0.7.1-v0.8.0 avevano bias hum->Fonologia
+  residuo): la regola stretta lo sopprime.
+
+### Test blind esterno (non nel corpus golden v1)
+
+Due brani canonici scaricati al volo e analizzati senza gold:
+- **Westerkamp *Kits Beach Soundwalk* 1989**: la skill apre
+  "Il materiale è Kits Beach Soundwalk di Hildegard Westerkamp (1989),
+  soundwalk acusmatico canonico della soundscape composition canadese",
+  identifica Kitsilano/Vancouver, cirripedi, WSP/SFU, Truax Riverrun,
+  Ferrari Presque Rien come precedente. Flagga il bias CLAP residuo.
+- **López *Buildings [New York]* 2001**: la skill apre "Il materiale è
+  Francisco López, *Buildings [New York]* (2001), opera acusmatica di
+  69 minuti costruita interamente a partire da registrazioni di
+  impianti di ventilazione, HVAC, ascensori...", cita `italian_context
+  false` come indicatore anti-Fonologia, colloca correttamente accanto
+  a *La Selva* + *Wind [Patagonia]* + Radigue + GRM.
+
+Entrambe le attribuzioni sono corrette al livello qualitativo piu'
+alto osservato finora sulla skill.
+
 ## [0.8.0] - 2026-04-19
 
 Patch del vocabolario CLAP per ridurre il bias italo-centrico (emerso

@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.8.0 (19 aprile 2026)
+**Versione corrente**: 0.8.2 (19 aprile 2026)
 **Test suite**: 182 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.8.0)
+## Stato corrente (v0.8.2)
 
 ### Capabilities attive
 
@@ -303,6 +303,16 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.8.2** (19/04/2026 sera): categoria CLAP 'paesaggi dalmati e
+  adriatici' (6 prompt) per recuperare il fit mediterraneo su Ferrari
+  *Presque Rien* senza bias italo-generico. Ferrari: 49.1 -> 59.9/100
+  (+10.8, precision/recall parentele 0.80).
+- **v0.8.1** (19/04/2026 sera): flag deterministico `italian_context.
+  is_italian_context` in agent_payload + regola agente "hum != Fonologia
+  RAI se contesto non italiano". Test blind esterni (Westerkamp *Kits
+  Beach*, López *Buildings [New York]*): attribuzione autore + titolo
+  + anno corrette al primo passo, flag citato esplicitamente
+  dall'agente come indicatore anti-Fonologia.
 - **v0.8.0** (19/04/2026): patch vocabolario CLAP per rimuovere bias
   italo-centrico. v1.7 -> v1.8: 18 prompt neutralizzati (rimossa parola
   "italiano"/"mediterraneo" quando semanticamente non essenziale),

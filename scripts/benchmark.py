@@ -130,33 +130,83 @@ def _lemmas(s: str) -> set[str]:
     return set(_WORD.findall(_normalize(s)))
 
 
-def _core_phrases(items: list[str]) -> list[set[str]]:
-    """Da ogni bullet, estrae il 'core' = testo prima del primo `—` o `-` lungo."""
+_ACRONYM_IN_PAREN = re.compile(r"\(([A-Z][A-Z0-9\/]+)\)")
+_STOPWORDS = {
+    # italiano
+    "di", "del", "della", "dei", "delle", "il", "la", "lo", "gli", "le", "un", "una",
+    "con", "per", "su", "in", "a", "e", "o", "che", "come",
+    # francese
+    "de", "du", "des", "le", "la", "les", "et", "ou", "au", "aux", "dans", "sur",
+    # inglese
+    "the", "of", "in", "on", "to", "and", "or", "as", "by",
+    # anglosassone per "paesaggi anglosassoni"
+}
+
+
+def _content_lemmas(s: str) -> set[str]:
+    """Lemmi di contenuto: rimuove stopwords comuni (it/fr/en)."""
+    return {w for w in _lemmas(s) if w not in _STOPWORDS}
+
+
+def _extract_acronym_aliases(text: str) -> list[str]:
+    """Estrae alias equivalenti da una parentela gold.
+
+    Es. 'Groupe de Recherches Musicales (GRM)' genera alias 'GRM'.
+    Permette match 'cognome-soltanto' e acronimi senza penalizzare.
+    """
+    aliases = []
+    for m in _ACRONYM_IN_PAREN.finditer(text):
+        aliases.append(m.group(1))
+    return aliases
+
+
+def _core_phrases(items: list[str]) -> list[tuple[set[str], list[set[str]]]]:
+    """Da ogni bullet, estrae (core_lemmas, aliases).
+
+    core_lemmas: lemmi di contenuto del testo prima del primo `—` o `-` lungo,
+    stopwords rimosse.
+    aliases: lista di set di lemmi alternativi (es. acronimi in parentesi).
+
+    v0.8.0: il match phrase contro gold accetta sia il core (con soglia
+    multi-parola) sia uno qualunque degli aliases (match esatto).
+    """
     out = []
     for it in items:
         head = re.split(r"\s[—–-]\s", it, maxsplit=1)[0]
-        lem = _lemmas(head)
-        if lem:
-            out.append(lem)
+        core = _content_lemmas(head)
+        aliases = []
+        for ac in _extract_acronym_aliases(head):
+            ac_lem = _lemmas(ac)
+            if ac_lem:
+                aliases.append(ac_lem)
+        if core or aliases:
+            out.append((core, aliases))
     return out
 
 
-def match_phrase(agent_lemmas: set[str], gold_phrase: set[str]) -> bool:
-    """Un gold è considerato coperto se ≥60% delle sue parole di contenuto sono
-    presenti nel testo dell'agente (soglia permissiva: lemmi brevi 1 parola
-    richiedono match esatto; frasi di N parole richiedono almeno `ceil(0.6*N)`)."""
-    if not gold_phrase:
-        return False
-    if len(gold_phrase) == 1:
-        return gold_phrase.issubset(agent_lemmas)
-    # Per frasi multi-parola: almeno metà delle parole di contenuto devono
-    # matchare, minimo 1. Questo è particolarmente importante per nomi propri
-    # di 2 parole (cognome soltanto basta: "Westerkamp" matcha "Hildegard
-    # Westerkamp"; "Truax" matcha "Barry Truax"). La soglia 60% precedente
-    # richiedeva 100% su frasi di 2 parole, penalizzando la skill che
-    # correttamente cita il cognome.
-    needed = max(1, len(gold_phrase) // 2)
-    return len(gold_phrase & agent_lemmas) >= needed
+def match_phrase(agent_lemmas: set[str], gold_phrase: set[str],
+                 aliases: list[set[str]] | None = None) -> bool:
+    """Un gold è considerato coperto se:
+    - tutti i lemmi del core sono presenti (1-parola: match esatto), OPPURE
+    - almeno N//2 dei lemmi del core sono presenti (multi-parola), OPPURE
+    - uno qualunque degli aliases è interamente contenuto nell'agent (match
+      esatto di acronimi come "GRM" per "Groupe de Recherches Musicales (GRM)").
+
+    Questo permette sia cognome-soltanto sia acronimo-soltanto di matchare
+    un'entry gold formulata per esteso.
+    """
+    if gold_phrase:
+        if len(gold_phrase) == 1:
+            if gold_phrase.issubset(agent_lemmas):
+                return True
+        else:
+            needed = max(1, len(gold_phrase) // 2)
+            if len(gold_phrase & agent_lemmas) >= needed:
+                return True
+    for ac in (aliases or []):
+        if ac and ac.issubset(agent_lemmas):
+            return True
+    return False
 
 
 # --------------------------------------------------------------------------- #
@@ -230,16 +280,16 @@ def compare(agent_text: str, golden: Golden) -> BenchmarkResult:
 
     terms_covered_raw = []
     terms_missing_raw = []
-    for i, gt in enumerate(gold_terms):
-        if match_phrase(agent_lem, gt):
+    for i, (gt, aliases) in enumerate(gold_terms):
+        if match_phrase(agent_lem, gt, aliases):
             terms_covered_raw.append(golden.terminologia[i])
         else:
             terms_missing_raw.append(golden.terminologia[i])
 
     parents_covered_raw = []
     parents_missing_raw = []
-    for i, gp in enumerate(gold_parents):
-        if match_phrase(agent_lem, gp):
+    for i, (gp, aliases) in enumerate(gold_parents):
+        if match_phrase(agent_lem, gp, aliases):
             parents_covered_raw.append(golden.parentele[i])
         else:
             parents_missing_raw.append(golden.parentele[i])

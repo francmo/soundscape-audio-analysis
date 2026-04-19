@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.7.3 (19 aprile 2026)
+**Versione corrente**: 0.8.0 (19 aprile 2026)
 **Test suite**: 182 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.7.3)
+## Stato corrente (v0.8.0)
 
 ### Capabilities attive
 
@@ -303,6 +303,20 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.8.0** (19/04/2026): patch vocabolario CLAP per rimuovere bias
+  italo-centrico. v1.7 -> v1.8: 18 prompt neutralizzati (rimossa parola
+  "italiano"/"mediterraneo" quando semanticamente non essenziale),
+  1 rimosso (ita_12 duplicato), 10 aggiunti (5 nuove categorie
+  non-italiane: nordici, artici, anglosassoni, europei orientali,
+  urbani internazionali). Totale prompt 236 -> 245. `category_defaults`
+  aggiornato in clap_academic_mapping_it.json. Benchmark esteso con
+  acronym alias (`(GRM)` matcha "GRM") e stopwords filter (di/the/de/of)
+  per metrica piu' equa. Zero tag italo-specifici nei top-10 CLAP dei
+  9 brani del corpus golden v1 (era 15-20 su v1.7). Media v0.8.0:
+  41.3/100 (Δ +0.4 vs baseline v0.7.1 ricalcolato). Trade-off: Ferrari
+  -10 (unico brano davvero mediterraneo, perde fit specifico), Nilsen
+  +11.8, Lockwood +19.6, Cusack London +5.8 (guadagni massicci su
+  brani non italiani che erano il target primario).
 - **v0.7.3** (19/04/2026): rule engine contestuale condizionato
   (`scripts/contextual_hints.py`) che ispeziona il payload agente e
   inietta dinamicamente blocchi "Suggerimenti contestuali di parentela"

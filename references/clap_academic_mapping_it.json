@@ -1,7 +1,7 @@
 {
   "version": "1.3",
   "schema_version": "1.0",
-  "generated_at": "2026-04-17",
+  "generated_at": "2026-04-19",
   "language": "it",
   "vocabulary_ref": {
     "path": "references/clap_vocabulary_it.json",
@@ -312,6 +312,46 @@
       "westerkamp_soundwalk_relevance": true,
       "schaeffer_type": "tenuto",
       "smalley_motion": "flow"
+    },
+    "paesaggi nordici": {
+      "krause": "mista",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "hi-fi",
+      "chion": "causale",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": true
+    },
+    "paesaggi artici": {
+      "krause": "geofonia",
+      "schafer_role": "keynote",
+      "schafer_fidelity": "hi-fi",
+      "chion": "ridotto",
+      "truax": "readiness",
+      "westerkamp_soundwalk_relevance": true
+    },
+    "paesaggi anglosassoni": {
+      "krause": "antropofonia",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "lo-fi",
+      "chion": "causale",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": true
+    },
+    "paesaggi europei orientali": {
+      "krause": "mista",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "hi-fi",
+      "chion": "causale",
+      "truax": "background",
+      "westerkamp_soundwalk_relevance": true
+    },
+    "paesaggi urbani internazionali": {
+      "krause": "antropofonia",
+      "schafer_role": "signal",
+      "schafer_fidelity": "lo-fi",
+      "chion": "causale",
+      "truax": "background",
+      "westerkamp_soundwalk_relevance": false
     }
   },
   "prompts": {

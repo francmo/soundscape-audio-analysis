@@ -149,7 +149,13 @@ def match_phrase(agent_lemmas: set[str], gold_phrase: set[str]) -> bool:
         return False
     if len(gold_phrase) == 1:
         return gold_phrase.issubset(agent_lemmas)
-    needed = math.ceil(0.6 * len(gold_phrase))
+    # Per frasi multi-parola: almeno metà delle parole di contenuto devono
+    # matchare, minimo 1. Questo è particolarmente importante per nomi propri
+    # di 2 parole (cognome soltanto basta: "Westerkamp" matcha "Hildegard
+    # Westerkamp"; "Truax" matcha "Barry Truax"). La soglia 60% precedente
+    # richiedeva 100% su frasi di 2 parole, penalizzando la skill che
+    # correttamente cita il cognome.
+    needed = max(1, len(gold_phrase) // 2)
     return len(gold_phrase & agent_lemmas) >= needed
 
 

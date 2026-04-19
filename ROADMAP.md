@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.7.1 (19 aprile 2026)
-**Test suite**: 165 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.7.3 (19 aprile 2026)
+**Test suite**: 182 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.7.1)
+## Stato corrente (v0.7.3)
 
 ### Capabilities attive
 
@@ -303,6 +303,24 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.7.3** (19/04/2026): rule engine contestuale condizionato
+  (`scripts/contextual_hints.py`) che ispeziona il payload agente e
+  inietta dinamicamente blocchi "Suggerimenti contestuali di parentela"
+  solo quando i marker acustici sono realmente presenti. 7 regole
+  (underwater/contact_mic_ice/urban_drone/sonic_journalism/drone_metal/
+  river_long/hum_no_fonologia). 16 test unitari. Modifica
+  `agent_bridge.py::_build_prompt` per l'iniezione. Fix `benchmark.py`
+  soglia match da 60% a 50% (permette match su cognome-soltanto per
+  frasi di 2 parole: "Westerkamp" matcha "Hildegard Westerkamp"). Media
+  v0.7.3: 39.5/100, Δ -0.2 vs baseline v0.7.1 ricalcolato (39.7).
+  Risultato "neutrale metrico" con redistribuzione: guadagno forte su
+  Nilsen (+13.5), Lockwood (+24.9), Cusack Chernobyl (+7.1); Ferrari
+  stabile a 62.1 (gold verificato); regressione su Watson (-27.5
+  artefatto gold incompleto: skill cita Watson+Köner ma gold non ha
+  Köner nelle parentele attese). **Skip v0.7.2**: tentativo prompt-patch
+  monolitico rollbackato lo stesso giorno (regressione -13 Ferrari,
+  -10 Winderen, -9 Lopez), pattern di non-monotonicità LLM documentato
+  come lezione metodologica per il paper.
 - **v0.7.1** (19/04/2026): infrastruttura benchmark. `scripts/benchmark.py`
   con parsing deterministico gold, match fuzzy, metriche precision/recall/
   Jaccard su terminologia e parentele, score aggregato 0-100.

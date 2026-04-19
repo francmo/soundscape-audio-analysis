@@ -8,6 +8,7 @@ v0.5.1: diagnostica arricchita su stderr per visibilita' dei failure mode
 Il dict ritornato include anche prompt_size_bytes e last_returncode per
 ispezione successiva nel summary JSON.
 """
+import json
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from . import config
+from . import contextual_hints
 from .locale_it import MESSAGGI_SISTEMA
 
 
@@ -23,13 +25,30 @@ AGENT_NAME = "soundscape-composer-analyst"
 PROMPT_TEMPLATE_PATH = config.TEMPLATES_DIR / "agent_prompt.md"
 
 
+def _load_summary_safe(summary_path: Path) -> dict | None:
+    try:
+        return json.loads(summary_path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — robustezza: se il summary non si legge, skip hints
+        print(
+            f"[agent_bridge] impossibile leggere summary per hints contestuali: {e}",
+            file=sys.stderr, flush=True,
+        )
+        return None
+
+
 def _build_prompt(summary_path: Path, narrative_md: str | None = None) -> str:
     """Costruisce il prompt da inviare a claude -p.
 
     v0.2.2: se `narrative_md` è presente viene iniettato direttamente nel
     prompt come materiale empirico già tradotto in italiano, evitando
-    all'agente di leggere la timeline completa (che su file lunghi
-    provocava timeout).
+    all'agente di leggere la timeline completa.
+
+    v0.7.3: inietta un blocco di "Suggerimenti contestuali di parentela"
+    selezionati condizionalmente dal payload (vedi `contextual_hints.py`).
+    Attivi solo le regole i cui marker acustici sono realmente presenti,
+    evitando di caricare il prompt con tutte le scuole possibili (pattern
+    di regressione documentato in v0.7.2 e v0.6.9). Se il summary non è
+    leggibile, il blocco viene omesso e il comportamento è identico a v0.7.1.
     """
     template = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
     instructions = template.replace("{SUMMARY_PATH}", str(summary_path))
@@ -40,10 +59,14 @@ def _build_prompt(summary_path: Path, narrative_md: str | None = None) -> str:
             + narrative_md
             + "\n"
         )
+    summary_dict = _load_summary_safe(summary_path)
+    hints_block = ""
+    if summary_dict is not None:
+        hints_block = contextual_hints.build_hints(summary_dict)
     body = f"""Sei l'agente {AGENT_NAME}. Segui esattamente le istruzioni seguenti.
 
 {instructions}
-{narrative_block}
+{hints_block}{narrative_block}
 Leggi il file JSON payload (summary ridotto) all'inizio del tuo ragionamento,
 poi integra la descrizione segmentata soprastante come materiale empirico
 già tradotto. Non ripeterla letteralmente: usala come evidenza. Produci il

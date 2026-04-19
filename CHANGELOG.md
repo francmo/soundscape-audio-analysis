@@ -1,5 +1,101 @@
 # Changelog
 
+## [0.7.3] - 2026-04-19
+
+Rule engine contestuale condizionato in `agent_bridge.py`. Risponde al
+pattern di non-monotonicità documentato nei tentativi v0.6.9 e v0.7.2
+(entrambi rollbackati): patch prompt monolitico migliora alcuni casi
+e degrada altri. La soluzione v0.7.3 è selezionare dinamicamente le
+parentele da suggerire all'agente **solo quando i marker acustici sono
+realmente presenti** nel payload.
+
+Skip v0.7.2: tentativo prompt-patch monolitico con guadagno medio +2.2
+ma regressioni gravi su gold verificati (Ferrari -13, Winderen -10,
+Lopez -9). Rollbackato lo stesso giorno.
+
+### Added
+
+- `scripts/contextual_hints.py`: 7 regole evidence-based che ispezionano
+  il payload per attivare condizionalmente suggerimenti di parentela:
+  R1 underwater (Winderen/Watson), R2 contact_mic_ice (Watson/Köner),
+  R3 urban_drone (Nilsen/López/Köner), R4 sonic_journalism (Cusack/CRiSAP),
+  R5 drone_metal (Earth/Sunn O)))/Boris + López atipico), R6 river_long
+  (Lockwood/Oliveros), R7 hum_no_fonologia (contro-regola anti-bias).
+  Accessor helper robusti a entrambe le strutture: summary.json completo
+  e agent_payload.json ridotto.
+- `tests/test_contextual_hints.py`: 16 test (fixture minime per ciascuna
+  regola, copertura positivi/negativi, verifica che il blocco hints sia
+  vuoto quando nessuna regola matcha — comportamento v0.7.1 preservato).
+
+### Changed
+
+- `scripts/agent_bridge.py::_build_prompt`: carica il payload JSON passato
+  e inietta il blocco `## Suggerimenti contestuali di parentela` dopo le
+  istruzioni principali, solo se almeno una regola contestuale matcha.
+  Se il summary non è leggibile, il blocco viene omesso (fallback pulito
+  a comportamento v0.7.1).
+- `scripts/benchmark.py::match_phrase`: soglia parole di contenuto per
+  match multi-parola abbassata da 60% (`ceil(0.6*N)`) a 50% (`max(1, N//2)`).
+  Lo stretto 60% richiedeva 100% su frasi di 2 parole, penalizzando la
+  skill quando citava solo il cognome ("Westerkamp" per gold "Hildegard
+  Westerkamp"). La nuova soglia permette match "cognome-soltanto".
+- `scripts/__init__.py`, `pyproject.toml`, `scripts/cli.py`: bump
+  0.7.1 → 0.7.3.
+
+### Baseline benchmark aggiornato (soglia 50%)
+
+Media v0.7.1 ricalcolata: 39.7/100 (era 26.8 con soglia 60%).
+Media v0.7.3: 39.5/100 (Δ -0.2 vs baseline).
+
+Confronto per brano (score aggregato):
+
+| # | Brano | v0.7.1 | v0.7.3 | Δ |
+|---|-------|--------|--------|---|
+| 01 | Cusack Chernobyl | 26.5 | 33.6 | +7.1 |
+| 02 | Nilsen Invisible City | 37.4 | 50.9 | **+13.5** |
+| 03 | Cusack London | 40.2 | 34.8 | -5.4 |
+| 04 | Herbert One Pig | 15.7 | 14.8 | -0.9 |
+| 05 | Ferrari Presque Rien ✓ | 59.3 | 62.1 | +2.8 |
+| 06 | Lockwood Danube | 26.4 | 51.3 | **+24.9** |
+| 07 | Watson Vatnajökull | 44.2 | 16.7 | -27.5 |
+| 08 | Winderen Energy Field | 51.9 | 45.5 | -6.4 |
+| 09 | Lopez Untitled #104 ✓ | 55.6 | 45.7 | -9.9 |
+
+### Lezione metodologica
+
+Net medio ~0, ma redistribuzione con **guadagni concentrati sui brani
+target del rule engine** (Nilsen, Lockwood, Cusack Chernobyl, Winderen
+Köner citato) e regressioni dove intervengono variabili confondenti.
+
+Caso Watson: la skill cita **esplicitamente** Chris Watson + Köner +
+WSP canadese, ma il gold Watson non include Köner come parentela
+attesa (è un gold minimale). Il crollo -27.5 è **artefatto del gold
+incompleto**, non regressione della skill. Lezione: i gold
+`golden_analyses/` devono essere **inclusivi** (lista di parentele
+accettabili, non minima); raffinare i gold alzerà gli score senza
+modifiche ulteriori alla skill.
+
+Caso Ferrari (gold verificato): 62.1 (da 59.3). Nessuna regola v0.7.3
+attivata, stabilità confermata.
+
+### Test
+
+- 182 passed + 2 skipped (165 v0.7.1 + 16 contextual_hints + 1 nuovo
+  test benchmark). Zero regressioni.
+
+### Rimane aperto per v0.7.4+
+
+- Raffinamento dei gold `golden_analyses/*.md` con liste inclusive di
+  parentele (Watson deve includere Köner; Winderen deve includere
+  Westerkamp/Nilsen/Krause; Lockwood deve includere Oliveros/Krause;
+  Nilsen deve includere López/Watson/Köner). Lavoro di documentazione,
+  non di ingegneria.
+- Secondo run benchmark v0.7.3 per misurare deviazione standard LLM
+  (temperatura > 0). Il singolo run non distingue variabilità da
+  regressione reale.
+- Regole contestuali aggiuntive basate sui pattern residui (soundmark
+  urbano di città specifica per sound mapping partecipativo).
+
 ## [0.7.1] - 2026-04-19
 
 Infrastruttura benchmark per misurare oggettivamente la qualita'

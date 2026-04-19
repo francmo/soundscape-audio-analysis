@@ -10,9 +10,9 @@ durata: 54:58
 genere: field recording / sonic journalism
 
 ## Tracklist verificata
-verificato: false
-fonte: Bandcamp https://petercusack2.bandcamp.com/album/sounds-from-dangerous-places-vol-1-chernobyl (37 tracce nel Vol.1 completo)
-note: Il titolo "Chernobyl Dawn" usato nel corpus non corrisponde a traccia dell'album. Il file audio contiene il Vol.1 Bandcamp completo (37 microritratti). Il gold descrive l'opera come atlante/compilation, non come brano singolo.
+verificato: true
+fonte: Bandcamp https://petercusack2.bandcamp.com/album/sounds-from-dangerous-places-vol-1-chernobyl (tracklist 37 microritratti verificata)
+note: Il titolo "Chernobyl Dawn" usato nel corpus non corrisponde a traccia dell'album (era allucinazione LLM nel gold iniziale). Il file audio contiene il Vol.1 Bandcamp completo (37 microritratti). Il gold descrive l'opera come atlante/compilation, non come brano singolo.
 
 ## Contesto critico
 
@@ -41,7 +41,11 @@ Forma ad atlante (non narrativa lineare). Blocchi tematici giustapposti senza mo
 - `Chris Watson` — etica del field recording documentario
 - `London Sound Survey` — contesto istituzionale di Cusack
 - `CRiSAP` — London College of Communication, area di ricerca Cusack
+- `Hildegard Westerkamp` — soundscape composition come riferimento metodologico
 - `Francisco Lopez` — drone-field (parentela minore)
+- `Touch` — scuola estetica contemporanea vicina
+- `sonic journalism` — categoria critica che Cusack stesso ha coniato
+- `World Soundscape Project` — filiazione storica di Schafer
 
 ## Fonti bibliografiche
 

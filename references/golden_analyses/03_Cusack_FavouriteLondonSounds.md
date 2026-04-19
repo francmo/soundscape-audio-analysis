@@ -41,6 +41,11 @@ Sequenza di vignette di durata variabile (1-5 minuti), ognuna introdotta o meno 
 - `R. Murray Schafer` — fondatore WSP, Tuning of the World
 - `London Sound Survey` — contesto Cusack
 - `CRiSAP` — London College of Communication, area di ricerca
+- `Luc Ferrari` — lunga durata diaristica urbana (parentela leggera)
+- `Alvin Curran` — collage urbano come pratica compositiva
+- `participatory sound mapping` — metodo di Cusack
+- `World Soundscape Project` — genealogia metodologica
+- `Cathy Lane` — area CRiSAP, pratica urbana parallela
 
 ## Fonti bibliografiche
 

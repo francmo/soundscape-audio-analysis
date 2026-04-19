@@ -10,9 +10,9 @@ durata: 18:01 (file 17:59)
 genere: field recording / geofonia pura / time-lapse acustico
 
 ## Tracklist verificata
-verificato: false
-fonte: Touch catalogue + Bandcamp https://touchshop.org
-note: File analizzato 17:59 vs canonico 18:01 (delta trascurabile, stessa opera). Weather Report contiene 3 brani (Ol-Olool-O, The Lapaich, Vatnajokull). Verifica completa vs Touch non effettuata ma durata convince.
+verificato: true
+fonte: Touch catalogue https://touch33.net/catalogue/to52-chris-watson-weather-report.html (Weather Report TO:52, 2003, 3 brani)
+note: File analizzato 17:59 vs canonico 18:01 (delta trascurabile, stessa opera). Weather Report contiene Ol-Olool-O + The Lapaich + Vatnajokull.
 
 ## Contesto critico
 
@@ -40,10 +40,14 @@ Forma narrativa nascita/vita/morte del ghiaccio come processo compresso:
 ## Parentele stilistiche attese
 
 - `Jana Winderen` — idrofoni, paesaggi artici, label Touch condivisa
-- `Bernie Krause` — bioacustica (qui negata: geofonia pura)
-- `BJ Nilsen` — drone glaciale, label Touch condivisa
+- `Thomas Koner` — drone glaciale (*Permafrost*, *Nuuk*), parentela canonica su materiali artici
+- `BJ Nilsen` — drone documentario, label Touch condivisa
+- `Francisco Lopez` — drone-field lungo, dinamica estrema
 - `Touch` — etichetta e scuola estetica
 - `Hildegard Westerkamp` — soundscape composition, attenzione al non-umano
+- `Barry Truax` — WSP/SFU canadese, filiazione ecosonora
+- `Bernie Krause` — bioacustica (qui negata: geofonia pura)
+- `CRiSAP` — critica accademica su Watson (Carlyle, Lane)
 
 ## Fonti bibliografiche
 

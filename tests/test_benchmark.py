@@ -111,7 +111,17 @@ def test_match_phrase_exact():
 def test_match_phrase_partial():
     agent = {"field", "biofonia"}
     gold = bench._lemmas("field recording")
-    # 1/2 = 50% < 60% threshold → no match
+    # 1/2 = 50% soglia: 1 match >= max(1, 2//2)=1 → True (match lento intenzionale
+    # per permettere cognome-soltanto su nomi propri di 2 parole, es. "Westerkamp"
+    # matcha "Hildegard Westerkamp").
+    assert bench.match_phrase(agent, gold) is True
+
+
+def test_match_phrase_partial_long_phrase():
+    # Per frasi lunghe la soglia rimane robusta: servono >= N//2 parole.
+    agent = {"one"}
+    gold = bench._lemmas("completely different phrase here")  # 4 lemmi
+    # needed = max(1, 4//2) = 2; agent ha 0 → no match
     assert bench.match_phrase(agent, gold) is False
 
 

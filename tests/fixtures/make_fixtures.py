@@ -66,6 +66,58 @@ def transient_dense(duration=4.0, n_events=150, sr=SR):
     return y.astype(np.float32)
 
 
+def silence_digital(duration=5.0, sr=SR):
+    """Silenzio numerico puro (tutti zeri). Per parity test ecoacoustic v0.9.0.
+    Atteso: ACI=0, NDSI indefinito/0, BI=0, H_temporal=0 (no energy), H_spectral
+    indefinito/0. Il backend deve gestire gracefully senza NaN/errori."""
+    return np.zeros(int(duration * sr), dtype=np.float32)
+
+
+def biofonia_sintetica(duration=10.0, sr=SR, seed=7):
+    """Mimo di soundscape biofonico con canti sintetici in banda 2-8 kHz.
+
+    Composto da:
+    - pink noise basso a -30 dBFS nella banda antropofonica (1-2 kHz),
+      simula traffico/rumore urbano di sottofondo.
+    - Tre sweep FM sinusoidali 2-8 kHz (simulano canti di uccelli), a -15 dBFS,
+      a tempi diversi per generare complessita' spettro-temporale.
+    - NDSI atteso POSITIVO (biofonia > antropofonia), BI atteso ALTO, ACI
+      atteso MODERATO (variazione temporale dei canti).
+    """
+    n = int(duration * sr)
+    t = np.linspace(0, duration, n, endpoint=False)
+    rng = np.random.default_rng(seed)
+
+    # base antropofonica: pink noise filtrato 1-2 kHz
+    white = rng.standard_normal(n)
+    fft = np.fft.rfft(white)
+    freqs = np.fft.rfftfreq(n, d=1 / sr)
+    scale = np.zeros_like(freqs)
+    band_a = (freqs >= 1000) & (freqs <= 2000)
+    scale[band_a] = 1.0 / np.sqrt(np.maximum(freqs[band_a], 1.0))
+    anthro = np.fft.irfft(fft * scale, n=n).astype(np.float32)
+    anthro = anthro / (np.max(np.abs(anthro)) + 1e-9) * (10 ** (-30.0 / 20.0))
+
+    # canti sintetici in 2-8 kHz: 3 sweep FM a momenti diversi
+    biophony = np.zeros(n, dtype=np.float32)
+    for start_s, dur_s, f0, f1 in [(1.5, 0.8, 2500, 4500),
+                                    (3.8, 1.2, 4000, 7000),
+                                    (6.2, 0.9, 3000, 5500),
+                                    (7.5, 0.6, 5500, 7500)]:
+        a = int(start_s * sr)
+        b = int((start_s + dur_s) * sr)
+        t_seg = np.linspace(0, dur_s, b - a, endpoint=False)
+        freq_inst = f0 + (f1 - f0) * (t_seg / dur_s)
+        phase = 2 * np.pi * np.cumsum(freq_inst) / sr
+        env = np.sin(np.pi * t_seg / dur_s) ** 2  # envelope campana
+        chirp = np.sin(phase).astype(np.float32) * env * (10 ** (-15.0 / 20.0))
+        biophony[a:b] += chirp
+
+    y = (anthro + biophony).astype(np.float32)
+    y = y / (np.max(np.abs(y)) + 1e-9) * 0.9
+    return y
+
+
 def multichannel_714(duration=2.0, sr=SR):
     """File 12 canali 7.1.4 con contenuto differenziato per canale."""
     n = int(duration * sr)
@@ -102,6 +154,9 @@ def main():
     sf.write(HERE / "silence_low.wav", silence_low(), SR, subtype="PCM_16")
     sf.write(HERE / "transient_dense.wav", transient_dense(), SR, subtype="PCM_16")
     sf.write(HERE / "multichannel_714.wav", multichannel_714(), SR, subtype="PCM_16")
+    # v0.9.0: fixture per parity test ecoacoustic (silenzio digitale e biofonia).
+    sf.write(HERE / "silence_digital.wav", silence_digital(), SR, subtype="PCM_16")
+    sf.write(HERE / "biofonia_sintetica.wav", biofonia_sintetica(), SR, subtype="PCM_16")
     print("Fatto")
 
 

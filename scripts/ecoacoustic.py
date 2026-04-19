@@ -192,11 +192,10 @@ def compute_adi_aei(
     }
 
 
-def ecoacoustic_summary(y: np.ndarray, sr: int, extended: bool = False) -> dict:
-    """Orchestrazione: calcola tutti gli indici principali.
-
-    Se `extended=True` include ADI/AEI (più costosi).
-    """
+def _ecoacoustic_summary_legacy(y: np.ndarray, sr: int, extended: bool = False) -> dict:
+    """Implementazione custom storica (indici ricalcolati a mano dalle formule
+    originali Pieretti/Kasten/Sueur/Boelman/Villanueva-Rivera). Restituisce
+    dict con chiavi {aci, ndsi, h_entropy, bi, adi_aei?}."""
     out = {
         "aci": compute_aci(y, sr),
         "ndsi": compute_ndsi(y, sr),
@@ -206,3 +205,25 @@ def ecoacoustic_summary(y: np.ndarray, sr: int, extended: bool = False) -> dict:
     if extended:
         out["adi_aei"] = compute_adi_aei(y, sr)
     return out
+
+
+def ecoacoustic_summary(y: np.ndarray, sr: int, extended: bool = False,
+                        backend: str | None = None) -> dict:
+    """Orchestrazione: calcola tutti gli indici principali.
+
+    Se `extended=True` include ADI/AEI (più costosi).
+
+    Il parametro `backend` (v0.9.0 Step A) seleziona l'implementazione:
+    - None (default): usa `config.ECO_BACKEND` ("legacy" fino a v0.9.x).
+    - "legacy": implementazione custom storica.
+    - "maad": thin wrapper su scikit-maad (Ulloa et al. 2021).
+
+    L'API pubblica (chiavi del dict risultato) e' identica fra i backend. Il
+    flag `--ecoacoustic-backend` del CLI permette di selezionare runtime.
+    Il flip del default a "maad" avverra' in v0.10.0 se il parity test passa.
+    """
+    chosen = backend or config.ECO_BACKEND
+    if chosen == "maad":
+        from .ecoacoustic_maad import ecoacoustic_summary_maad
+        return ecoacoustic_summary_maad(y, sr, extended=extended)
+    return _ecoacoustic_summary_legacy(y, sr, extended=extended)

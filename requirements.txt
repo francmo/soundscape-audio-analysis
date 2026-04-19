@@ -2,7 +2,10 @@
 # Pin stringenti per riproducibilità
 
 # Numerico e I/O audio
-numpy>=1.26,<2.3
+# numpy pinnato <2.0 per compatibilita' con laion-clap 1.1.7 e tensorflow 2.x
+# (v0.9.0: pin stretto dopo incidente scikit-maad 1.5.2 che tirava numpy 2.2.6
+# via scikit-image 0.26 / tifffile 2026, rompendo laion-clap + panns_inference).
+numpy>=1.26,<2.0
 scipy>=1.11,<1.15
 librosa>=0.10,<0.11
 soundfile>=0.12,<0.13
@@ -36,6 +39,17 @@ reportlab>=4.0,<4.4
 # CLI
 click>=8.1,<8.3
 rich>=13.7
+
+# Ecoacoustic indices (v0.9.0 Step A):
+# scikit-maad fornisce le implementazioni peer-reviewed di ACI/NDSI/H/BI/ADI/AEI
+# (Ulloa et al. 2021, SoftwareX, DOI 10.1016/j.softx.2021.100720).
+# Pin stretto su 1.4.3 + scikit-image<0.23 + tifffile<2024 per evitare la
+# catena transitiva che esigerebbe numpy>=2 e romperebbe laion-clap/tensorflow.
+# Il wrapper scripts/ecoacoustic_maad.py e' opt-in via --ecoacoustic-backend maad.
+scikit-maad==1.4.3
+scikit-image<0.23
+tifffile<2024
+pywavelets>=1.4,<1.6
 
 # Testing e validazione
 pytest>=8.0

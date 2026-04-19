@@ -423,6 +423,15 @@ HIFI_FLATNESS_MAX = 0.3
 ECO_BIOPHONY_BAND = (2000, 8000)
 ECO_ANTHROPOPHONY_BAND = (1000, 2000)
 
+# v0.9.0 Step A: backend indici ecoacustici.
+# - "legacy": implementazione custom storica (scripts/ecoacoustic.py, v0.2+).
+# - "maad": thin wrapper sopra scikit-maad (scripts/ecoacoustic_maad.py),
+#   libreria peer-reviewed (Ulloa et al. 2021, SoftwareX). Output API identico.
+# Il flip del default a "maad" avverra' in v0.10.0 solo se il parity test
+# (tests/test_ecoacoustic_parity.py + corpus golden v1) conferma delta
+# accettabili documentati nel research log.
+ECO_BACKEND = "legacy"
+
 # Palette ABTEC40 (hex)
 PALETTE = {
     "dark": "#1a2a3a",

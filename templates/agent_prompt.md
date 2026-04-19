@@ -140,6 +140,18 @@ Clementi, Zuccheri):
 - voci processate con nastro (splicing, reversal, pitch shift) + field recording
   di strada/industriale (operai, manifestazioni, fabbriche).
 
+**Regola deterministica hum != Fonologia (v0.8.1)**: il payload include
+`italian_context.is_italian_context` computato dalla skill (True solo se
+almeno 2 indicatori italiani: parlato italiano, hum 50Hz presente, tag
+CLAP italo-specifici, stopwords italiane nella trascrizione).
+**Se `italian_context.is_italian_context == false`, NON attribuire
+l'opera alla Fonologia RAI**. L'hum 50 Hz da solo e' comune a qualunque
+catena analogica europea contemporanea (Touch, Editions Mego, Raster,
+Staubgold). In quel caso pesa Touch dark ambient, drone-field contemporaneo,
+o altre parentele non-italiane. L'attribuzione alla Fonologia richiede
+lingua italiana + contesto politico-sociale italiano + datazione storica
+coerente, non il solo hum.
+
 **Indicatori di GRM francese** (Schaeffer, Henry, Parmegiani, Ferrari, Bayle):
 - Schaeffer detail cross-sintesi alta, morphing continuo fra oggetti concreti e
   sintetici.

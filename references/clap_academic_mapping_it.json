@@ -352,6 +352,14 @@
       "chion": "causale",
       "truax": "background",
       "westerkamp_soundwalk_relevance": false
+    },
+    "paesaggi dalmati e adriatici": {
+      "krause": "mista",
+      "schafer_role": "soundmark",
+      "schafer_fidelity": "hi-fi",
+      "chion": "causale",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": true
     }
   },
   "prompts": {

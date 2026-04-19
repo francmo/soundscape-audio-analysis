@@ -88,6 +88,62 @@ def _build_signature(
     }
 
 
+def _compute_italian_context(speech: dict, hum: dict, clap: dict) -> dict:
+    """v0.8.1: flag deterministico di "contesto italiano" per regolare le
+    attribuzioni stilistiche dell'agente.
+
+    Ritorna `{is_italian_context: bool, reasons: [str]}` con motivazione
+    ispezionabile. Il flag e' True solo se CO-occorrono almeno 2 dei 4
+    indicatori, evitando che l'hum 50 Hz da solo forzi l'agente verso
+    la Fonologia RAI.
+
+    Indicatori:
+    1. `speech_italian`: speech.language_detected == 'it' con probabilita'
+       >= 0.80.
+    2. `hum_50hz_dominant`: hum 50 Hz "presente" nel verdict overall (hum
+       60 Hz da solo esclude: rete americana).
+    3. `italian_clap_markers`: almeno 1 tag CLAP nei top-20 con
+       geo_specific=True e categoria 'paesaggi italiani specifici'.
+    4. `italian_speech_content`: trascrizione speech (se presente) contiene
+       parole italiane frequenti (la, il, che, non, è, un).
+
+    L'agente usa questo flag per la regola "hum analogico != Fonologia RAI
+    senza corroborazione italiana" documentata nel prompt v0.8.1.
+    """
+    reasons: list[str] = []
+    lang = str(speech.get("language_detected", "") or "").lower()
+    lang_prob = float(speech.get("language_probability", 0) or 0)
+    speech_italian = (lang == "it" and lang_prob >= 0.80)
+    if speech_italian:
+        reasons.append("speech_italian")
+
+    hum_overall = str(hum.get("overall_verdict", "") or "").lower()
+    hum_50 = False
+    peaks = hum.get("peaks") or []
+    for p in peaks:
+        if p.get("target_hz") == 50 and p.get("verdict") == "presente":
+            hum_50 = True
+            break
+    if hum_50 and "presente" in hum_overall:
+        reasons.append("hum_50hz_dominant")
+
+    clap_italian = False
+    for t in (clap.get("top_global") or [])[:20]:
+        if t.get("geo_specific") is True and "italian" in str(t.get("category", "")).lower():
+            clap_italian = True
+            break
+    if clap_italian:
+        reasons.append("italian_clap_markers")
+
+    transcript = str(speech.get("transcript_it", "") or "").lower()
+    italian_stopwords = {" la ", " il ", " che ", " non ", " un ", " una ", " del ", " della ", "è "}
+    if transcript and sum(1 for sw in italian_stopwords if sw in transcript) >= 3:
+        reasons.append("italian_speech_content")
+
+    is_italian = len(reasons) >= 2
+    return {"is_italian_context": is_italian, "reasons": reasons}
+
+
 def build_agent_payload(summary: dict, narrative_md: str) -> dict:
     """Estrae il payload minimo ma sufficiente per l'agente."""
     meta = summary.get("metadata", {})
@@ -101,6 +157,8 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
     mc = summary.get("multichannel", {}) or {}
     structure = summary.get("structure", {}) or {}
 
+    italian_ctx = _compute_italian_context(speech, hum, clap)
+
     payload = {
         "file": {
             "name": meta.get("filename", ""),
@@ -109,6 +167,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "channels": meta.get("channels", 0),
             "layout": (mc or {}).get("layout") or "stereo",
         },
+        "italian_context": italian_ctx,
         "signature": _build_signature(meta, tech, spec, classifier, clap, speech),
         "technical": {
             "peak_dbfs": tech.get("levels", {}).get("peak_dbfs"),

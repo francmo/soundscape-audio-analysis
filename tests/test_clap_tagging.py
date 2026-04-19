@@ -20,11 +20,11 @@ def _fixtures():
 
 
 def test_vocabulary_load():
-    """v0.8.0: il vocabolario v1.8 ha almeno 240 prompt e 29 categorie."""
+    """v0.8.2: il vocabolario v1.9 ha almeno 250 prompt e 30 categorie."""
     vocab = load_vocabulary()
     assert "prompts" in vocab
-    assert vocab["version"] == "1.8"
-    assert len(vocab["prompts"]) >= 240
+    assert vocab["version"] == "1.9"
+    assert len(vocab["prompts"]) >= 250
     # Ogni prompt ha i campi obbligatori
     for p in vocab["prompts"]:
         assert "id" in p and "text" in p and "category" in p

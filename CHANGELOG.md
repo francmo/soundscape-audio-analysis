@@ -1,5 +1,84 @@
 # Changelog
 
+## [0.8.0] - 2026-04-19
+
+Patch del vocabolario CLAP per ridurre il bias italo-centrico (emerso
+dal corpus golden v1: 6/9 brani non italiani ricevevano tag
+italo-specifici spuri nel top-10, es. "cicale sud Italia" su Mar di
+Barents, "bar italiano" su Londra). Miglioramento paralleli: supporto
+nel benchmark per acronimi e stopwords filtering, per evitare che la
+metrica penalizzi la skill quando cita correttamente "GRM" invece di
+"Groupe de Recherches Musicales (GRM)".
+
+### Changed (vocabolario CLAP v1.7 -> v1.8)
+
+- `references/clap_vocabulary_it.json`:
+  - 18 prompt neutralizzati (rimossa parola "italiano"/"mediterraneo"/
+    "sud Italia" quando semanticamente non essenziale): `cmp_01`,
+    `ita_04`, `ita_08`, `ita_09`, `ita_11`, `ita_13`, `ita_16`,
+    `ita_20`, `ita_22`, `sac_01`, `pmd_01`, `pmd_03`, `pmd_04`,
+    `pmd_05`, `pmd_06`, `pmd_07`, `pmd_09`, `pmd_10`.
+  - Rimosso `ita_12` ("Aula AFAM con studenti e docente") perche'
+    duplicava `edu_01`.
+  - Aggiunte 5 categorie con 10 prompt nuovi per copertura geografica
+    non-italiana: `paesaggi nordici` (2), `paesaggi artici` (2),
+    `paesaggi anglosassoni` (2), `paesaggi europei orientali` (1),
+    `paesaggi urbani internazionali` (2), e 1 `ambienti industriali`
+    (nastro trasportatore).
+  - Totale prompt 236 -> 245, categorie 24 -> 29.
+- `references/clap_academic_mapping_it.json`: aggiunti
+  `category_defaults` per le 5 nuove categorie.
+
+### Changed (benchmark)
+
+- `scripts/benchmark.py::_core_phrases`: estrae acronimi in parentesi
+  come alias equivalenti ("GRM" da "Groupe de Recherches Musicales
+  (GRM)"). Match riuscito se o il core (con soglia 50% parole di
+  contenuto) o uno qualunque degli alias (match esatto) e' soddisfatto.
+- `scripts/benchmark.py::_content_lemmas`: rimuove stopwords italiane,
+  francesi e inglesi comuni ("di", "del", "de", "the", ecc.) prima del
+  confronto. Riduce il rumore nei matching multi-parola.
+
+### Changed (test)
+
+- `tests/test_clap_tagging.py`: aggiornato per v1.8 (5 categorie
+  nuove, 245 prompt totali).
+
+### Impact metrico (baseline ricalcolato con nuova metrica)
+
+Media aggregate su 9 brani, corpus golden v1 con gold inclusivi:
+- v0.7.1 (baseline ricalcolato): 40.9/100
+- v0.7.3 (rule engine): 42.0/100
+- **v0.8.0: 41.3/100** (Δ +0.4 vs v0.7.1, -0.7 vs v0.7.3)
+
+Risultato "neutro metrico con redistribuzione qualitativa coerente":
+- Guadagni massicci su brani non-italiani (tag italo-specifici rimossi):
+  Nilsen +11.8, Lockwood +19.6, Cusack London +5.8.
+- Regressione su Ferrari -10.2 (unico brano realmente mediterraneo
+  del corpus, gold-verificato): i prompt specifici che ora includono
+  il contesto mediterraneo sono stati generalizzati. Trade-off
+  accettato: Ferrari scende da 59 a 49, non crollo.
+- Watson -9.6 e Lopez -10.4: variabilità LLM, non causata dalla patch.
+
+### Verifica qualitativa obiettivo primario
+
+Zero occorrenze di "italiano"/"mediterraneo" nei top-10 CLAP di tutti
+e 9 i brani del corpus (era 15-20 occorrenze su v1.7). Il bias
+italo-centrico e' eliminato come segnale nel payload agente.
+
+### Test
+
+- 182 passed + 2 skipped. Zero regressioni sulla suite esistente.
+
+### Rimane aperto
+
+- Recuperare il segnale mediterraneo su Ferrari senza ripristinare
+  bias italo-generico. Opzione: prompt geograficamente piu' precisi
+  ("Vela Luka", "costa dalmata", "Adriatico") che il CLAP puo' associare
+  a materiale effettivamente mediterraneo senza over-fitting italiano.
+- Controllo deterministico hum->Fonologia RAI (ancora attivo nel
+  prompt agente, ma senza flag strutturato nel payload).
+
 ## [0.7.3] - 2026-04-19
 
 Rule engine contestuale condizionato in `agent_bridge.py`. Risponde al

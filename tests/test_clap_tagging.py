@@ -20,11 +20,11 @@ def _fixtures():
 
 
 def test_vocabulary_load():
-    """v0.6.6: il vocabolario v1.7 ha almeno 230 prompt e 24 categorie."""
+    """v0.8.0: il vocabolario v1.8 ha almeno 240 prompt e 29 categorie."""
     vocab = load_vocabulary()
     assert "prompts" in vocab
-    assert vocab["version"] == "1.7"
-    assert len(vocab["prompts"]) >= 230
+    assert vocab["version"] == "1.8"
+    assert len(vocab["prompts"]) >= 240
     # Ogni prompt ha i campi obbligatori
     for p in vocab["prompts"]:
         assert "id" in p and "text" in p and "category" in p
@@ -48,7 +48,16 @@ def test_vocabulary_load():
         "sintesi digitale storica",
         "canto liturgico e cantillazione",
     ):
-        assert cat in cats, f"categoria '{cat}' mancante nel vocabolario v1.7"
+        assert cat in cats, f"categoria '{cat}' mancante nel vocabolario v1.8"
+    # v0.8.0: 5 nuove categorie per copertura geografica non-italiana
+    for cat in (
+        "paesaggi nordici",
+        "paesaggi artici",
+        "paesaggi anglosassoni",
+        "paesaggi europei orientali",
+        "paesaggi urbani internazionali",
+    ):
+        assert cat in cats, f"categoria '{cat}' mancante nel vocabolario v1.8"
 
 
 @pytest.mark.skipif(not CLAP_CHECKPOINT_FILE.exists(),

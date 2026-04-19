@@ -1,9 +1,9 @@
 {
-  "version": "1.7",
-  "generated_at": "2026-04-17",
+  "version": "1.8",
+  "generated_at": "2026-04-19",
   "model": "LAION-CLAP music_audioset_epoch_15_esc_90",
   "language": "it",
-  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.3 (v0.5.2): espansione da 172 a 193 prompt sulla base del feedback Presque Rien N°1 di Luc Ferrari. Nuova categoria 'paesaggi mediterranei generici' (10 prompt) per affiancare 'paesaggi italiani specifici' su materiale mediterraneo non italiano (Croazia, Grecia, Spagna, Francia mediterranea). Estensioni: geofonia estesa +3 (mare calmo onde leggere, sciabordio molo, brezza marina alba), biofonia +3 (gallo all'alba villaggio costiero, gabbiani in volo distante, coro rane mare), antropofonia urbana +3 (pescatori dalle barche, bambini in lingua straniera, mercato pesce), antropofonia meccanica +2 (peschereccio diesel piccolo cabotaggio, catene di barca). Schema invariato. v1.4 (16/04/2026): aggiunta categoria utterance (10 prompt utt_01..utt_10) per gesti vocali umani e non-umani trattati come oggetti sonori (Wishart 1996). v1.5 (17/04/2026): aggiunti 4 prompt elx_14..elx_17 per materiali tonali campanari processati con time-stretch estremo (emerso da confronto blind con Truax 'Basilica' 1992: PANNs/CLAP precedenti non riconoscevano campane trasformate al 20x). v1.6 (17/04/2026, regressione): rimossi elx_14..elx_17 perche' matchavano troppo largo su materiali tonali non-campanari (risonanze metalliche industriali di Nono 'La fabbrica illuminata' Italsider, sintesi additiva MUSIC V di Risset 'Sud'), provocando falsi positivi sistemici tipo 'campane trasfigurate in drone armonico' con attribuzione errata a Truax Basilica. Ritorno a 203 prompt come in v1.4. La descrizione di campane trasformate e' demandata alla narrativa di narrative.py e all'agente compositivo, non a tag CLAP dedicati. v1.7 (17/04/2026, v0.6.6): aggiunte 5 categorie (33 prompt nuovi) dal confronto blind corpus Nottoli: 'ambienti industriali' (ind_01..ind_07) per Nono 'La fabbrica illuminata' (laminatoio, altoforno, officina, macchinari, fiamma ossidrica, catena di montaggio, nastro magnetico d'archivio); 'soundscape politico urbano' (pol_01..pol_08) per Nono 'Non consumiamo Marx' (slogan, contestazione studentesca, scritte murali, sciopero, megafono, occupazione, archivio Sessantotto, piazza politica); 'elektronische Musik storica' (elk_01..elk_06) per Studio Fonologia RAI e WDR (sinusoidi pure, oscillatore sweep, rumore bianco filtrato, ring modulation, nastro con voce processata, feedback controllato); 'sintesi digitale storica' (sdg_01..sdg_06) per Risset 'Sud' e MUSIC V/Csound (additiva percussiva metallica, spettrale con partials decrescenti, campana sintetica a spettro modulato, cross-sintesi field recording/strumento, MUSIC V envelope esponenziale, granulare parametrica); 'canto liturgico e cantillazione' (lit_01..lit_06) per Truax 'Song of Songs I' (canto monastico maschile, salmodia latina, cantillazione ebraica, gregoriano in abbazia, coro liturgico con eco, shofar rituale). Totale prompt 203 -> 236, categorie 19 -> 24.",
+  "notes": "Vocabolario italiano soundscape-oriented per auto-tagging con CLAP. Versione 1.3 (v0.5.2): espansione da 172 a 193 prompt sulla base del feedback Presque Rien N°1 di Luc Ferrari. Nuova categoria 'paesaggi mediterranei generici' (10 prompt) per affiancare 'paesaggi italiani specifici' su materiale mediterraneo non italiano (Croazia, Grecia, Spagna, Francia mediterranea). Estensioni: geofonia estesa +3 (mare calmo onde leggere, sciabordio molo, brezza marina alba), biofonia +3 (gallo all'alba villaggio costiero, gabbiani in volo distante, coro rane mare), antropofonia urbana +3 (pescatori dalle barche, bambini in lingua straniera, mercato pesce), antropofonia meccanica +2 (peschereccio diesel piccolo cabotaggio, catene di barca). Schema invariato. v1.4 (16/04/2026): aggiunta categoria utterance (10 prompt utt_01..utt_10) per gesti vocali umani e non-umani trattati come oggetti sonori (Wishart 1996). v1.5 (17/04/2026): aggiunti 4 prompt elx_14..elx_17 per materiali tonali campanari processati con time-stretch estremo (emerso da confronto blind con Truax 'Basilica' 1992: PANNs/CLAP precedenti non riconoscevano campane trasformate al 20x). v1.6 (17/04/2026, regressione): rimossi elx_14..elx_17 perche' matchavano troppo largo su materiali tonali non-campanari (risonanze metalliche industriali di Nono 'La fabbrica illuminata' Italsider, sintesi additiva MUSIC V di Risset 'Sud'), provocando falsi positivi sistemici tipo 'campane trasfigurate in drone armonico' con attribuzione errata a Truax Basilica. Ritorno a 203 prompt come in v1.4. La descrizione di campane trasformate e' demandata alla narrativa di narrative.py e all'agente compositivo, non a tag CLAP dedicati. v1.7 (17/04/2026, v0.6.6): aggiunte 5 categorie (33 prompt nuovi) dal confronto blind corpus Nottoli: 'ambienti industriali' (ind_01..ind_07) per Nono 'La fabbrica illuminata' (laminatoio, altoforno, officina, macchinari, fiamma ossidrica, catena di montaggio, nastro magnetico d'archivio); 'soundscape politico urbano' (pol_01..pol_08) per Nono 'Non consumiamo Marx' (slogan, contestazione studentesca, scritte murali, sciopero, megafono, occupazione, archivio Sessantotto, piazza politica); 'elektronische Musik storica' (elk_01..elk_06) per Studio Fonologia RAI e WDR (sinusoidi pure, oscillatore sweep, rumore bianco filtrato, ring modulation, nastro con voce processata, feedback controllato); 'sintesi digitale storica' (sdg_01..sdg_06) per Risset 'Sud' e MUSIC V/Csound (additiva percussiva metallica, spettrale con partials decrescenti, campana sintetica a spettro modulato, cross-sintesi field recording/strumento, MUSIC V envelope esponenziale, granulare parametrica); 'canto liturgico e cantillazione' (lit_01..lit_06) per Truax 'Song of Songs I' (canto monastico maschile, salmodia latina, cantillazione ebraica, gregoriano in abbazia, coro liturgico con eco, shofar rituale). Totale prompt 203 -> 236, categorie 19 -> 24. v1.8 (19/04/2026, v0.8.0): riduzione bias italo-centrico emerso dal corpus golden v1 (6/9 brani non italiani ricevevano tag italo-specifici spuri nel top-10, es. 'cicale sud Italia' su Mar di Barents, 'bar italiano' su Londra). Modifiche: (a) 18 prompt neutralizzati (rimossa la parola 'italiano'/'mediterraneo'/'sud Italia' quando il prompt resta semanticamente valido in contesto internazionale); (b) rimosso ita_12 (duplicava edu_01 'Aula di conservatorio con studenti'); (c) aggiunte 4 categorie con 10 prompt nuovi per copertura non-italiana: 'paesaggi nordici' (2), 'paesaggi artici' (2), 'paesaggi anglosassoni' (2), 'paesaggi europei orientali' (1), 'paesaggi urbani internazionali' (2), e 1 ambienti industriali (nastro trasportatore). Totale prompt 236 -> 245. Le categorie 'paesaggi italiani specifici' e 'paesaggi mediterranei generici' restano con prompt realmente italiani/mediterranei per materiale pertinente. Flag geo_specific marca i residui come in v1.7.",
   "prompts": [
     {
       "id": "geo_01",
@@ -368,7 +368,7 @@
     {
       "id": "cmp_01",
       "category": "composizione soundscape",
-      "text": "Paesaggio sonoro di borgo rurale italiano"
+      "text": "Paesaggio sonoro di borgo rurale europeo"
     },
     {
       "id": "cmp_02",
@@ -693,7 +693,7 @@
     {
       "id": "ita_04",
       "category": "paesaggi italiani specifici",
-      "text": "Mercato rionale italiano al mattino"
+      "text": "Mercato rionale urbano al mattino"
     },
     {
       "id": "ita_05",
@@ -713,12 +713,12 @@
     {
       "id": "ita_08",
       "category": "paesaggi italiani specifici",
-      "text": "Cicale in campagna estiva del sud Italia"
+      "text": "Cicale in campagna estiva"
     },
     {
       "id": "ita_09",
       "category": "paesaggi italiani specifici",
-      "text": "Mercato cittadino italiano con grida dei venditori"
+      "text": "Mercato cittadino con grida dei venditori"
     },
     {
       "id": "ita_10",
@@ -728,17 +728,12 @@
     {
       "id": "ita_11",
       "category": "paesaggi italiani specifici",
-      "text": "Aula di conservatorio italiano con esercizi simultanei"
-    },
-    {
-      "id": "ita_12",
-      "category": "paesaggi italiani specifici",
-      "text": "Aula AFAM con studenti e docente"
+      "text": "Aula di conservatorio con esercizi simultanei"
     },
     {
       "id": "ita_13",
       "category": "paesaggi italiani specifici",
-      "text": "Motorino in centro storico di città italiana"
+      "text": "Motorino in centro storico"
     },
     {
       "id": "ita_14",
@@ -753,7 +748,7 @@
     {
       "id": "ita_16",
       "category": "paesaggi italiani specifici",
-      "text": "Piazza italiana con fontana barocca"
+      "text": "Piazza europea con fontana barocca"
     },
     {
       "id": "ita_17",
@@ -773,7 +768,7 @@
     {
       "id": "ita_20",
       "category": "paesaggi italiani specifici",
-      "text": "Bar italiano con macchina del caffè e chiacchiere"
+      "text": "Bar con macchina del caffè e chiacchiere"
     },
     {
       "id": "ita_21",
@@ -783,7 +778,7 @@
     {
       "id": "ita_22",
       "category": "paesaggi italiani specifici",
-      "text": "Traffico in centro storico italiano con clacson"
+      "text": "Traffico in centro storico con clacson"
     },
     {
       "id": "elx_01",
@@ -873,7 +868,7 @@
     {
       "id": "sac_01",
       "category": "sacralita sonora",
-      "text": "Campane maggiori di cattedrale italiana"
+      "text": "Campane maggiori di cattedrale europea"
     },
     {
       "id": "sac_02",
@@ -923,7 +918,7 @@
     {
       "id": "pmd_01",
       "category": "paesaggi mediterranei generici",
-      "text": "Porto peschereccio mediterraneo all'alba con voci"
+      "text": "Porto peschereccio all'alba con voci"
     },
     {
       "id": "pmd_02",
@@ -933,27 +928,27 @@
     {
       "id": "pmd_03",
       "category": "paesaggi mediterranei generici",
-      "text": "Piazza di villaggio mediterraneo con bar e radio"
+      "text": "Piazza di villaggio con bar e radio"
     },
     {
       "id": "pmd_04",
       "category": "paesaggi mediterranei generici",
-      "text": "Vicolo bianco di villaggio mediterraneo con passi e eco"
+      "text": "Vicolo bianco di villaggio con passi e eco"
     },
     {
       "id": "pmd_05",
       "category": "paesaggi mediterranei generici",
-      "text": "Mercato di pesce mediterraneo di prima mattina"
+      "text": "Mercato di pesce mattutino con grida"
     },
     {
       "id": "pmd_06",
       "category": "paesaggi mediterranei generici",
-      "text": "Spiaggia mediterranea con onde leggere e voci distanti"
+      "text": "Spiaggia con onde leggere e voci distanti"
     },
     {
       "id": "pmd_07",
       "category": "paesaggi mediterranei generici",
-      "text": "Festa di paese mediterranea con musica popolare"
+      "text": "Festa di paese con musica popolare"
     },
     {
       "id": "pmd_08",
@@ -963,12 +958,12 @@
     {
       "id": "pmd_09",
       "category": "paesaggi mediterranei generici",
-      "text": "Crepuscolo in villaggio mediterraneo con cicale e radio"
+      "text": "Crepuscolo rurale con cicale e radio"
     },
     {
       "id": "pmd_10",
       "category": "paesaggi mediterranei generici",
-      "text": "Pioggia leggera su tegole di villaggio mediterraneo"
+      "text": "Pioggia leggera su tegole di villaggio"
     },
     {
       "id": "utt_01",
@@ -1184,6 +1179,56 @@
       "id": "lit_06",
       "category": "canto liturgico e cantillazione",
       "text": "Shofar in atmosfera rituale"
+    },
+    {
+      "id": "nrd_01",
+      "category": "paesaggi nordici",
+      "text": "Villaggio nordico costiero con vento e gabbiani"
+    },
+    {
+      "id": "nrd_02",
+      "category": "paesaggi nordici",
+      "text": "Fiordo con acqua ferma e richiami di uccelli marini"
+    },
+    {
+      "id": "arc_01",
+      "category": "paesaggi artici",
+      "text": "Costa artica con vento e ghiaccio in frammentazione"
+    },
+    {
+      "id": "arc_02",
+      "category": "paesaggi artici",
+      "text": "Cracking di lastre di ghiaccio su lago gelato"
+    },
+    {
+      "id": "uk_01",
+      "category": "paesaggi anglosassoni",
+      "text": "Pub britannico con chiacchiere e bicchieri"
+    },
+    {
+      "id": "uk_02",
+      "category": "paesaggi anglosassoni",
+      "text": "Stazione della metropolitana londinese con annunci"
+    },
+    {
+      "id": "est_01",
+      "category": "paesaggi europei orientali",
+      "text": "Villaggio dell'Europa orientale con galli e belati"
+    },
+    {
+      "id": "int_01",
+      "category": "paesaggi urbani internazionali",
+      "text": "Piazza urbana centroeuropea con tram e voci"
+    },
+    {
+      "id": "int_02",
+      "category": "paesaggi urbani internazionali",
+      "text": "Parco cittadino con conversazioni distanti e bambini"
+    },
+    {
+      "id": "ind_08",
+      "category": "ambienti industriali",
+      "text": "Nastro trasportatore con lamiere e motori elettrici"
     }
   ]
 }

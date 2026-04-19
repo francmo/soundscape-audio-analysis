@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.7.1] - 2026-04-19
+
+Infrastruttura benchmark per misurare oggettivamente la qualita'
+descrittiva dell'output dell'agente compositivo contro analisi
+accademiche di riferimento. Primo passo della metrica precision/
+recall/Jaccard prevista dalla ROADMAP come cuore del paper
+scientifico. Skip v0.7.0 (plausibility sistematica) che viene
+aggregata nelle patch successive su driver empirico del benchmark.
+
+### Added
+
+- `scripts/benchmark.py`: parsing deterministico dei gold in schema
+  standardizzato, match fuzzy con soglia 60% per frasi multi-parola,
+  metriche precision/recall/Jaccard su terminologia e parentele
+  stilistiche, score aggregato 0-100, warning automatici su gold
+  non verificati (flag `verificato: true` obbligatorio nello schema).
+- `templates/golden_analysis_schema.md`: template standardizzato per
+  scrivere analisi accademiche di riferimento. Sezioni obbligatorie
+  parsabili automaticamente (`Metadati`, `Tracklist verificata`,
+  `Terminologia attesa`, `Parentele stilistiche attese`).
+- `scripts/cli.py::benchmark_cmd`: sub-comando `soundscape benchmark
+  <audio> --against <gold.md>` che produce report markdown e JSON
+  opzionale con i BenchmarkResult serializzati.
+- `references/golden_analyses/05_Ferrari_PresqueRien1.md`: primo gold
+  canonico riscritto in formato schema (Ferrari *Presque Rien N°1*),
+  serve da calibrazione per regressioni future.
+- `tests/test_benchmark.py`: 11 test coprono parsing gold, match
+  phrase fuzzy su frasi singole/multiple, scenario perfect
+  match/zero overlap, warning su gold non verificati, round-trip
+  JSON del BenchmarkResult.
+
+### Changed
+
+- Gold Ferrari `05_Ferrari_PresqueRien1.md` migrato al nuovo schema
+  `templates/golden_analysis_schema.md` con `verificato: true`
+  (fonte Discogs + INA-GRM catalogue).
+- `scripts/__init__.py`, `pyproject.toml`, `scripts/cli.py::version_cmd`:
+  bump 0.6.8 -> 0.7.1 (skip 0.7.0).
+
+### Baseline benchmark
+
+- Ferrari *Presque Rien N°1*: score aggregato 41.1/100 con v0.7.1
+  baseline. Precision term 0.462, recall term 0.643, precision
+  parentele 0.200, recall parentele 0.200. Questo valore e' il
+  punto di calibrazione contro cui misurare le patch successive:
+  se scende, regressione. Se sale sopra 60%, patch utile.
+
+### Lezione metodologica documentata (paper)
+
+- Validazione 2026-04-19 del corpus golden v1 (9 brani eterogenei)
+  ha rivelato che **5 gold su 9 contenevano allucinazioni LLM sui
+  titoli delle tracce** (brani inesistenti nei rispettivi album).
+  Gold riscritti dopo verifica online tracklist. Implicazione:
+  il benchmark deve sempre verificare il flag `verificato` del
+  gold prima di accettarlo come oracolo. Lezione codificata nello
+  schema `templates/golden_analysis_schema.md` e nel warning
+  automatico di `benchmark.compare()`.
+
+### Test
+
+- 165 passed + 2 skipped (154 v0.6.8 + 11 nuovi su benchmark). Zero
+  regressioni.
+
+### Rimane per future versioni
+
+- Bootstrap `references/golden_analyses/` per altri brani canonici
+  (Watson Vatnajoekull, Westerkamp Kits Beach, Truax Basilica,
+  Heineman Air Piece) in formato schema.
+- Plausibility sistematica (estensione pattern + propagazione a
+  `agent_payload.confidence`): rimandata a v0.7.2+ con driver
+  empirico dal benchmark.
+- Sezione "repertorio contemporaneo" nel prompt agente: v0.7.3+
+  come safeguard richiede metrica oggettiva del benchmark gia'
+  funzionante.
+
 ## [0.6.8] - 2026-04-18
 
 Estensione del pre-filtro plausibility da 5 a 11 pattern. Copre altre

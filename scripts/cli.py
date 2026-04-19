@@ -4,6 +4,7 @@ Orchestrazione della pipeline completa: io -> technical -> hum -> spectral ->
 ecoacoustic -> semantic (con pre-check) -> multichannel -> comparison GRM ->
 plotting -> agente compositivo -> PDF ReportLab.
 """
+import json
 import sys
 import traceback
 from datetime import datetime
@@ -624,10 +625,72 @@ def agent_cmd(summary_path: Path, pdf: bool, output_dir: Path | None,
         click.echo(agent_text)
 
 
+@cli.command("benchmark")
+@click.argument("audio", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--against",
+    "gold_path",
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+    help="Path al file gold markdown (references/golden_analyses/<id>.md).",
+)
+@click.option(
+    "--agent-source",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path al PDF report o al file agent_reading.md. Se omesso, cercato accanto all'audio.",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Path del markdown di report. Default: <audio_stem>_benchmark.md accanto all'audio.",
+)
+@click.option(
+    "--json-out",
+    "json_out",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Path opzionale del JSON con il BenchmarkResult serializzato.",
+)
+def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, output: Path | None, json_out: Path | None):
+    """Benchmarka la lettura dell'agente contro un'analisi accademica di riferimento.
+
+    Calcola precision/recall terminologici, Jaccard, precision/recall parentele
+    stilistiche e score aggregato 0-100. Se l'output dell'agente non esiste,
+    istruisce a lanciare `soundscape analyze` prima.
+    """
+    from . import benchmark as bench
+
+    try:
+        report_md, result = bench.run_benchmark(audio, gold_path, agent_source)
+    except FileNotFoundError as e:
+        click.echo(click.style(str(e), fg="red"), err=True)
+        raise SystemExit(2)
+
+    out_md = output or audio.with_name(audio.stem + "_benchmark.md")
+    out_md.write_text(report_md, encoding="utf-8")
+    click.echo(click.style(f"Report benchmark: {out_md}", fg="green", bold=True))
+
+    if json_out:
+        json_out.write_text(
+            json.dumps(bench.result_to_dict(result), indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        click.echo(f"JSON: {json_out}")
+
+    click.echo("")
+    click.echo(f"Score aggregato: {result.score_aggregate:.1f}/100")
+    click.echo(f"  precision term {result.precision_term:.3f}  recall term {result.recall_term:.3f}  jaccard {result.jaccard_term:.3f}")
+    click.echo(f"  precision par  {result.precision_parent:.3f}  recall par  {result.recall_parent:.3f}  jaccard {result.jaccard_parent:.3f}")
+    for w in result.warnings:
+        click.echo(click.style(f"  AVVISO: {w}", fg="yellow"), err=True)
+
+
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.6.1")
+    click.echo("soundscape-audio-analysis 0.7.1")
 
 
 def main():

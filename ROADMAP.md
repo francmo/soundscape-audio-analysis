@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.6.8 (18 aprile 2026)
-**Test suite**: 147 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.7.1 (19 aprile 2026)
+**Test suite**: 165 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.6.0)
+## Stato corrente (v0.7.1)
 
 ### Capabilities attive
 
@@ -303,6 +303,17 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.7.1** (19/04/2026): infrastruttura benchmark. `scripts/benchmark.py`
+  con parsing deterministico gold, match fuzzy, metriche precision/recall/
+  Jaccard su terminologia e parentele, score aggregato 0-100.
+  `templates/golden_analysis_schema.md` schema standardizzato per
+  scrivere gold parsabili. Sub-comando `soundscape benchmark` CLI.
+  Primo gold calibrato Ferrari *Presque Rien N°1* (41.1/100 baseline).
+  11 nuovi test. **Skip v0.7.0**: plausibility sistematica rimandata a
+  v0.7.2+ con driver empirico dal benchmark. Driver: corpus golden v1
+  validato 2026-04-19 con 48% aggregato (test-set held-out, vs 80%
+  corpus Nottoli training-set); **5 gold su 9 contenevano allucinazioni
+  LLM sui titoli**, lezione metodologica codificata nel validator gold.
 - **v0.6.8** (18/04/2026): estensione pre-filtro plausibility da 5 a 11
   pattern (aspirapolvere, scrittura tastiera, pianto infantile, grandine,
   porta di legno, veicoli specifici). 154 test passati. Embrione

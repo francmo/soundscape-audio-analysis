@@ -47,6 +47,7 @@ def _analyze_single(
     narrative_mode: str = "full",
     do_transcribe_speech: bool = False,
     known_piece: str = "",
+    ecoacoustic_backend: str | None = None,
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     from . import io_loader, technical, hum, spectral, ecoacoustic, semantic
@@ -87,9 +88,11 @@ def _analyze_single(
         spec["timbre"]["spectral_flatness"],
     )
 
-    click.echo(f"[5/10] Indici ecoacustici ({ecoacoustic_mode})")
+    eco_backend_used = ecoacoustic_backend or config.ECO_BACKEND
+    click.echo(f"[5/10] Indici ecoacustici ({ecoacoustic_mode}, backend={eco_backend_used})")
     extended = ecoacoustic_mode == "extended"
-    eco = ecoacoustic.ecoacoustic_summary(y, sr, extended=extended)
+    eco = ecoacoustic.ecoacoustic_summary(y, sr, extended=extended, backend=eco_backend_used)
+    eco["backend_used"] = eco_backend_used
 
     semantic_res = {"enabled": False}
     if do_semantic:
@@ -315,6 +318,12 @@ def cli():
 @click.option("--birdnet", is_flag=True, help="Riconoscimento avifauna BirdNET (opzionale)")
 @click.option("--ecoacoustic", "ecoacoustic_mode", type=click.Choice(["basic", "extended"]),
               default="basic", help="Modalità indici ecoacustici")
+@click.option("--ecoacoustic-backend", "ecoacoustic_backend",
+              type=click.Choice(["legacy", "maad"]), default=None,
+              help=f"Backend per calcolo indici ecoacustici (default: {config.ECO_BACKEND}). "
+                   "'legacy' = implementazione custom storica (v0.2+). 'maad' = wrapper "
+                   "scikit-maad (Ulloa et al. 2021). Il flip del default a 'maad' è "
+                   "previsto in v0.10.0 dopo parity test documentato nel research log.")
 @click.option("--compare", "compare_mode", default="none",
               help="all | <profile_id> | grm-experimental | none (default: none in v0.2)")
 @click.option("--report", "report_format", type=click.Choice(["pdf", "md", "json", "all"]),
@@ -337,7 +346,8 @@ def cli():
                    "v0.5.4: utile quando si analizza un brano di repertorio noto e si "
                    "vuole evitare attribuzioni errate del modello.")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
-def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, compare_mode,
+def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
+                ecoacoustic_backend, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
                 speech, known_piece, lang):
     """Analizza un file audio o una cartella di file audio.
@@ -381,6 +391,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode, com
                 narrative_mode=narrative_mode,
                 do_transcribe_speech=speech,
                 known_piece=known_piece,
+                ecoacoustic_backend=ecoacoustic_backend,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))
@@ -690,7 +701,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.8.2")
+    click.echo("soundscape-audio-analysis 0.9.0")
 
 
 def main():

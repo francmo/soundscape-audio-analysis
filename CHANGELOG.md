@@ -1,5 +1,85 @@
 # Changelog
 
+## [0.9.0] - 2026-04-20
+
+Step A del refactor ecoacoustic: wrapper scikit-maad come backend opt-in,
+default rimane `legacy`. Il flip del default a `maad` e' **rimandato oltre
+v0.10.0** perche' il parity test sul corpus golden v1 ha rivelato ranking
+divergente per ACI (Spearman ρ = 0.117), mentre NDSI, BI e H_total
+preservano ranking (ρ ≥ 0.98). Numeri e diagnosi nel research log
+2026-04-20.
+
+### Added
+
+- `scripts/ecoacoustic_maad.py`: thin wrapper contro scikit-maad 1.4.3
+  (Ulloa et al. 2021, SoftwareX, DOI 10.1016/j.softx.2021.100720).
+  API ispezionata e verificata (non assunta) sulla versione pinnata.
+  Mappa ACI/NDSI/H/BI/ADI/AEI alle funzioni peer-reviewed equivalenti.
+- `scripts/ecoacoustic.py`: dispatcher `ecoacoustic_summary(backend=...)`.
+  Il parametro e' esposto anche via `config.ECO_BACKEND` (default "legacy").
+- `scripts/cli.py`: flag `--ecoacoustic-backend {legacy,maad}` per
+  sovrascrivere runtime il default.
+- `tests/fixtures/silence_digital.wav` + `biofonia_sintetica.wav`:
+  fixture deterministiche per parity test.
+- `tests/test_ecoacoustic_parity.py`: 10 test parity stratificati.
+  Assert stretti su no-NaN/Inf, sign NDSI coerente, API shape identica,
+  H_spectral mapping (delta <20% dopo fix EAS->1-EAS). Delta magnitudine
+  come informational table stampata (non fail).
+- `~/soundscape-training/audio_golden_v1/parity_corpus.py` +
+  `parity_corpus.md`: script esplorativo che calcola Spearman ρ sui 9
+  brani del corpus golden v1, decide flip-readiness indice per indice.
+
+### Changed
+
+- `requirements.txt`:
+  - `numpy>=1.26,<2.0` (stretto da `<2.3`) per compatibilita' con
+    laion-clap + tensorflow + panns_inference.
+  - Aggiunta sezione ecoacoustic con pin stringenti: `scikit-maad==1.4.3`,
+    `scikit-image<0.23`, `tifffile<2024`, `pywavelets>=1.4,<1.6`.
+- `scripts/config.py`: nuovo `ECO_BACKEND = "legacy"` con commento esplicito
+  sul piano di flip condizionato.
+- `scripts/__init__.py`, `pyproject.toml`, `scripts/cli.py::version_cmd`:
+  bump 0.8.2 -> 0.9.0.
+
+### Bug fixes (wrapper maad)
+
+1. **NaN su silenzio digitale**: `acoustic_complexity_index`,
+   `soundscape_index`, `bioacoustics_index` di maad 1.4.3 dividono per
+   zero su `sum(Sxx) == 0`. Guard `_is_silent(Sxx)` nel wrapper ritorna
+   0.0 prima della chiamata.
+2. **NaN su temporal_entropy con audio lungo**: `temporal_entropy`
+   di maad 1.4.3 va in NaN su audio > ~40 min (overflow precisione
+   numerica nella somma envelope). Fallback manuale a calcolo Sueur
+   identico al legacy.
+3. **H_spectral mapping EAS -> Sueur**: maad `spectral_entropy` ritorna
+   EAS (Entropy of Average Spectrum, Towsey 2017) che misura deviazione
+   da uniforme. Sueur H_f misura uniformita' diretta. Verificato
+   algebricamente che `H_Sueur = 1 - EAS` (delta < 1e-3 su sine/noise).
+   Wrapper applica trasformazione.
+
+### Lezione metodologica (codificata)
+
+- **Pin stringente obbligatorio** per ML stacks: primo tentativo
+  `pip install scikit-maad>=1.4` ha tirato la catena scikit-maad 1.5.2
+  -> scikit-image 0.26 -> tifffile 2026 (richiede numpy>=2), rompendo
+  laion-clap/tensorflow. Snapshot `requirements.freeze.before_maad.txt`
+  prima dell'intervento, rollback + pin puntuali.
+- **Thin wrapper non e' drop-in replacement** quando le implementazioni
+  di riferimento usano convenzioni diverse. Il parity test sintetico su
+  ACI/BI ha delta magnitudine 40-99% non per bug ma per scelte
+  architetturali divergenti (j_seconds, R_compatible, ecc.). Il criterio
+  utile per il flip non e' magnitudine, e' conservazione del ranking.
+
+### Verdetto v0.9.0 (documentato)
+
+Backend `maad` e' **opt-in permanente** in v0.9.x. Default resta `legacy`.
+In v0.10.0+ possibile flip parziale (NDSI/BI/H su maad, ACI su legacy)
+oppure implementazione ACI-a-blocchi sopra maad. Decisione rimandata.
+
+### Test
+
+192 passed + 2 skipped (182 pre-Step A + 10 parity nuovi). Zero regressioni.
+
 ## [0.8.2] - 2026-04-19 (sera)
 
 Prompt mediterranei geograficamente precisi (Adriatico/dalmato) per

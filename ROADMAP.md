@@ -3,13 +3,13 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.8.2 (19 aprile 2026)
-**Test suite**: 182 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.9.0 (20 aprile 2026)
+**Test suite**: 192 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
 
 ---
 
-## Stato corrente (v0.8.2)
+## Stato corrente (v0.9.0)
 
 ### Capabilities attive
 
@@ -303,6 +303,17 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.9.0** (20/04/2026): Step A refactor ecoacoustic. Wrapper
+  `ecoacoustic_maad.py` contro scikit-maad 1.4.3 (Ulloa 2021). Dispatcher
+  `ecoacoustic_summary(backend=...)`. Flag CLI `--ecoacoustic-backend`,
+  default `legacy`. 10 test parity nuovi, fixture sintetiche
+  `silence_digital.wav` + `biofonia_sintetica.wav`. Pin requirements
+  stringenti (`scikit-maad==1.4.3`, `scikit-image<0.23`, `tifffile<2024`,
+  `numpy<2.0`). Bug fix wrapper: NaN su silenzio + NaN su temporal_entropy
+  con audio lungo, mapping EAS->Sueur verificato algebricamente.
+  **Parity corpus v1** (9 brani): ρ NDSI=1.000, BI=1.000, H_total=0.983,
+  ACI=0.117. Flip default NON approvato in v0.10.0 per ACI. Wrapper maad
+  resta opt-in permanente. 192 test passed.
 - **v0.8.2** (19/04/2026 sera): categoria CLAP 'paesaggi dalmati e
   adriatici' (6 prompt) per recuperare il fit mediterraneo su Ferrari
   *Presque Rien* senza bias italo-generico. Ferrari: 49.1 -> 59.9/100

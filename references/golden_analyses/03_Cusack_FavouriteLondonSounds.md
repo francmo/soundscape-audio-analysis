@@ -1,37 +1,55 @@
-# Peter Cusack, "Favourite London Sounds" (sostituisce Justin Bennett, non reperibile su YouTube)
+# Peter Cusack, Favourite London Sounds
 
-## Dati principali
-- Compositore: Peter Cusack (UK, 1948)
-- Anno: 1998-2001 (progetto partecipativo avviato nel 1998, prima uscita discografica 2001)
-- Luogo: Londra, luoghi multipli (Tamigi, mercati, stazioni, parchi, edifici istituzionali)
-- Durata: versione album LMC (London Musicians' Collective) 2001, 73:00; le tracce singole superano tutte i 3 minuti; il file YouTube scaricato qui e una compilazione/selezione
-- Ascolto: Bandcamp (ReR Megacorp ristampa), YouTube (archivi LMC/Resonance FM)
+## Metadati
+autore: Peter Cusack
+titolo: Favourite London Sounds
+anno: 1998-2001
+label: London Musicians' Collective (LMC) 2001, ristampa ReR Megacorp
+luogo: Londra (Tamigi, mercati, stazioni, parchi, edifici istituzionali)
+durata: 73:45
+genere: participatory sound mapping / soundscape urbano
 
-## Contesto
-Progetto partecipativo: Cusack invita i londinesi a segnalare i loro suoni preferiti della citta e li registra. Modello metodologico dei successivi *Favourite Sounds of Beijing*, *Chicago*, *Prague*, *Istanbul*. Studiato come esempio di *participatory sound mapping* e di applicazione pratica della *World Soundscape Project* di Schafer al contesto urbano contemporaneo.
+## Tracklist verificata
+verificato: false
+fonte: sito favouritesounds.org + ReR Megacorp + LMC
+note: File YouTube scaricato è compilazione/selezione estesa dell'album LMC 2001 originale. L'album canonico è organizzato in vignette di 1-5 minuti, ognuna su un soundmark londinese.
 
-Bibliografia:
-- Jean-Paul Thibaud, *En quete d'ambiances* (MetisPresses, 2015)
-- Brandon LaBelle, *Acoustic Territories*, Continuum, 2010
-- Cathy Lane, *Playing with Words*, CRiSAP, 2008
-- Numerosi saggi in *Organised Sound* e *Soundscape: The Journal of Acoustic Ecology*
+## Contesto critico
 
-Concetti: soundmarks (Schafer) partecipativi, memoria sonora urbana, democrazia dell'ascolto. L'opera ha generato il sito favouritesounds.org, piu un archivio che un'opera fissa, ma la versione album LMC 2001 e canonizzata.
+Progetto partecipativo: Cusack invita i londinesi a segnalare i loro suoni preferiti della città e li registra. Modello metodologico dei successivi *Favourite Sounds of Beijing*, *Chicago*, *Prague*, *Istanbul*. Studiato come esempio canonico di *participatory sound mapping* e di applicazione pratica della World Soundscape Project di Schafer al contesto urbano contemporaneo. Bibliografia: Jean-Paul Thibaud, *En quete d'ambiances* (MetisPresses, 2015); Brandon LaBelle, *Acoustic Territories* (Continuum, 2010); Cathy Lane, *Playing with Words* (CRiSAP, 2008).
 
-## Guida all'ascolto (struttura del progetto)
-L'album e organizzato come sequenza di vignette di durata variabile (1-5 minuti), ognuna introdotta o no da una breve testimonianza vocale del cittadino che ha segnalato quel suono. Le categorie ricorrenti:
+## Struttura attesa
 
-- Soundmarks istituzionali: Big Ben, campane di Westminster, battelli sul Tamigi
-- Mercati: Borough Market, Brick Lane, Portobello
-- Trasporti: Underground, stazioni, bus a due piani
-- Parchi: Hyde Park, Hampstead Heath (fauna urbana)
-- Acqua: Tamigi, fontane, canali
-- Vita comunitaria: mercati etnici, richiami di venditori, lingue multiple
+Sequenza di vignette di durata variabile (1-5 minuti), ognuna introdotta o meno da breve testimonianza vocale del cittadino che ha segnalato quel suono. Categorie ricorrenti: soundmark istituzionali (Big Ben, campane di Westminster, battelli sul Tamigi), mercati (Borough Market, Brick Lane, Portobello), trasporti (Underground, stazioni, bus a due piani), parchi (Hyde Park, Hampstead Heath), acqua (Tamigi, fontane, canali), vita comunitaria. Transizioni Lo-Fi (metropolitana) a Hi-Fi (parchi) come chiave schaferiana.
 
-Ascolto consigliato: cercare i momenti di transizione fra vignette per notare come Cusack crei continuita o rottura. I passaggi da Lo-Fi (metropolitana) a Hi-Fi (parchi) sono particolarmente istruttivi schaferianamente.
+## Terminologia attesa
 
-## Concetti chiave
-Soundmark (Schafer), participatory sound mapping, World Soundscape Project, democrazia dell'ascolto, memoria urbana, vignetta come unita compositiva.
+- `soundmark` — concetto Schafer centrale (Big Ben, Westminster, Tamigi)
+- `participatory sound mapping` — metodo di Cusack
+- `World Soundscape Project` — filiazione metodologica (Schafer/WSP)
+- `keynote` — infrastruttura urbana londinese
+- `Lo-Fi` — metropolitana, traffico
+- `Hi-Fi` — parchi urbani
+- `memoria urbana` — concetto critico centrale
+- `soundwalk` — pratica da cui deriva (Westerkamp)
+- `vignetta` — unità compositiva
 
-## Nota sulla sostituzione
-Questo brano sostituisce il precedentemente previsto Justin Bennett, "BunkerRadio", che non risulta caricato integralmente su YouTube. "BunkerRadio" resta consultabile sul sito justinbennett.net e negli archivi Kunstradio (kunstradio.at).
+## Parentele stilistiche attese
+
+- `Hildegard Westerkamp` — soundwalk, WSP/SFU
+- `Barry Truax` — WSP/SFU, ambienti urbani
+- `R. Murray Schafer` — fondatore WSP, Tuning of the World
+- `London Sound Survey` — contesto Cusack
+- `CRiSAP` — London College of Communication, area di ricerca
+
+## Fonti bibliografiche
+
+- Thibaud, J-P. *En quete d'ambiances*, MetisPresses, 2015.
+- LaBelle, B. *Acoustic Territories*, Continuum, 2010.
+- Lane, C. *Playing with Words*, CRiSAP, 2008.
+- Schafer, R.M. *The Tuning of the World* (1977).
+- Sito favouritesounds.org (archivio ancora attivo).
+
+## Note per il benchmark
+
+Gold non verificato per identità esatta della compilazione YouTube. Primo test chiave: la skill riconosce **Londra** (non "collage italiano anni 70" come nella prima analisi blind v0.6.8)?

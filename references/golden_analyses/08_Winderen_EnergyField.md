@@ -1,28 +1,26 @@
-# Jana Winderen, *Energy Field* (Touch TO:73, 2010)
+# Jana Winderen, Energy Field (Touch TO:73, 2010)
 
-## Nota metodologica (gold riallineato 2026-04-19)
+## Metadati
+autore: Jana Winderen
+titolo: Energy Field (album)
+anno: 2010
+label: Touch TO:73
+luogo: Mare di Barents, fiordi norvegesi, acque della Groenlandia
+durata: 37:58 (file scaricato) / 50:15 (album completo 3 tracce)
+genere: field recording subacqueo / blue humanities / drone-field
 
-Nel gold iniziale si parlava di "traccia titolo Energy Field 22:05". In realtà l'album non contiene una traccia con quel titolo: *Energy Field* è il nome dell'album. Le 3 tracce effettive sono *Aquaculture* (18:00), *Isolation/Measurement* (12:11), *Sense of Latent Power* (20:04), totale 50:15. Il file `track_08.mp3` (37:58) è verosimilmente l'album quasi integrale (prime due tracce + parte della terza).
+## Tracklist verificata
+verificato: false
+fonte: Touch catalogue https://touch33.net/catalogue/to73-jana-winderen-energy-field.html
+note: "Energy Field" è titolo album, non traccia (allucinazione del gold originale). Le 3 tracce sono Aquaculture (18:00), Isolation/Measurement (12:11), Sense of Latent Power (20:04). File 37:58 è album quasi completo (prime due tracce + parte della terza).
 
-## Dati principali
-- Autrice: Jana Winderen (Norvegia, 1965), formazione in biologia marina e matematica.
-- Album: *Energy Field*, Touch TO:73 CD, 6 aprile 2010.
-- Tracce: Aquaculture (18:00), Isolation/Measurement (12:11), Sense of Latent Power (20:04). Totale 50:15.
-- Luoghi: Mare di Barents, fiordi norvegesi, acque di Groenlandia.
-- Metodo: idrofoni specializzati (DPA 8011, multicanale), microfoni parabolici per ambiente aereo.
-- Premio: Golden Nica Ars Electronica 2011 (Digital Musics & Sound Art).
+## Contesto critico
 
-## Contesto
+Jana Winderen (Norvegia 1965), formazione in biologia marina e matematica oltre che in arte, lavora quasi esclusivamente con idrofoni specializzati (DPA 8011, multicanale). Registra biofonia subacquea normalmente inaccessibile: crostacei (crackling di gamberetti rompighiaccio), pesci (click di merluzzi, haddock, herring, pollock), ghiaccio in fusione, correnti sottomarine. Premio Golden Nica Ars Electronica 2011 (Digital Musics & Sound Art). Bibliografia: Stefan Helmreich, *Sounding the Limits of Life* (Princeton UP, 2016); *Leonardo Music Journal*; *The Wire* (interviste 2011, 2018). Riferimento concettuale: *blue humanities*, acoustic ecology marina. Assenza programmatica di antropofonia come scelta etica.
 
-Winderen lavora quasi esclusivamente con idrofoni: biofonia subacquea normalmente inaccessibile (crostacei, pesci, ghiaccio in fusione, correnti sottomarine). Registra crackling di gamberetti rompighiaccio, click di merluzzi, strida di delfini, ghiaccio che si frattura, drone di correnti artiche.
+## Struttura attesa
 
-Bibliografia: Stefan Helmreich, *Sounding the Limits of Life* (Princeton UP 2016); *Leonardo Music Journal*; *The Wire* (interviste 2011, 2018). Riferimento concettuale: *blue humanities*, acoustic ecology marina, biodiversità sonora come soggetto estetico.
-
-Assenza programmatica di antropofonia come scelta etica e estetica: l'oceano pre-industriale, la scala biologica sotto soglia umana.
-
-## Struttura tipica delle tracce
-
-Ogni traccia è una composizione di 12-20 min con struttura ad arco:
+Ogni traccia è composizione di 12-20 min con struttura ad arco:
 - drone grave di corrente subacquea a bassissima frequenza
 - emergenza di eventi biologici puntuali (click, crackling, strida)
 - sezione centrale di massima densità spettrale (ghiaccio in frattura, voci multiple)
@@ -30,10 +28,34 @@ Ogni traccia è una composizione di 12-20 min con struttura ad arco:
 
 Scala percettiva disorientante: oggetti piccoli (gamberi) suonano grandi per prossimità idrofono; oggetti grandi (iceberg) suonano distanti.
 
-## Concetti chiave
+## Terminologia attesa
 
-Biofonia marina, idrofono, *blue humanities*, biodiversità sonora, scala percettiva disorientata, assenza programmatica dell'antropofonia, *listening underwater* come epistemologia.
+- `idrofono` — tecnica centrale
+- `biofonia` — marina, subacquea
+- `blue humanities` — cornice critica
+- `geofonia` — ghiaccio, correnti
+- `drone` — elemento costruttivo delle tracce
+- `field recording` — modalità di base
+- `soundscape` — acoustic ecology marina
+- `ascolto ridotto` — applicato su materiali acusmatici subacquei
+- `scala percettiva` — disorientata (grande/piccolo)
 
-## Estetica di riferimento per il benchmark
+## Parentele stilistiche attese
 
-Scuola Touch (Londra), drone-field contemplativo, acoustic ecology marina. Parentele attese: **Thomas Köner** (*Permafrost*, *Nuuk*: drone glaciale, dinamica estrema) — intuizione che la skill v0.6.8 ha colto. **Francisco López** per la durata lunga + dinamica estrema + sospensione fra documento e astrazione. **Chris Watson** per la sezione ghiaccio (*Vatnajökull* condivide tecniche con contact mic/idrofono). **Hildegard Westerkamp** per il versante contemplativo WSP. Winderen stessa come punto di riferimento canonico della *underwater soundscape composition* anni 2010.
+- `Thomas Koner` — Permafrost, Nuuk (drone glaciale)
+- `Chris Watson` — Vatnajokull, label Touch condivisa, contact mic/idrofono
+- `Francisco Lopez` — drone lungo, dinamica estrema
+- `Touch` — etichetta che definisce l'estetica di Winderen
+- `Hildegard Westerkamp` — soundscape composition, versante contemplativo
+
+## Fonti bibliografiche
+
+- Helmreich, S. *Sounding the Limits of Life*, Princeton UP, 2016.
+- *Leonardo Music Journal*, articoli 2012-2018 su Winderen.
+- *The Wire*, interviste 2011 e 2018.
+- Note di copertina Touch TO:73, 2010.
+- Archivio janawinderen.com + touchshop.org.
+
+## Note per il benchmark
+
+La skill ha già nominato correttamente Köner (Permafrost/Nuuk) come parentela in v0.6.8: misura se lo score benchmark riflette questa intuizione. Primo test della precision/recall su parentele quando la skill ha colto correttamente.

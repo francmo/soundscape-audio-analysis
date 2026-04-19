@@ -1,35 +1,54 @@
-# BJ Nilsen, *The Invisible City* (Touch TO:77, 2010)
+# BJ Nilsen, The Invisible City (Touch TO:77, 2010)
 
-## Nota metodologica (gold riallineato 2026-04-19)
+## Metadati
+autore: BJ Nilsen
+titolo: The Invisible City
+anno: 2010
+label: Touch TO:77
+luogo: Svezia, Islanda, Norvegia, UK, Giappone, Portogallo, Germania (2008-2009 mixato a Berlino)
+durata: 3:15 estratto (album totale 1:04:57)
+genere: dark ambient / drone urbano / ambient documentary
 
-Il titolo "Front" usato nel gold iniziale non corrisponde a nessuna traccia. L'album *The Invisible City* di BJ Nilsen ha 8 tracce (totale 1:04:57): *Gravity Station, Phase and Amplitude, Scientia, Virtual Resistance, Meter Reading, Into Its Coloured Rays, Gradient, The Invisible City*. Il file `track_02.mp3` (3:15) è un estratto breve della poetica Nilsen/Touch.
+## Tracklist verificata
+verificato: false
+fonte: Touch catalogue https://touch33.net/catalogue/to77-bjnilsen-the-invisible-city-2.html (8 tracce)
+note: "Front" non esiste nell'album (allucinazione LLM del gold originale). File `track_02.mp3` è estratto breve (3:15) di 1:04:57 totali. Le 8 tracce sono Gravity Station, Phase and Amplitude, Scientia, Virtual Resistance, Meter Reading, Into Its Coloured Rays, Gradient, The Invisible City.
 
-## Dati principali
-- Autore: Benny Jonas Nilsen (Svezia, 1975), label Touch (Londra).
-- Album: *The Invisible City*, Touch TO:77 CD+digital, gennaio 2010.
-- Tracce: 8 (Gravity Station, Phase and Amplitude, Scientia, Virtual Resistance, Meter Reading, Into Its Coloured Rays, Gradient, The Invisible City).
-- Totale album: 1:04:57.
-- Luoghi di ripresa: Svezia, Islanda, Norvegia, UK, Giappone, Portogallo, Germania (2008-2009, mixato a Berlino).
-- Strumenti: tape recorders, computer, organo, chitarra acustica, elettronica, viola (Hildur Gudnadottir), Subharchord (sintetizzatore vintage DDR).
+## Contesto critico
 
-## Contesto
+BJ Nilsen (Stoccolma 1975) è figura centrale del roster Touch dal 2000, con radici nel dark ambient (ex Hazard). *The Invisible City* indaga il basso continuo delle città contemporanee: rumore infrastrutturale che definisce la città ma sfugge alla percezione cosciente (HVAC, sottostazioni, traffico filtrato, risonanze architettoniche). Citato in Brandon LaBelle, *Acoustic Territories* (Continuum, 2010). Area Touch come *ambient documentary*: non collage narrativo ma stratificazione spettrale. Riferimento schaferiano diretto: città contemporanea come ambiente Lo-Fi.
 
-Nilsen è figura centrale del roster Touch dal 2000, con radici nel dark ambient (ex Hazard). *The Invisible City* indaga il basso continuo delle città contemporanee: il rumore infrastrutturale che definisce la città ma sfugge alla percezione cosciente (HVAC, sottostazioni, traffico filtrato, risonanze architettoniche). Citato in Brandon LaBelle, *Acoustic Territories* (Continuum 2010), e in area Touch come esempio di *ambient documentary*: non collage narrativo ma stratificazione spettrale.
+## Struttura attesa
 
-Riferimento schaferiano: la città contemporanea come ambiente Lo-Fi (bassa definizione, eventi singoli assorbiti dal drone di fondo). Nilsen rende udibile questo fondo normalmente rimosso. Dialoga con Francisco López (drone urbano come materia) e con Chris Watson (documento trasformato).
+Drone urbano/infrastrutturale a lunga durata, struttura ad arco per ciascuna traccia: ingresso drone grave (sottostazione elettrica, ventilazione), progressiva stratificazione di impulsi metallici e traffico filtrato, densità massima Lo-Fi programmatico (singolo evento assorbito dal fondo), svuotamento graduale con ritorno al pedale grave. Uso del Subharchord (sintetizzatore vintage DDR).
 
-## Struttura tipica (derivabile dall'album)
+## Terminologia attesa
 
-Ogni traccia è un drone lungo con struttura ad arco:
-- ingresso di drone grave infrastrutturale (sottostazione elettrica, ventilazione)
-- ingresso progressivo di impulsi metallici (rotaie, serrande, impatti)
-- densità massima in cui il singolo evento non è più distinguibile dal fondo (Lo-Fi programmatico)
-- svuotamento graduale, ritorno al pedale grave
+- `drone` — elemento costruttivo centrale
+- `keynote` — concetto Schafer per il pedale infrastrutturale
+- `Lo-Fi` — città contemporanea come ambiente Lo-Fi
+- `soundscape` — ambient documentary di Nilsen
+- `antropofonia` — infrastruttura urbana
+- `ambient documentary` — etichetta critica per Nilsen
+- `tenuto` — tipologia Schaeffer del drone
+- `field recording` — tecnica di base per il materiale
+- `dark ambient` — genere di riferimento
 
-## Concetti chiave
+## Parentele stilistiche attese
 
-Keynote sound, Lo-Fi urbano (Schafer), drone infrastrutturale, ambient documentary, politica della scala spettrale, Subharchord come archeologia strumentale DDR.
+- `Thomas Koner` — drone glaciale, dinamica estrema, parentela Touch
+- `Francisco Lopez` — drone urbano come materia, dinamica estrema
+- `Chris Watson` — documento trasformato, label Touch condivisa
+- `Touch` — etichetta che definisce l'estetica
+- `Brian Eno` — drone ambient come genealogia storica
 
-## Estetica di riferimento per il benchmark
+## Fonti bibliografiche
 
-Scuola Touch (Londra, Jon Wozencroft, Mike Harding), dark ambient elettronico svedese contemporaneo. Parentele attese: Francisco López (drone lungo, dinamica estrema), Chris Watson (field recording documentario trasformato), Thomas Köner (drone glaciale), BJ Nilsen medesimo come punto di riferimento per l'etichetta Touch anni 2000-2010. NON scuola Fonologia RAI (errore comune della skill quando rileva hum).
+- LaBelle, B. *Acoustic Territories*, Continuum, 2010.
+- *The Wire*, interventi su Touch e Nilsen 2010-2015.
+- Note di copertina Touch TO:77, 2010.
+- Schafer, R.M. *The Soundscape*, 1977.
+
+## Note per il benchmark
+
+Gold non verificato per corrispondenza traccia specifica (file è estratto breve). Misura la capacità dell'agente di attribuire a Touch/dark ambient scandinavo e non a Fonologia RAI (errore comune già documentato).

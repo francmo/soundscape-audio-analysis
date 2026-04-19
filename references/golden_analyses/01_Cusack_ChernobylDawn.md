@@ -1,35 +1,55 @@
-# Peter Cusack, *Sounds from Dangerous Places Vol. 1 (Chernobyl)*
+# Peter Cusack, Sounds from Dangerous Places Vol. 1 (Chernobyl)
 
-## Nota metodologica (gold riallineato 2026-04-19)
+## Metadati
+autore: Peter Cusack
+titolo: Sounds from Dangerous Places Vol. 1 (Chernobyl)
+anno: 2006-2012
+label: ReR Megacorp ReRPC3 / Bandcamp 2022
+luogo: Zona di Esclusione di Chernobyl, Ucraina (Pripyat, Kopachi, villaggi evacuati)
+durata: 54:58
+genere: field recording / sonic journalism
 
-Il file `track_01.mp3` (54:58) contiene il volume 1 Bandcamp 2022 di *Sounds from Dangerous Places Vol. 1 (Chernobyl)* (ristampa della parte Chernobyl dell'edizione ReR Megacorp 2012). Il titolo "Chernobyl Dawn" usato nel gold iniziale non corrisponde a nessuna traccia: era un'allucinazione LLM. L'edizione completa ha 37 tracce per ~74:18. La traccia 15 "Dawn chorus, Chernobyl Town" (4:44) è il vero brano biofonico all'alba.
+## Tracklist verificata
+verificato: false
+fonte: Bandcamp https://petercusack2.bandcamp.com/album/sounds-from-dangerous-places-vol-1-chernobyl (37 tracce nel Vol.1 completo)
+note: Il titolo "Chernobyl Dawn" usato nel corpus non corrisponde a traccia dell'album. Il file audio contiene il Vol.1 Bandcamp completo (37 microritratti). Il gold descrive l'opera come atlante/compilation, non come brano singolo.
 
-## Dati principali
-- Autore: Peter Cusack (UK, 1948), London Sound Survey, CRiSAP.
-- Edizione ReR Megacorp (ReRPC3) 2012, libro+2CD. Bandcamp 2022 Vol.1 solo Chernobyl.
-- Registrazioni: 2006-2007, Zona di Esclusione di Chernobyl (Pripyat, Kopachi, borghi evacuati).
-- Durata Vol.1 Bandcamp: 54:58 (file scaricato) / 74:18 (CD ReR).
+## Contesto critico
 
-## Contesto
+Peter Cusack conia l'espressione sonic journalism come alternativa al field recording puro: il paesaggio come reportage d'autore su siti di danno ambientale. Non un'opera unica ma un atlante di 37 microritratti (30s-5min ciascuno): radiometri che crepitano, giostre abbandonate a Pripyat al vento, dawn chorus nei villaggi evacuati, voci di evacuati, animali selvatici ricolonizzati. Critica di riferimento: libro omonimo ReR 2012, *In the Field* (Carlyle & Lane, CRiSAP 2013), *Organised Sound*.
 
-Cusack conia *sonic journalism* come alternativa al field recording puro: il paesaggio come reportage d'autore su siti di danno ambientale. Non un'opera unica ma un atlante di microritratti: radiometri, giostre abbandonate a Pripyat al vento, dawn chorus nei villaggi evacuati, voci di evacuati, animali selvatici che hanno ricolonizzato lo spazio antropico.
+## Struttura attesa
 
-Critica: libro omonimo (ReR 2012), *In the Field* (Carlyle & Lane, CRiSAP 2013), *Organised Sound*.
+Forma ad atlante (non narrativa lineare). Blocchi tematici giustapposti senza montaggio drammaturgico: radiometri e contatori Geiger, ambienti evacuati di Pripyat, dawn chorus multispecie nei villaggi, interviste a evacuati, fauna ricolonizzata, infrastrutture industriali residuali. Il rifiuto del montaggio è scelta politica: ogni traccia è un punto sulla mappa.
 
-## Struttura dell'opera (Vol.1)
+## Terminologia attesa
 
-Sequenza di 37 tracce brevi (30 secondi - 5 min) organizzate in blocchi tematici:
-- Radiometri e contatori Geiger in vari punti della Zona
-- Ambienti evacuati di Pripyat (giostre, palestra, asilo, appartamenti)
-- Dawn chorus multispecie nei villaggi evacuati (traccia 15, 4:44)
-- Interviste a evacuati e abitanti illegali
-- Fauna ricolonizzata (rane, uccelli, insetti)
-- Infrastrutture industriali ancora attive (pompaggio, messa in sicurezza)
+- `sonic journalism` — espressione coniata da Cusack
+- `field recording` — tecnica centrale dell'opera
+- `atlante sonoro` — forma compositiva a microritratti giustapposti
+- `Hi-Fi` — paesaggio post-antropico Schafer alta definizione
+- `rewilding` — fenomeno di ricolonizzazione biofonica documentato
+- `biofonia` — dawn chorus multispecie nei villaggi evacuati
+- `antropofonia` — residuali (lavori messa in sicurezza, custodi)
+- `keynote` — assente nei villaggi (soglia Schafer invertita)
+- `Acoustic Niche Hypothesis` — applicata al rewilding (Krause)
+- `indessicalita` — ogni traccia come punto geografico documentato
 
-## Concetti chiave
+## Parentele stilistiche attese
 
-Sonic journalism, atlante sonoro, documento come drammaturgia per giustapposizione, Hi-Fi post-antropico (Schafer), rewilding come fenomeno acustico, radiazione come suono **assente** (la minaccia è inudibile), Acoustic Niche Hypothesis (Krause) applicata al rewilding.
+- `Luc Ferrari` — Far-West News, Presque Rien avec filles (formato diaristico esteso)
+- `Chris Watson` — etica del field recording documentario
+- `London Sound Survey` — contesto istituzionale di Cusack
+- `CRiSAP` — London College of Communication, area di ricerca Cusack
+- `Francisco Lopez` — drone-field (parentela minore)
 
-## Estetica di riferimento per il benchmark
+## Fonti bibliografiche
 
-Forma ad atlante (non narrativa lineare), prossimità a Luc Ferrari *Far-West News* per il formato diaristico esteso e a Chris Watson per l'etica del field recording documentario. Il rifiuto del montaggio drammaturgico è una scelta politica: ogni traccia è un punto sulla mappa, la sintesi è nell'orecchio dell'ascoltatore.
+- Cusack, P. *Sounds from Dangerous Places*, libro+2CD, ReR Megacorp, 2012.
+- Carlyle, A. & Lane, C. (a cura di) *In the Field*, CRiSAP, 2013.
+- *Organised Sound* (Cambridge UP), vari saggi 2010-2020.
+- Schafer, R.M. *The Soundscape: Our Sonic Environment and the Tuning of the World*, 1977.
+
+## Note per il benchmark
+
+Gold non verificato contro tracklist per titolo specifico (il titolo "Chernobyl Dawn" del corpus è allucinazione LLM). Il file audio è il Vol.1 completo. Il benchmark misura la capacità dell'agente di leggere **la forma-atlante** e citare Cusack/sonic journalism.

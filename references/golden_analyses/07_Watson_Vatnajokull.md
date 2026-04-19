@@ -1,31 +1,58 @@
-# Chris Watson, "Vatnajökull"
+# Chris Watson, Vatnajokull
 
-Dall'album *Weather Report* (Touch TO:52, 2003).
+## Metadati
+autore: Chris Watson
+titolo: Vatnajokull (da Weather Report)
+anno: 2003
+label: Touch TO:52
+luogo: ghiacciaio Vatnajokull, Islanda sud-orientale
+durata: 18:01 (file 17:59)
+genere: field recording / geofonia pura / time-lapse acustico
 
-## Dati principali
-- Compositore: Chris Watson (UK, 1952; ex membro Cabaret Voltaire, field recordist BBC)
-- Anno: 2003
-- Luogo: ghiacciaio Vatnajokull, Islanda sud-orientale
-- Durata: 18:01
-- Ascolto: Bandcamp (Touch), Spotify
+## Tracklist verificata
+verificato: false
+fonte: Touch catalogue + Bandcamp https://touchshop.org
+note: File analizzato 17:59 vs canonico 18:01 (delta trascurabile, stessa opera). Weather Report contiene 3 brani (Ol-Olool-O, The Lapaich, Vatnajokull). Verifica completa vs Touch non effettuata ma durata convince.
 
-## Contesto
-Tra i brani piu analizzati della sound ecology contemporanea e uno dei lavori che definisce lo standard tecnico-estetico del field recording d'autore. *Weather Report* comprende tre pezzi lunghi ("Ol-Olool-O", "The Lapaich", "Vatnajokull") che applicano la stessa strategia: tempo compresso, paesaggio trasformato in processo.
+## Contesto critico
 
-Watson dichiara esplicitamente: 18 ore di registrazione compresse in 18 minuti. La scala temporale geologica diventa udibile.
+Chris Watson (UK 1952, ex Cabaret Voltaire, field recordist BBC) è fra i più analizzati della sound ecology contemporanea e definisce lo standard tecnico-estetico del field recording d'autore. *Weather Report* (Touch TO:52, 2003) comprende tre pezzi lunghi che applicano la stessa strategia: tempo compresso, paesaggio trasformato in processo. Watson dichiara esplicitamente: 18 ore di registrazione compresse in 18 minuti. La scala temporale geologica diventa udibile. Tecnica: contact microphones su ghiaccio, idrofoni sotto la superficie, microfoni stereo in superficie. Post-produzione minima dichiarata (compressione temporale non lineare, crossfade).
 
-Bibliografia:
-- Jonathan Prior, "Environmental Sound Art, Nature, and Value", *Emotion, Space and Society*, 2017
-- Angus Carlyle (CRiSAP), interventi su Watson
-- Michael Gallagher et al., saggi su *listening geographies*
-- Cathy Lane & Angus Carlyle (a cura di), *In the Field* (CRiSAP, 2013), intervista a Watson
+## Struttura attesa
 
-Tecnica: contact microphones su ghiaccio, idrofoni sotto la superficie, microfoni stereo in superficie. Post-produzione minima dichiarata (compressione temporale non lineare, crossfade).
+Forma narrativa nascita/vita/morte del ghiaccio come processo compresso:
+- 00:00 - 06:00: formazione e accrescimento, crepitii cristallini, suoni di contrazione termica, ambiente Hi-Fi estremo notturno. Biofonia assente, geofonia pura.
+- 06:00 - 12:00: vita del ghiacciaio adulto, scricchiolii strutturali profondi, rombi interni registrati con contact microphones e idrofoni. Il ghiaccio suona come strumento gigantesco, spettro 20 Hz - 15 kHz.
+- 12:00 - 18:01: fusione e distacco, acqua che scorre sotto il ghiaccio, cavitazioni, frammentazione, calving (caduta di blocchi in mare). Finale sul mare.
 
-## Guida all'ascolto (struttura dichiarata dall'autore)
-- 0:00 - 6:00: formazione e accrescimento del ghiaccio. Crepitii cristallini, suoni di contrazione termica, ambiente Hi-Fi estremo, registrazione notturna. Biofonia assente, geofonia pura.
-- 6:00 - 12:00: vita del ghiacciaio adulto. Scricchiolii strutturali profondi, rombi interni registrati con contact microphones e idrofoni sotto la superficie. Il ghiaccio suona come strumento gigantesco, con spettro dai 20 Hz ai 15 kHz.
-- 12:00 - 18:01: fusione e distacco. Acqua che scorre sotto il ghiaccio, cavitazioni, frammentazione, calving (caduta di blocchi in mare). Finale sul mare. Forma narrativa: nascita/vita/morte del ghiaccio come processo compresso.
+## Terminologia attesa
 
-## Concetti chiave
-Geofonia pura (Krause), compressione temporale, time-lapse acustico, contact microphone, idrofono, Hi-Fi estremo, scala geologica.
+- `geofonia` — Krause, categoria dominante dell'opera
+- `Hi-Fi` — ambiente islandese estremo
+- `contact microphone` — tecnica centrale
+- `idrofono` — tecnica centrale
+- `field recording` — modalita di base
+- `time-lapse acustico` — 18 ore in 18 minuti
+- `compressione temporale` — tecnica di Watson
+- `scala geologica` — concetto critico
+- `soundscape` — contesto acoustic ecology
+
+## Parentele stilistiche attese
+
+- `Jana Winderen` — idrofoni, paesaggi artici, label Touch condivisa
+- `Bernie Krause` — bioacustica (qui negata: geofonia pura)
+- `BJ Nilsen` — drone glaciale, label Touch condivisa
+- `Touch` — etichetta e scuola estetica
+- `Hildegard Westerkamp` — soundscape composition, attenzione al non-umano
+
+## Fonti bibliografiche
+
+- Prior, J. "Environmental Sound Art, Nature, and Value", *Emotion, Space and Society*, 2017.
+- Carlyle, A. (CRiSAP) interventi su Watson 2010-2018.
+- Gallagher, M. et al. saggi su *listening geographies*.
+- Lane, C. & Carlyle, A. (a cura di) *In the Field*, CRiSAP, 2013, intervista a Watson.
+- Note di copertina Touch TO:52, 2003.
+
+## Note per il benchmark
+
+Prima verifica critica: la skill riconosce un **ghiacciaio**, un **contact microphone/idrofono**, una **geofonia pura**, invece di "motore tenuto in veicolo" e "crepuscolo villaggio mediterraneo" documentato nella prima analisi blind v0.6.8?

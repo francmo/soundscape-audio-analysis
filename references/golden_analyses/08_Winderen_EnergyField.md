@@ -10,9 +10,9 @@ durata: 37:58 (file scaricato) / 50:15 (album completo 3 tracce)
 genere: field recording subacqueo / blue humanities / drone-field
 
 ## Tracklist verificata
-verificato: false
-fonte: Touch catalogue https://touch33.net/catalogue/to73-jana-winderen-energy-field.html
-note: "Energy Field" è titolo album, non traccia (allucinazione del gold originale). Le 3 tracce sono Aquaculture (18:00), Isolation/Measurement (12:11), Sense of Latent Power (20:04). File 37:58 è album quasi completo (prime due tracce + parte della terza).
+verificato: true
+fonte: Touch catalogue https://touch33.net/catalogue/to73-jana-winderen-energy-field.html (verificato 3 tracce con durate)
+note: "Energy Field" è titolo album, non traccia. Le 3 tracce sono Aquaculture (18:00), Isolation/Measurement (12:11), Sense of Latent Power (20:04). Totale 50:15. File 37:58 è album quasi completo (prime due tracce + parte della terza).
 
 ## Contesto critico
 
@@ -42,11 +42,16 @@ Scala percettiva disorientante: oggetti piccoli (gamberi) suonano grandi per pro
 
 ## Parentele stilistiche attese
 
-- `Thomas Koner` — Permafrost, Nuuk (drone glaciale)
+- `Thomas Koner` — Permafrost, Nuuk (drone glaciale, drone-field)
 - `Chris Watson` — Vatnajokull, label Touch condivisa, contact mic/idrofono
 - `Francisco Lopez` — drone lungo, dinamica estrema
+- `Bernard Parmegiani` — trattamento acusmatico del materiale concreto (parentela GRM)
+- `Francis Dhomont` — scuola acusmatica francofona, morphing su field recording
 - `Touch` — etichetta che definisce l'estetica di Winderen
+- `BJ Nilsen` — compagno di roster Touch, drone-field documentario
 - `Hildegard Westerkamp` — soundscape composition, versante contemplativo
+- `Bernie Krause` — bioacustica (qui applicata al mondo subacqueo)
+- `Pauline Oliveros` — deep listening applicato al subacqueo
 
 ## Fonti bibliografiche
 

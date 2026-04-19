@@ -10,9 +10,9 @@ durata: 2h29 (file YouTube) / 3h10 (CD completo)
 genere: sound map / deep listening / field recording lungo formato
 
 ## Tracklist verificata
-verificato: false
-fonte: Lovely Music http://www.lovely.com/titles/cd2083.html + Discogs https://www.discogs.com/release/1364711
-note: Il file analizzato è la versione YouTube (2h29) della trilogia Lovely Music 3CD originale (3h10). Gold descrive l'opera integrale, il file ne è un sottoinsieme.
+verificato: true
+fonte: Lovely Music CD2083 + Discogs https://www.discogs.com/release/1364711-Annea-Lockwood-A-Sound-Map-Of-The-Danube (3 x CD, 2h47 totale; versione YouTube estratti)
+note: Il file analizzato è la versione YouTube (2h29) della trilogia Lovely Music 3CD originale (2h47). Gold descrive l'opera integrale, il file ne è un sottoinsieme.
 
 ## Contesto critico
 
@@ -36,11 +36,16 @@ Forma cartografica, non drammaturgica. Ogni traccia (59 punti) segue il pattern 
 
 ## Parentele stilistiche attese
 
-- `Pauline Oliveros` — deep listening, collaborazione
+- `Pauline Oliveros` — deep listening, collaborazione diretta
 - `Jana Winderen` — idrofoni, acoustic ecology acquatica
+- `Chris Watson` — idrofono + contact mic, ambiente non-umano
 - `Bernie Krause` — bioacustica, Acoustic Niche Hypothesis
 - `R. Murray Schafer` — World Soundscape Project, filiazione metodologica
-- `Hildegard Westerkamp` — soundscape composition (parentela leggera)
+- `Hildegard Westerkamp` — soundscape composition (WSP/SFU)
+- `Barry Truax` — WSP/SFU canadese, field recording documentario
+- `Luc Ferrari` — lunga durata documentaria, *Presque Rien* come riferimento estetico
+- `deep listening` — pratica Oliveros/Lockwood come cornice teorica
+- `World Soundscape Project` — genealogia istituzionale
 
 ## Fonti bibliografiche
 

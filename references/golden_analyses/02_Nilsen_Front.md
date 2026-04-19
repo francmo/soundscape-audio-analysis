@@ -39,8 +39,13 @@ Drone urbano/infrastrutturale a lunga durata, struttura ad arco per ciascuna tra
 - `Thomas Koner` — drone glaciale, dinamica estrema, parentela Touch
 - `Francisco Lopez` — drone urbano come materia, dinamica estrema
 - `Chris Watson` — documento trasformato, label Touch condivisa
+- `Jana Winderen` — compagna di roster Touch, drone-field
+- `Mika Vainio` — minimal industrial (Pan Sonic), drone tonale urbano
 - `Touch` — etichetta che definisce l'estetica
 - `Brian Eno` — drone ambient come genealogia storica
+- `Eliane Radigue` — drone ARP come filiazione storica del drone lungo
+- `dark ambient` — cornice di genere
+- `ambient documentary` — definizione critica Touch
 
 ## Fonti bibliografiche
 

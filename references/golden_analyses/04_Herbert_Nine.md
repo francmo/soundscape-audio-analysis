@@ -10,8 +10,8 @@ durata: 5:16 estratto (album completo 9 tracce)
 genere: elettronica concreta / sound journalism etico
 
 ## Tracklist verificata
-verificato: false
-fonte: Bandcamp https://matthewherbert.bandcamp.com/album/one-pig (9 tracce con nomi di mesi)
+verificato: true
+fonte: Bandcamp https://matthewherbert.bandcamp.com/album/one-pig (9 tracce con durate verificate)
 note: "Nine" non esiste nell'album (allucinazione LLM). Le 9 tracce sono: August 2009 (6:54), September (5:51), October (5:52), November (2:34), December (3:31), January (4:04), February (6:18), August 2010 (6:05), May 2011 (2:34). Il file 5:16 è estratto o mix di tracce.
 
 ## Contesto critico
@@ -42,6 +42,10 @@ Sequenza cronologica di 9 tracce (nomi di mese + postumo), ognuna documenta una 
 - `Accidental Records` — etichetta di Herbert
 - `Mika Vainio` — antropofonia industriale minima (Pan Sonic)
 - `David Toop` — area critica di riferimento
+- `sonic journalism` — categoria critica di Cusack, applicata
+- `PCCOM` — Personal Contract for the Composition of Music, metodo di Herbert
+- `committed journalism` — categoria critica per l'opera di Herbert
+- `Pierre Schaeffer` — musique concrete come genealogia storica del campionamento
 
 ## Fonti bibliografiche
 

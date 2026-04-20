@@ -319,30 +319,17 @@ def _build_clap_block(clap: dict, styles) -> list:
         story.append(Paragraph(hints_text, styles["body"]))
         story.append(Spacer(1, 8))
 
+    # v0.12.3: timeline 10s tabellare RIMOSSA dal PDF.
+    # Resta in summary.json per data-mining (chiave clap.timeline).
+    # La Partitura grafica (sezione 3) comunica la stessa informazione
+    # visivamente via plot_tags_timeline.
     timeline = clap.get("timeline", [])
     if timeline:
         story.append(Paragraph(
-            f"<b>Timeline tag (top-3 per segmento di {clap.get('segment_seconds', 10.0):.0f} s)</b>",
-            styles["body"]))
-        rows = [["Tempo", "Top 1", "Top 2", "Top 3"]]
-        for seg in timeline[:60]:
-            t0 = _fmt_time(seg["t_start_s"])
-            t1 = _fmt_time(seg["t_end_s"])
-            tags = seg.get("tags", [])
-            row = [f"{t0}-{t1}"]
-            # v0.6.5: niente slice [:35]; styled_table._wrap avvolge i prompt
-            # in Paragraph con word-wrap ReportLab (vedi report_styles.py).
-            for idx in range(3):
-                if idx < len(tags):
-                    row.append(tags[idx]["prompt"])
-                else:
-                    row.append("")
-            rows.append(row)
-        if len(timeline) > 60:
-            rows.append([f"...", f"+{len(timeline)-60} segmenti omessi nel PDF",
-                         "vedi timeline CSV", ""])
-        story.append(report_styles.styled_table(
-            rows, [22 * mm, 48 * mm, 48 * mm, 48 * mm], styles
+            f"<i>Timeline tag per segmento di {clap.get('segment_seconds', 10.0):.0f} s "
+            f"disponibile in `summary.json` ({len(timeline)} finestre). "
+            f"La sintesi grafica a colori e' nella Partitura grafica.</i>",
+            styles["caption"],
         ))
     return story
 
@@ -662,6 +649,32 @@ def _build_hum_block(hum: dict, styles) -> list:
     return story
 
 
+def _eco_radar_commentary(eco: dict) -> str:
+    """v0.12.3: 2-3 frasi di commento accanto al radar ecoacustico."""
+    ndsi_v = float((eco.get("ndsi") or {}).get("ndsi") or 0.0)
+    h_total = float((eco.get("h_entropy") or {}).get("h_total") or 0.0)
+    bi_v = float(eco.get("bi") or 0.0)
+    aci_v = float(eco.get("aci") or 0.0)
+    parts = []
+    if ndsi_v > 0.3:
+        parts.append("NDSI positivo indica predominanza biofonica")
+    elif ndsi_v < -0.3:
+        parts.append("NDSI negativo indica predominanza antropofonica")
+    else:
+        parts.append("NDSI vicino a zero, rapporto biofonia/antropofonia bilanciato")
+    if h_total > 0.80:
+        parts.append(f"entropia alta ({h_total:.2f}) indica paesaggio ricco")
+    elif h_total < 0.50:
+        parts.append(f"entropia bassa ({h_total:.2f}) indica paesaggio concentrato")
+    else:
+        parts.append(f"entropia media ({h_total:.2f})")
+    if bi_v > 20000:
+        parts.append(f"BI elevato ({bi_v:.0f}) supporta la lettura biofonica")
+    if aci_v > 100000:
+        parts.append(f"ACI alto ({aci_v:.0f}) segnala attivita' spettrale densa")
+    return ". ".join(parts) + "."
+
+
 def _build_executive_summary(summary: dict, styles) -> list:
     """v0.12.0: sintesi iniziale (una pagina) pensata per il compositore.
 
@@ -770,38 +783,69 @@ def _translate_label_for_summary(label: str) -> str:
 
 
 def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> list:
-    """v0.12.0: descrizione segmentata raggruppata per sezione strutturale.
+    """v0.12.3: sintesi compatta per sezione strutturale.
 
-    Sostituisce il dump delle finestre 30s (40+ blocchi ripetitivi). Per
-    ciascuna delle 8 sezioni macro identificate da changepoint detection,
-    aggrega le finestre narrative che vi ricadono e produce un paragrafo
-    compatto. La granularita' 30s resta disponibile in `summary.json`.
+    Cambio rispetto a v0.12.0: non concatena piu' la prosa di tutte le
+    finestre 30s interne (che su sezioni lunghe produceva muri di testo
+    di 10+ pagine). Produce invece un singolo paragrafo di sintesi per
+    sezione, estraendo programmaticamente:
+      - firma RMS/centroide/flatness media della sezione
+      - onset density media
+      - PANNs top dominante (sezione)
+      - famiglia CLAP dominante (sezione, con nuova mappa famiglie)
+      - eventuale variazione interna significativa (range RMS)
+
+    La prosa per-finestra resta disponibile in `summary.json`. Il sub-agent
+    compositivo riceve comunque le 30s per la sua lettura drammaturgica.
     """
+    from . import clap_families
+
     story: list = []
     sections = (structure or {}).get("sections") or []
     segments = (narrative or {}).get("segments") or []
-    if not sections or not segments:
+    if not sections:
         return story
 
     intro = Paragraph(
-        "Le finestre narrative di 30 s sono aggregate per sezione strutturale. "
-        "I prompt CLAP e i tag PANNs con i qualificatori linguistici citati "
-        "rispettano le soglie della legenda valori. Per la granularità piena "
-        "(ogni finestra) consultare il summary JSON allegato.",
+        "Sintesi empirica per ciascuna sezione strutturale: firma media, "
+        "famiglia semantica dominante, variazione interna. La granularità "
+        "30 s resta disponibile in `summary.json` e alimenta la Lettura "
+        "compositiva precedente.",
         styles["body"],
     )
     story.append(intro)
     story.append(Spacer(1, 6))
 
+    def _fmt_flatness(f: float) -> str:
+        if f < 0.02:
+            return "tonale"
+        if f < 0.10:
+            return "tonale-misto"
+        if f < 0.30:
+            return "misto"
+        return "rumoroso"
+
+    def _fmt_centroid(hz: float) -> str:
+        if hz < 500:
+            return "graves"
+        if hz < 2000:
+            return "medi"
+        if hz < 5000:
+            return "brillanti"
+        return "molto brillanti"
+
+    def _fmt_density(d: float) -> str:
+        if d < 0.3:
+            return "rarefatto"
+        if d < 1.0:
+            return "sparso"
+        if d < 2.5:
+            return "medio"
+        return "denso"
+
     for sec in sections:
         t_s = float(sec.get("t_start_s", 0.0))
         t_e = float(sec.get("t_end_s", 0.0))
-        within = [
-            s for s in segments
-            if float(s.get("t_end_s", 0.0)) > t_s and float(s.get("t_start_s", 0.0)) < t_e
-        ]
-        if not within:
-            continue
         sig_label = (sec.get("signature_label") or "").strip()
         header = (
             f"<b>{sec.get('id','')}</b> "
@@ -811,14 +855,81 @@ def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> lis
             + ")"
         )
         story.append(Paragraph(header, styles["h3"]))
-        # Fonde i paragrafi delle finestre interne in un solo paragrafo per
-        # sezione. Mantiene la prosa originale (con qualificatori e numeri),
-        # ma senza il preambolo "Questo blocco temporale..." ripetitivo.
-        texts = [s.get("narrative_it", "") for s in within]
-        merged = " ".join(t.strip() for t in texts if t)
-        if merged:
-            story.append(Paragraph(merged, styles["body"]))
-            story.append(Spacer(1, 4))
+
+        # Aggregazione deterministica dalle finestre interne
+        within = [
+            s for s in segments
+            if float(s.get("t_end_s", 0.0)) > t_s and float(s.get("t_start_s", 0.0)) < t_e
+        ]
+        n_win = len(within)
+
+        rms_vals = [s.get("rms_db") for s in within if isinstance(s.get("rms_db"), (int, float))]
+        cen_vals = [s.get("centroid_hz") for s in within if isinstance(s.get("centroid_hz"), (int, float))]
+        flat_vals = [s.get("flatness") for s in within if isinstance(s.get("flatness"), (int, float))]
+        dens_vals = [s.get("density") for s in within if isinstance(s.get("density"), (int, float))]
+
+        rms_mean = sum(rms_vals) / len(rms_vals) if rms_vals else sec.get("mean_rms_db")
+        cen_mean = sum(cen_vals) / len(cen_vals) if cen_vals else sec.get("mean_centroid_hz")
+        flat_mean = sum(flat_vals) / len(flat_vals) if flat_vals else sec.get("mean_flatness")
+        dens_mean = sum(dens_vals) / len(dens_vals) if dens_vals else 0.0
+
+        # Famiglia CLAP dominante su window della sezione
+        clap_windows = []
+        for s in within:
+            tl_entry = s.get("clap_windows") or []
+            clap_windows.extend(tl_entry if isinstance(tl_entry, list) else [])
+        # Fallback: usa la dominante PANNs della sezione se clap_windows non
+        # viene esposto nei segmenti narrative.
+        fam_label = None
+        try:
+            if clap_windows:
+                doms = clap_families.dominant_family_per_window(clap_windows)
+                if doms:
+                    from collections import Counter
+                    most_fam = Counter(d["family"] for d in doms).most_common(1)[0][0]
+                    fam_label = clap_families.family_meta(most_fam).get("label", most_fam)
+        except Exception:
+            fam_label = None
+
+        # Sintesi discorsiva (max 4-5 frasi brevi)
+        parts: list[str] = []
+        if cen_mean is not None and flat_mean is not None:
+            parts.append(
+                f"La firma timbrica media e' su registro {_fmt_centroid(cen_mean)} "
+                f"({cen_mean:.0f} Hz) con spettro {_fmt_flatness(flat_mean)} "
+                f"(flatness {flat_mean:.3f})."
+            )
+        if rms_mean is not None:
+            parts.append(f"Dinamica RMS media {rms_mean:+.1f} dBFS.")
+            if rms_vals and len(rms_vals) > 1:
+                rms_range = max(rms_vals) - min(rms_vals)
+                if rms_range > 8:
+                    parts.append(
+                        f"All'interno della sezione la dinamica oscilla su "
+                        f"{rms_range:.0f} dB, segno di modulazione interna."
+                    )
+        if dens_mean:
+            parts.append(
+                f"Densita' di onset {_fmt_density(dens_mean)} ({dens_mean:.1f}/s)."
+            )
+        dom_panns = (sec.get("dominant_panns") or "").strip()
+        if dom_panns:
+            parts.append(f"PANNs dominante: {dom_panns}.")
+        if fam_label:
+            parts.append(f"Famiglia CLAP prevalente: {fam_label}.")
+        krause = (sec.get("krause") or "").strip()
+        if krause:
+            parts.append(f"Triade ecoacustica: predomina {krause}.")
+        if n_win:
+            parts.append(
+                f"Sintesi derivata da {n_win} finestre di 30 s interne."
+            )
+        if not parts:
+            parts.append("Dati insufficienti per una sintesi discorsiva.")
+
+        story.append(Paragraph(" ".join(parts), styles["body"]))
+        story.append(Spacer(1, 4))
+
     return story
 
 
@@ -1034,7 +1145,18 @@ def build_report(
     if eco:
         story.append(Spacer(1, 6))
         story.append(Paragraph(INTESTAZIONI["ecoacustica"], styles["h2"]))
-        story.append(_build_eco_table(eco, styles))
+        radar_path = (plot_paths or {}).get("ecoacoustic_radar")
+        if radar_path is not None and Path(radar_path).exists():
+            try:
+                story.append(Image(str(radar_path), width=110 * mm, height=90 * mm))
+                story.append(Paragraph(
+                    _eco_radar_commentary(eco),
+                    styles["caption"],
+                ))
+            except Exception:
+                story.append(_build_eco_table(eco, styles))
+        else:
+            story.append(_build_eco_table(eco, styles))
     story.append(PageBreak())
 
     # 5. DESCRIZIONE PER SEZIONI STRUTTURALI (v0.12.0: non piu' 40 finestre 30s)

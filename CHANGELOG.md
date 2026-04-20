@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.12.3] - 2026-04-20
+
+Patch di correzione basata su feedback esterno sul PDF v0.12.0. Tre
+problemi reali: (1) la descrizione per sezione strutturale concatenava
+la prosa delle finestre 30 s, producendo "muri di testo" di 13+ pagine
+per sezioni lunghe; (2) gli indici ecoacustici restavano in tabella
+numerica invece di diventare visualizzazione polare; (3) la tabella
+timeline CLAP 10 s era ancora stampata in appendice nonostante la
+partitura grafica a p.5 comunichi la stessa informazione.
+
+### Changed
+
+- `_build_narrative_by_section()` riscritto: produce **una sintesi
+  discorsiva per sezione** (4-6 frasi brevi) anziche' concatenare la
+  prosa delle finestre interne. La sintesi estrae programmaticamente
+  firma timbrica media (centroide, flatness), dinamica RMS (media +
+  range interno se >8 dB), densita' di onset, PANNs dominante, famiglia
+  CLAP dominante (via `clap_families`) e triade Krause. Risultato: p.10-11
+  invece di p.11-24 sul test di riferimento.
+- `_build_clap_block()`: rimossa la tabella "Timeline tag (top-3 per
+  segmento 10 s)" (40-60 righe per brano medio). Sostituita da una
+  riga caption che rimanda alla partitura grafica e al summary.json.
+- Overview tecnica: gli indici ecoacustici ora appaiono come **radar
+  chart** a 5 assi (ACI, NDSI, H, BI, ADI normalizzati) con 2-3 frasi
+  di commento deterministico. Fallback a tabella solo se il radar non
+  puo' essere generato.
+
+### Added
+
+- `scripts/plotting.py::plot_ecoacoustic_radar()`: radar polare matplotlib
+  a 5 assi con normalizzazioni empiriche (ACI log10/5.5, NDSI (x+1)/2,
+  H identita', BI/50000 clip 1, ADI/3 clip 1). Etichette con valori
+  grezzi.
+- `_eco_radar_commentary()`: 2-3 frasi deterministiche di commento al
+  radar basate sulle soglie NDSI/H/BI/ACI.
+- `scripts/cli.py`: genera automaticamente `<base>_ecoacoustic_radar.png`
+  in `graphics_dir` durante `analyze`.
+
+### Bug fix
+
+- Fix del muro di testo S1 descritto dal feedback: una sezione di 23
+  minuti (S1 = 00:00-23:30) non produce piu' 13 pagine di prosa 30 s
+  concatenata, bensi' un singolo paragrafo di 4-6 frasi.
+
+bump 0.12.0 -> 0.12.3.
+
 ## [0.12.0] - 2026-04-20
 
 Riorganizzazione completa del PDF, famiglie semantiche CLAP e timeline

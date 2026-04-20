@@ -195,6 +195,75 @@ def plot_structure_timeline(sections: list[dict], total_duration_s: float,
     return out_path
 
 
+def plot_ecoacoustic_radar(eco: dict, out_path: Path,
+                            title: str = "Profilo ecoacustico") -> Path | None:
+    """v0.12.3: radar chart a 5 assi per gli indici ecoacustici principali.
+
+    Assi (normalizzati 0-1 per leggibilita' polare):
+    - ACI: log10(ACI+1) diviso per 5.5 (scala empirica su corpus,
+      ACI=0 -> 0, ACI=300000 -> ~1)
+    - NDSI: (ndsi + 1) / 2, quindi 0 = anthropophony pura, 0.5 = bilanciato,
+      1 = biophony pura
+    - H totale: gia' 0-1 per costruzione (Sueur)
+    - BI: min(BI/50000, 1) (scala empirica)
+    - ADI: gia' 0-3 ~ diviso per 3; fallback 0.5 se mancante
+
+    Sostituisce la tabella numerica per una lettura rapida del profilo.
+    """
+    import math
+    aci = float(eco.get("aci") or 0.0)
+    ndsi_val = float((eco.get("ndsi") or {}).get("ndsi") or 0.0)
+    h_total = float((eco.get("h_entropy") or {}).get("h_total") or 0.0)
+    bi_val = float(eco.get("bi") or 0.0)
+    adi_val = float(eco.get("adi") or 0.0)
+
+    axes = ["ACI", "NDSI", "H", "BI", "ADI"]
+    norm_values = [
+        min(math.log10(max(aci, 0) + 1) / 5.5, 1.0),
+        max(0.0, min(1.0, (ndsi_val + 1.0) / 2.0)),
+        max(0.0, min(1.0, h_total)),
+        min(max(bi_val, 0) / 50000.0, 1.0),
+        min(max(adi_val, 0) / 3.0, 1.0) if adi_val else 0.5,
+    ]
+
+    raw_labels = [
+        f"{aci:.0f}",
+        f"{ndsi_val:+.2f}",
+        f"{h_total:.2f}",
+        f"{bi_val:.0f}",
+        f"{adi_val:.2f}" if adi_val else "n.d.",
+    ]
+
+    angles = [i * 2 * math.pi / len(axes) for i in range(len(axes))]
+    angles.append(angles[0])
+    norm_closed = norm_values + [norm_values[0]]
+
+    fig = plt.figure(figsize=(5.5, 4.5))
+    ax = fig.add_subplot(111, polar=True)
+    ax.set_theta_offset(math.pi / 2)
+    ax.set_theta_direction(-1)
+
+    ax.plot(angles, norm_closed, color=config.PALETTE["dark"], linewidth=1.6)
+    ax.fill(angles, norm_closed, color=config.PALETTE["dark"], alpha=0.18)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(
+        [f"{lab}\n{val}" for lab, val in zip(axes, raw_labels)],
+        fontsize=8,
+    )
+    ax.set_ylim(0, 1)
+    ax.set_yticks([0.25, 0.5, 0.75])
+    ax.set_yticklabels(["0.25", "0.50", "0.75"], fontsize=6,
+                       color=config.PALETTE["muted_gray"])
+    ax.grid(True, linewidth=0.4, alpha=0.5)
+    ax.set_title(title, fontsize=10, color=config.PALETTE["dark"], pad=14)
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def plot_tags_timeline(dominant_windows: list[dict], total_duration_s: float,
                        out_path: Path,
                        title: str = "Timeline famiglie semantiche CLAP") -> Path:

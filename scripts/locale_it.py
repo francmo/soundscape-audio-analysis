@@ -46,6 +46,10 @@ INTESTAZIONI = {
     "dialoghi_trascritti": "Dialoghi trascritti",
     "sezioni_strutturali": "Sezioni strutturali",
     "narrativa": "Descrizione segmentata",
+    "executive_summary": "Sintesi",
+    "partitura_grafica": "Partitura grafica",
+    "overview_tecnica": "Overview tecnica",
+    "appendice": "Appendice analitica",
 }
 
 PARAMETRI = {

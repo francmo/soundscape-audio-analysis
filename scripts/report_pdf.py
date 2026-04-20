@@ -662,6 +662,166 @@ def _build_hum_block(hum: dict, styles) -> list:
     return story
 
 
+def _build_executive_summary(summary: dict, styles) -> list:
+    """v0.12.0: sintesi iniziale (una pagina) pensata per il compositore.
+
+    Riunisce in uno sguardo: identita' del brano, qualita' di registrazione,
+    carattere ecoacustico, top famiglie semantiche. Non sostituisce le
+    sezioni tecniche dettagliate, le anticipa.
+    """
+    meta = summary.get("metadata", {}) or {}
+    tech = summary.get("technical", {}) or {}
+    spec = summary.get("spectral", {}) or {}
+    hum = summary.get("hum", {}) or {}
+    eco = summary.get("ecoacoustic", {}) or {}
+    clap = summary.get("clap") or {}
+    classifier = (summary.get("semantic", {}) or {}).get("classifier", {}) or {}
+    structure = summary.get("structure") or {}
+
+    levels = tech.get("levels", {}) or {}
+    lufs = tech.get("lufs", {}) or {}
+    tp = tech.get("true_peak", {}) or {}
+    hifi = spec.get("hifi_lofi", {}) or {}
+
+    rows = [["", ""]]
+    rows.append([
+        "Durata / formato",
+        f"{_fmt(meta.get('duration_s'), '{:.1f} s')} - "
+        f"{_fmt(meta.get('sr'), '{} Hz')} - {_fmt(meta.get('channels'))} canali",
+    ])
+    rows.append([
+        "Qualità di registrazione",
+        f"LUFS integrato {_fmt(lufs.get('integrated_lufs'), '{:+.1f}')}, "
+        f"true peak {_fmt(tp.get('true_peak_dbtp'), '{:+.2f}')} dBTP, "
+        f"dinamica {_fmt(levels.get('dynamic_range_db'), '{:.1f}')} dB",
+    ])
+    hifi_score = hifi.get("score")
+    hifi_label = hifi.get("label", "")
+    rows.append([
+        "Profilo Schafer",
+        f"Hi-Fi/Lo-Fi score {hifi_score}/5 ({hifi_label}). "
+        f"Hum 50/60 Hz {'rilevato' if hum.get('detected') else 'entro baseline'}.",
+    ])
+
+    krause = (eco.get("krause") or {})
+    if krause:
+        k_sorted = sorted(
+            ((k, v) for k, v in krause.items() if isinstance(v, (int, float))),
+            key=lambda kv: -kv[1],
+        )[:3]
+        parts = [f"{k} {v*100:.0f}%" if v <= 1 else f"{k} {v:.0f}%" for k, v in k_sorted]
+        rows.append(["Triade ecoacustica (Krause)", ", ".join(parts)])
+
+    top_panns = (classifier.get("top_categories") or [])[:3]
+    if top_panns:
+        parts = [f"{_translate_label_for_summary(c.get('name',''))} ({c.get('score',0):.2f})"
+                 for c in top_panns if c.get("score", 0) > 0.03]
+        if parts:
+            rows.append(["Classificatore semantico (PANNs)", ", ".join(parts)])
+
+    top_clap = (clap.get("top_global") or [])[:3]
+    if top_clap:
+        parts = [f"«{t.get('prompt','')}» ({t.get('score',0):.2f})"
+                 for t in top_clap if t.get("score", 0) > 0.20]
+        if parts:
+            rows.append(["Auto-tag CLAP", "; ".join(parts)])
+
+    n_sec = len((structure.get("sections") or []))
+    if n_sec:
+        rows.append([
+            "Struttura",
+            f"{n_sec} sezioni significative (changepoint detection)",
+        ])
+
+    table = report_styles.styled_table(
+        rows[1:], [62 * mm, 108 * mm], styles, header=False,
+    )
+
+    intro = Paragraph(
+        "Questa sintesi e' pensata come prima lettura: identita' del brano, "
+        "qualita' di registrazione, carattere ecoacustico, famiglie semantiche "
+        "dominanti. Le pagine successive articolano la lettura compositiva "
+        "e i dettagli analitici.",
+        styles["body"],
+    )
+    return [intro, Spacer(1, 6), table, Spacer(1, 8)]
+
+
+def _translate_label_for_summary(label: str) -> str:
+    """Traduzione leggera di label PANNs per la tabella sintesi.
+
+    Non dipende dal modulo narrative (che importa librosa), quindi resta
+    auto-contained. Per i casi non mappati ritorna il label originale.
+    """
+    mapping = {
+        "Speech": "parlato umano",
+        "Music": "musica",
+        "Silence": "silenzio",
+        "Animal": "animali",
+        "Bird": "uccelli",
+        "Insect": "insetti",
+        "Water": "acqua",
+        "Wind": "vento",
+        "Vehicle": "veicoli",
+        "Engine": "motore",
+        "Environmental noise": "rumore ambientale",
+    }
+    return mapping.get(label, label.lower())
+
+
+def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> list:
+    """v0.12.0: descrizione segmentata raggruppata per sezione strutturale.
+
+    Sostituisce il dump delle finestre 30s (40+ blocchi ripetitivi). Per
+    ciascuna delle 8 sezioni macro identificate da changepoint detection,
+    aggrega le finestre narrative che vi ricadono e produce un paragrafo
+    compatto. La granularita' 30s resta disponibile in `summary.json`.
+    """
+    story: list = []
+    sections = (structure or {}).get("sections") or []
+    segments = (narrative or {}).get("segments") or []
+    if not sections or not segments:
+        return story
+
+    intro = Paragraph(
+        "Le finestre narrative di 30 s sono aggregate per sezione strutturale. "
+        "I prompt CLAP e i tag PANNs con i qualificatori linguistici citati "
+        "rispettano le soglie della legenda valori. Per la granularità piena "
+        "(ogni finestra) consultare il summary JSON allegato.",
+        styles["body"],
+    )
+    story.append(intro)
+    story.append(Spacer(1, 6))
+
+    for sec in sections:
+        t_s = float(sec.get("t_start_s", 0.0))
+        t_e = float(sec.get("t_end_s", 0.0))
+        within = [
+            s for s in segments
+            if float(s.get("t_end_s", 0.0)) > t_s and float(s.get("t_start_s", 0.0)) < t_e
+        ]
+        if not within:
+            continue
+        sig_label = (sec.get("signature_label") or "").strip()
+        header = (
+            f"<b>{sec.get('id','')}</b> "
+            f"({_fmt_time(t_s)} - {_fmt_time(t_e)}, "
+            f"{sec.get('duration_s', 0):.0f} s"
+            + (f", {sig_label}" if sig_label else "")
+            + ")"
+        )
+        story.append(Paragraph(header, styles["h3"]))
+        # Fonde i paragrafi delle finestre interne in un solo paragrafo per
+        # sezione. Mantiene la prosa originale (con qualificatori e numeri),
+        # ma senza il preambolo "Questo blocco temporale..." ripetitivo.
+        texts = [s.get("narrative_it", "") for s in within]
+        merged = " ".join(t.strip() for t in texts if t)
+        if merged:
+            story.append(Paragraph(merged, styles["body"]))
+            story.append(Spacer(1, 4))
+    return story
+
+
 def _build_narrative_legenda(styles) -> list:
     """v0.11: legenda dei valori per la Descrizione segmentata.
 
@@ -780,132 +940,155 @@ def build_report(
     story.append(NextPageTemplate("body"))
     story.append(PageBreak())
 
-    # SEZIONE TECNICA
-    story.append(Paragraph(INTESTAZIONI["metadati"], styles["h1"]))
+    tech = summary.get("technical", {}) or {}
+    hum = summary.get("hum", {}) or {}
+    spec = summary.get("spectral", {}) or {}
+    eco = summary.get("ecoacoustic", {}) or {}
+    semantic = summary.get("semantic", {}) or {}
+    clap = summary.get("clap") or {}
+    speech = summary.get("speech") or {}
+    mc = summary.get("multichannel")
+    structure = summary.get("structure") or {}
+    narrative = summary.get("narrative") or {}
+
+    # v0.12.0 REORGANIZATION:
+    # 1) Sintesi (executive summary)
+    # 2) Lettura compositiva (dal sub-agent)
+    # 3) Partitura grafica (spettrogramma + timeline strutturale)
+    # 4) Overview tecnica compatta
+    # 5) Descrizione per sezioni strutturali (non 40 finestre 30s)
+    # 6) Appendice: CLAP/PANNs/speech/multichannel/GRM/raw
+
+    # 1. SINTESI
+    story.append(Paragraph(INTESTAZIONI["executive_summary"], styles["h1"]))
+    story.extend(_build_executive_summary(summary, styles))
+    story.append(PageBreak())
+
+    # 2. LETTURA COMPOSITIVA (spostata in testa)
+    story.append(Paragraph(INTESTAZIONI["lettura_compositiva"], styles["h1"]))
+    story.extend(_build_composer_section(agent_text, styles))
+    story.append(PageBreak())
+
+    # 3. PARTITURA GRAFICA: spettrogramma + timeline strutturale
+    story.append(Paragraph(INTESTAZIONI["partitura_grafica"], styles["h1"]))
+    story.append(Paragraph(
+        "Sintesi visiva del brano: lo spettrogramma log-frequenza come "
+        "partitura del colore, sotto la timeline delle sezioni strutturali "
+        "identificate via changepoint detection.",
+        styles["body"],
+    ))
+    story.append(Spacer(1, 6))
+    if plot_paths and plot_paths.get("spectrogram"):
+        story.append(Image(str(plot_paths["spectrogram"]), width=170 * mm, height=65 * mm))
+        story.append(Paragraph("Spettrogramma log-frequenza, scala dB.", styles["caption"]))
+        story.append(Spacer(1, 4))
+    timeline_path = (plot_paths or {}).get("structure_timeline")
+    if timeline_path is not None and Path(timeline_path).exists():
+        try:
+            story.append(Image(str(timeline_path), width=170 * mm, height=26 * mm))
+            story.append(Paragraph(
+                "Sezioni strutturali colorate per Krause dominante.",
+                styles["caption"],
+            ))
+        except Exception:
+            pass
+    tags_path = (plot_paths or {}).get("tags_timeline")
+    if tags_path is not None and Path(tags_path).exists():
+        try:
+            story.append(Spacer(1, 4))
+            story.append(Image(str(tags_path), width=170 * mm, height=30 * mm))
+            story.append(Paragraph(
+                "Timeline delle famiglie semantiche CLAP: ogni colore corrisponde "
+                "a una macro-categoria (biofonia, geofonia, antropofonia umana/meccanica, "
+                "paesaggio urbano/geografico, musica e processing, oggetti astratti). "
+                "Intensita' del colore proporzionale al cosine score di similarita'.",
+                styles["caption"],
+            ))
+        except Exception:
+            pass
+    story.append(PageBreak())
+
+    # 4. OVERVIEW TECNICA compatta
+    story.append(Paragraph(INTESTAZIONI["overview_tecnica"], styles["h1"]))
+    story.append(Paragraph(INTESTAZIONI["metadati"], styles["h2"]))
     story.append(_build_metadati_table(meta, styles))
-    story.append(Spacer(1, 8))
-
-    tech = summary.get("technical", {})
-    story.append(Paragraph(INTESTAZIONI["livelli_dinamica"], styles["h1"]))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph(INTESTAZIONI["livelli_dinamica"], styles["h2"]))
     story.append(_build_livelli_table(tech, styles))
-    story.append(Spacer(1, 8))
-
-    hum = summary.get("hum", {})
-    story.append(Paragraph(INTESTAZIONI["diagnosi_tecnica"], styles["h1"]))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph(INTESTAZIONI["diagnosi_tecnica"], styles["h2"]))
     story.append(_build_diagnosi_table(tech, hum, styles))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
     story.extend(_build_hum_block(hum, styles))
     story.append(PageBreak())
 
-    # SEZIONE SPETTRALE
-    spec = summary.get("spectral", {})
-    story.append(Paragraph(INTESTAZIONI["spettro"], styles["h1"]))
+    story.append(Paragraph(INTESTAZIONI["spettro"], styles["h2"]))
     story.append(_build_bande_table(spec.get("bands_schafer", {}), styles))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
     story.append(Paragraph(INTESTAZIONI["caratt_timbrica"], styles["h2"]))
     story.append(_build_timbre_table(spec.get("timbre", {}), spec.get("onsets", {}),
                                       spec.get("hifi_lofi", {}), styles))
-    story.append(Spacer(1, 8))
-
+    story.append(Spacer(1, 6))
     if plot_paths and plot_paths.get("bands_bar"):
         story.append(Image(str(plot_paths["bands_bar"]), width=165 * mm, height=55 * mm))
+    if eco:
         story.append(Spacer(1, 6))
-    if plot_paths and plot_paths.get("spectrogram"):
-        story.append(Image(str(plot_paths["spectrogram"]), width=165 * mm, height=60 * mm))
-        story.append(Paragraph("Spettrogramma log-frequenza, scala dB.", styles["caption"]))
+        story.append(Paragraph(INTESTAZIONI["ecoacustica"], styles["h2"]))
+        story.append(_build_eco_table(eco, styles))
     story.append(PageBreak())
 
-    # ECOACUSTICA
-    eco = summary.get("ecoacoustic", {})
-    if eco:
-        story.append(Paragraph(INTESTAZIONI["ecoacustica"], styles["h1"]))
-        story.append(_build_eco_table(eco, styles))
+    # 5. DESCRIZIONE PER SEZIONI STRUTTURALI (v0.12.0: non piu' 40 finestre 30s)
+    if structure.get("enabled") and structure.get("sections"):
+        story.append(Paragraph(INTESTAZIONI["sezioni_strutturali"], styles["h1"]))
+        story.extend(_build_structure_block(structure, None, styles))
         story.append(Spacer(1, 8))
+        if narrative.get("enabled") and narrative.get("segments"):
+            story.extend(_build_narrative_legenda(styles))
+            story.extend(_build_narrative_by_section(structure, narrative, styles))
+        story.append(PageBreak())
 
-    # SEMANTICA
-    semantic = summary.get("semantic", {})
-    story.append(Paragraph(INTESTAZIONI["classificazione_semantica"], styles["h1"]))
+    # 6. APPENDICE
+    story.append(Paragraph(INTESTAZIONI["appendice"], styles["h1"]))
+    story.append(Paragraph(
+        "Dati di supporto per fact-checking: classificazione PANNs dettagliata, "
+        "auto-tagging CLAP top-20, trascrizione dialoghi, analisi multicanale "
+        "ed eventuali confronti sperimentali. La descrizione segmentata finestra "
+        "per finestra (30 s) resta disponibile in `summary.json`.",
+        styles["body"],
+    ))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph(INTESTAZIONI["classificazione_semantica"], styles["h2"]))
     story.extend(_build_semantic_block(semantic, styles))
     story.append(PageBreak())
 
-    # CLAP auto-tagging (v0.2.1)
-    clap = summary.get("clap") or {}
     if clap.get("enabled"):
-        story.append(Paragraph(INTESTAZIONI["clap"], styles["h1"]))
+        story.append(Paragraph(INTESTAZIONI["clap"], styles["h2"]))
         story.extend(_build_clap_block(clap, styles))
         story.append(PageBreak())
 
-    # DIALOGHI TRASCRITTI (v0.5.1)
-    speech = summary.get("speech") or {}
     if speech.get("enabled") and not speech.get("skipped_reason"):
         base_name = Path(summary.get("metadata", {}).get("filename", "file")).stem
-        story.append(Paragraph(INTESTAZIONI["dialoghi_trascritti"], styles["h1"]))
+        story.append(Paragraph(INTESTAZIONI["dialoghi_trascritti"], styles["h2"]))
         story.extend(_build_speech_block(speech, base_name, styles))
         story.append(PageBreak())
 
-    # MULTICANALE
-    mc = summary.get("multichannel")
     if mc:
-        story.append(Paragraph(INTESTAZIONI["multicanale"], styles["h1"]))
+        story.append(Paragraph(INTESTAZIONI["multicanale"], styles["h2"]))
         story.extend(_build_multichannel_block(mc, styles))
         story.append(PageBreak())
 
-    # CONFRONTO GRM
-    # v0.2: disattivato di default, riattivabile solo con --compare=grm-experimental
-    # o --compare=<profile_id>. Se rank_grm è vuota la sezione viene saltata.
     if rank_grm:
-        story.append(Paragraph(INTESTAZIONI["confronto_grm"], styles["h1"]))
+        story.append(Paragraph(INTESTAZIONI["confronto_grm"], styles["h2"]))
         story.append(report_styles.box_info(
             "Confronto sperimentale con profili GRM letteratura-based",
-            "Questa sezione è attivata manualmente via --compare=grm-experimental. "
-            "I profili di riferimento sono stimati da letteratura e non da audio reale, "
-            "quindi il confronto numerico ha valore esplorativo, non interpretativo. "
-            "Nella v0.3 verranno sostituiti da profili audio-derived via profile build.",
+            "Sezione attivata manualmente via --compare=grm-experimental. "
+            "I profili di riferimento sono stimati da letteratura e non da audio reale.",
             styles,
         ))
         story.append(Spacer(1, 6))
         story.extend(_build_confronto_grm_block(rank_grm, styles))
         story.append(PageBreak())
-
-    # SEZIONI STRUTTURALI (v0.6.0): timeline grafica + tabella
-    structure = summary.get("structure") or {}
-    if structure.get("enabled") and structure.get("sections"):
-        timeline_path = (plot_paths or {}).get("structure_timeline")
-        story.append(Paragraph(INTESTAZIONI["sezioni_strutturali"], styles["h1"]))
-        story.extend(_build_structure_block(structure, timeline_path, styles))
-        story.append(PageBreak())
-
-    # DESCRIZIONE SEGMENTATA (v0.2.2, legenda v0.11)
-    narrative = summary.get("narrative") or {}
-    if narrative.get("enabled") and narrative.get("segments"):
-        story.append(Paragraph(INTESTAZIONI["narrativa"], styles["h1"]))
-        story.append(Paragraph(
-            f"Descrizione generata da `narrative.py` con finestra di "
-            f"{narrative.get('window_seconds', 30):.0f} secondi, modalità "
-            f"<b>{narrative.get('mode', 'full')}</b>. Integra livelli, spettro, "
-            f"eventi, classificatore e CLAP in prosa italiana.",
-            styles["body"]
-        ))
-        story.append(Spacer(1, 6))
-        story.extend(_build_narrative_legenda(styles))
-        for seg in narrative["segments"][:60]:
-            story.append(Paragraph(
-                f"<b>{seg['t_start_str']} - {seg['t_end_str']}</b>",
-                styles["h3"]
-            ))
-            story.append(Paragraph(seg["narrative_it"], styles["body"]))
-            story.append(Spacer(1, 4))
-        if len(narrative["segments"]) > 60:
-            story.append(Paragraph(
-                f"<i>(+{len(narrative['segments'])-60} segmenti aggiuntivi omessi "
-                f"per contenere la dimensione del PDF. Vedi summary JSON.)</i>",
-                styles["caption"]
-            ))
-        story.append(PageBreak())
-
-    # LETTURA COMPOSITIVA (AGENTE)
-    story.append(Paragraph(INTESTAZIONI["lettura_compositiva"], styles["h1"]))
-    story.extend(_build_composer_section(agent_text, styles))
 
     # COLOFONE
     story.append(Spacer(1, 20))

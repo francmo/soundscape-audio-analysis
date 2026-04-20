@@ -1,5 +1,132 @@
 # Changelog
 
+## [0.11.0] - 2026-04-20
+
+Intervento di leggibilita' PDF e di precisione sull'output del sub-agent
+compositivo. L'osservazione utente: le parentesi numeriche della
+Descrizione segmentata ("environmental noise (0.14)") non erano leggibili
+senza una scala di riferimento.
+
+### Added
+
+- `scripts/report_pdf.py::_build_narrative_legenda()`: tabella legenda 8
+  righe x 5 colonne con le soglie qualitative usate dalla skill per
+  PANNs, CLAP, flatness, centroide, onset density, LRA, LUFS. Inserita
+  prima delle finestre della Descrizione segmentata. Le parentesi
+  numeriche restano come tracciabilita' empirica, la legenda le traduce.
+
+### Changed
+
+- `scripts/narrative.py::_describe_panns`: score-only sostituito da
+  qualificatori linguistici. Soglie AudioSet CNN14:
+    <0.03   trascurabile, non citato
+    0.03-0.15 "tenue presenza di X"
+    0.15-0.40 "presenza plausibile di X"
+    >0.40   "presenza marcata di X" (grassetto)
+- `scripts/narrative.py::_describe_clap`: stesse soglie per cosine CLAP:
+    <0.20   "CLAP non raggiunge soglie, ipotesi di lavoro"
+    0.20-0.30 "affinita' debole con"
+    0.30-0.40 "affinita' con"
+    >0.40   "forte affinita' con" (corsivo)
+- bump 0.10.0 -> 0.11.0.
+
+### Metriche
+
+Blind cycle v0.11.0 su 14 tracce (5 Nottoli re-analizzate con CLAP v1.9
+fresh, golden v1 rigenerate con nuovo narrative):
+- all mean 43.17 (v0.10 44.04), median 48.2 (v0.10 44.95)
+- delta mediana vs v0.10 +0.95, media -0.87
+- 5 regressioni >5 pt, 6 miglioramenti >5 pt, bilanciate
+- **N12 Nono Fabbrica**: 13.8 -> 19.5 (+5.7), italian_context ora
+  correttamente attivato con CLAP v1.9 fresh
+- traiettoria Nottoli v0.9 -> v0.11: 33.5 -> 34.7 (+1.2 con alta varianza)
+- traiettoria golden v0.9 -> v0.11: 45.4 -> 47.9 (+2.5)
+
+### Lezione metodologica
+
+Il **noise floor stocastico** del sub-agent `claude -p` e' piu' alto di
+quanto stimato: stesso codice, stesso summary, due chiamate diverse
+producono score aggregate che variano fino a ~23 punti su tracce
+singole (es. N14 Nono Non consumiamo Marx: 55.1 -> 31.6 tra due run
+consecutivi con identica pipeline). La soglia operativa per dichiarare
+un miglioramento reale sale da ±10 a **~±15-20 punti di delta mediana**.
+Patch future devono essere valutate su questa banda, non su miglioramenti
+marginali che sono pura varianza.
+
+---
+
+## [0.10.0] - 2026-04-19
+
+Patch sul prompt del sub-agent compositivo: forza citazioni esplicite
+dei fondatori di scuola quando gli indicatori tecnici lo sostengono, e
+impone uso di terminologia canonica invece di parafrasi generiche.
+Corpus benchmark espanso da 9 a 14 tracce con l'aggiunta di 5 gold
+Nottoli (Truax, Nono, Risset).
+
+### Added
+
+- `templates/agent_prompt.md` + `~/.claude/agents/soundscape-composer-analyst.md`
+  (mirror): nuove sezioni "Regola dei fondatori" e "Terminologia canonica
+  obbligatoria". La regola dei fondatori mappa 9 scuole/tecniche con
+  autori canonici da nominare: soundscape composition (Schafer + WSP +
+  Truax/Westerkamp), granular synthesis (Truax + Roads), musique concrete
+  italiana con `italian_context=true` (Zuccheri + Studio di Fonologia RAI
+  + Nono/Berio/Maderna), morphing naturale/sintetico (Risset + GRM +
+  Bayle), sonic journalism (Cusack + CRiSAP), drone-field (Lopez +
+  Vainio + Nilsen + Koner), field recording biologico (Watson + Winderen
+  + Krause), fluviale (Lockwood + Westerkamp), spettromorfologia
+  (Smalley).
+- La terminologia canonica impone uso di `spectromorphology`, `keynote`,
+  `soundmark`, `Hi-Fi`/`Lo-Fi`, `biofonia`/`antropofonia`/`geofonia`,
+  `granular synthesis`, `musique concrete`, `acusmatica`, `quadrato
+  magico`, `sonic journalism`, e nomi di sistemi storici (PODX, Syter,
+  MUSIC V, Studio di Fonologia RAI Milano) quando tecnicamente
+  pertinenti. Regola operativa: almeno 3 termini canonici per brano.
+- 5 gold analyses Nottoli (benchmark corpus iteration set):
+  - `references/golden_analyses/10_Truax_Basilica.md` (1992, PODX,
+    granular + soundmark campane)
+  - `references/golden_analyses/11_Truax_SongOfSongs_I.md` (1992,
+    soundscape composition multireferenziale)
+  - `references/golden_analyses/12_Nono_FabbricaIlluminata.md` (1964,
+    Studio di Fonologia, quadrato magico, documento politico)
+  - `references/golden_analyses/13_Risset_Sud_part1.md` (1985, MUSIC V
+    + Syter, morphing naturale/sintetico)
+  - `references/golden_analyses/14_Nono_NonConsumiamoMarx.md` (1969,
+    musique concrete politica, Parigi/Venezia '68)
+
+### Changed
+
+- bump 0.9.0 -> 0.10.0.
+
+### Metriche
+
+Blind cycle v0.10.0 su 14 tracce:
+- all mean 44.04 (v0.9 41.14), median 44.95 (v0.9 42.5)
+- **delta mediana vs v0.9 +5.6, media +2.9**
+- 7 miglioramenti >5 pt, 3 regressioni >5 pt (netto positivo)
+- Miglioramenti mirati dalla regola fondatori: N11 Truax Song of Songs
+  +19.5, N10 Truax Basilica +17.7, G07 Watson Vatnajokull +16.4,
+  N14 Nono Non consumiamo Marx +14.0
+- Regressione N12 Nono Fabbrica -35.4: diagnosticata come
+  `italian_context=false` su summary v0.6.1 stale (CLAP pre-v0.8.2
+  senza markers italiani). Risolta in v0.11.0 via re-analyze con
+  CLAP v1.9 fresh.
+
+### Infrastruttura di iterazione introdotta
+
+- `~/soundscape-training/tools/blind_benchmark_cycle.py`: pipeline
+  auto-contained per il ciclo di iterazione evaluation-driven. Phases
+  `analyze / agent / benchmark / aggregate`. Delta vs prev-version,
+  term missing hit-rate, parent missing hit-rate, regressioni flaggate.
+  Output: `~/soundscape-training/blind_cycle_reports/gap_analysis_<ver>.md`.
+- **Split iteration/held-out**: 14 tracce (9 golden_v1 + 5 Nottoli)
+  restano visibili e guidano il design. 6 tracce held-out in
+  `~/soundscape-training/rc_gold_v1/` (Research Catalogue: Chester,
+  Brito Dias, Pisano, Chattopadhyay, Wright) **sigillate per evitare
+  overfitting**, da toccare solo a v1.0.
+
+---
+
 ## [0.9.0] - 2026-04-20
 
 Step A del refactor ecoacoustic: wrapper scikit-maad come backend opt-in,

@@ -215,6 +215,16 @@ def _analyze_single(
         )
         plot_paths["structure_timeline"] = timeline_path
 
+    # Radar ecoacustico (v0.12.3)
+    eco_for_radar = summary.get("ecoacoustic") or {}
+    if eco_for_radar:
+        try:
+            radar_path = graphics_dir / f"{base}_ecoacoustic_radar.png"
+            plotting.plot_ecoacoustic_radar(eco_for_radar, out_path=radar_path)
+            plot_paths["ecoacoustic_radar"] = radar_path
+        except Exception as exc:
+            click.echo(f"  avviso: plot ecoacoustic_radar saltato ({exc})")
+
     # Timeline famiglie semantiche CLAP (v0.12.1)
     clap_timeline = (summary.get("clap") or {}).get("timeline") or []
     if clap_timeline:
@@ -718,7 +728,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.12.0")
+    click.echo("soundscape-audio-analysis 0.12.3")
 
 
 def main():

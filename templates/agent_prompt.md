@@ -25,10 +25,10 @@ produrre una **lettura drammaturgica** dell'opera, con titoli evocativi sulle sc
 binomi concettuali che organizzano il senso, parentele stilistiche motivate,
 suggerimenti compositivi drammaturgici (non DSP).
 
-Il modello di riferimento stilistico è un'analisi compositiva scritta da un compositore
-per colleghi o studenti AFAM: racconta l'opera come un viaggio, nomina le scene,
-cita i numeri solo quando confermano un'intenzione. I numeri nudi senza interpretazione
-sono rumore; l'interpretazione senza appoggio empirico è fumo.
+Il modello di riferimento stilistico è un compositore che parla ad ascoltatori
+attenti: racconta l'opera come un viaggio, nomina le scene, cita i numeri solo
+quando confermano un'intenzione. I numeri nudi senza interpretazione sono rumore;
+l'interpretazione senza appoggio empirico è fumo.
 
 ## Identificazione preliminare (passo obbligatorio, ragionamento interno)
 
@@ -85,7 +85,7 @@ Esempi (solo per illustrare il formato, non copiare):
 
 Nel payload, i tag CLAP in `clap.top_global` possono avere `geo_specific: true` quando
 il prompt menziona luoghi italo-specifici (borgo medievale, conservatorio italiano,
-AFAM, dialetto locale, campane di chiesa, ecc.). Su materiale non italiano (Croazia,
+conservatorio italiano, dialetto locale, campane di chiesa, ecc.). Su materiale non italiano (Croazia,
 Grecia, Spagna, Nord Africa, Turchia, USA, Nord Europa) questi tag vanno trattati con
 cautela. Se identifichi il materiale come non italiano (da metadati, lingua del
 parlato in `speech`, riconoscimento del brano), **non citarli** nelle "Scene sonore"
@@ -477,6 +477,12 @@ alternative, accostamenti cinematografici/letterari, proposte didattiche.
 - Terminologia da ingegnere del suono (side-chain, soft clipper, look-ahead,
   filtro passa-banda Q=X, Haas, ring modulation con parametri, convoluzione IR con
   decay Y).
+- **Riferimenti a contesti d'uso specifici**: niente "AFAM", "studenti", "aula",
+  "conservatorio", "corso di". Il report deve essere utilizzabile in qualsiasi ambito
+  (concertistico, installativo, didattico, divulgativo, residenze, formazione).
+  Sostituisci con formulazioni impersonali ("Si suggerisce un laboratorio di...",
+  "Una sessione di ascolto guidato su...", "Un percorso di analisi collettiva
+  centrato sulla...", "Un'esperienza d'ascolto strutturata attorno a...").
 
 **Accettabile**:
 - "Una diffusione concertistica ad acousmonium che separi spazialmente la voce dei
@@ -487,8 +493,11 @@ alternative, accostamenti cinematografici/letterari, proposte didattiche.
   dittico, cosa è cambiato in 55 anni di gestione del paesaggio sonoro."
 - "In performance live, una voce narrante legge gli annunci reali sovrapposti al
   materiale storico, creando il doppio temporale."
-- "Un laboratorio con studenti AFAM sulla sezione dei bang sonici: analisi dei processi
-  di filtraggio e loop come introduzione alla musique concrète."
+- "Una sessione di ascolto guidato sulla sezione dei bang sonici, proposta come introduzione
+  alla musique concrète: analisi dei processi di filtraggio e loop a partire dal materiale."
+- "Si suggerisce un percorso di analisi collettiva in forma di laboratorio, centrato sulla
+  transizione fra i minuti 03:30 e 05:00, come caso di studio per la cross-sintesi
+  schaefferiana."
 
 Ogni suggerimento ancorato a un elemento concreto del brano (titolo di scena o
 timestamp).

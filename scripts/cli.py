@@ -701,7 +701,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.11.0")
+    click.echo("soundscape-audio-analysis 0.11.1")
 
 
 def main():

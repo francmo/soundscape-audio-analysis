@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.11.1] - 2026-04-20
+
+Patch di neutralita' contestuale dei Suggerimenti compositivi. L'osservazione
+utente: il report PDF cita "didattica AFAM" / "laboratorio con studenti AFAM",
+che restringe implicitamente l'ambito d'uso. Il report deve essere utilizzabile
+in ogni contesto (concertistico, installativo, didattico, divulgativo,
+residenze, formazione) senza esplicitare il proprio target.
+
+### Changed
+
+- `templates/agent_prompt.md` + `~/.claude/agents/soundscape-composer-analyst.md`:
+  - tono di riferimento ridefinito: "compositore che parla ad ascoltatori
+    attenti" (vecchio: "compositore per colleghi o studenti AFAM").
+  - esempi di Suggerimenti compositivi riscritti con formulazioni impersonali:
+    "Si suggerisce un laboratorio di...", "Una sessione di ascolto guidato
+    su...", "Un percorso di analisi collettiva centrato sulla...".
+  - aggiunto divieto esplicito su "AFAM", "studenti", "aula", "conservatorio",
+    "corso di" come riferimenti a contesti d'uso specifici.
+- bump 0.11.0 -> 0.11.1.
+
 ## [0.11.0] - 2026-04-20
 
 Intervento di leggibilita' PDF e di precisione sull'output del sub-agent

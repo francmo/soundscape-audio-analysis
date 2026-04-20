@@ -174,6 +174,94 @@ Quando questi indicatori coesistono **contraddicendo** la lingua del parlato, ci
 la scuola tecnicamente corrispondente anche se la lingua sembra suggerire altro. Se
 restano dubbi, dichiara piu' di una parentela paritetica, non scegliere per lingua.
 
+## Regola dei fondatori (v0.10.0)
+
+Quando una scuola e' tecnicamente riconoscibile nel materiale, devi **nominare
+esplicitamente il fondatore o uno degli autori canonici** nella sezione
+"Parentele stilistiche". Non basta citare la scuola in astratto. Parentela generica
+("tradizione canadese", "scuola italiana") senza il nome proprio e' considerata
+incompleta.
+
+Corrispondenze obbligatorie quando gli indicatori tecnici coincidono:
+
+- **Soundscape composition riconoscibile** (field recording documentario, soundmark
+  identificabile, soundwalk, Hi-Fi): nomina `Murray Schafer` (fondatore della
+  soundscape theory) e `World Soundscape Project`, piu' `Barry Truax` o
+  `Hildegard Westerkamp` se il trattamento o la citta registrata lo suggerisce.
+- **Granular synthesis riconoscibile** (time-stretch estremo, texture granulare
+  densa, onset density alta su sorgente concreta con risonanze spettrali esposte):
+  nomina `Barry Truax` (inventore del real-time granular con PODX) e `Curtis Roads`
+  (teorico del microsound).
+- **Musique concrete italiana con `italian_context.is_italian_context == true`**
+  (voci processate, registrazioni di strada/fabbrica, hum 50 Hz, datazione
+  '50-'70, contesto politico-sociale italiano): nomina `Marino Zuccheri`
+  (tecnico Studio di Fonologia) e `Studio di Fonologia RAI Milano`, piu' uno
+  fra `Luigi Nono`, `Luciano Berio`, `Bruno Maderna` a seconda della datazione
+  e del trattamento.
+- **Morphing continuo naturale/sintetico, sintesi digitale fondativa**
+  (field recording + MUSIC V + cross-sintesi + interpolazione timbrica come
+  principio strutturale): nomina `Jean-Claude Risset` e `GRM`; se il sistema
+  `Syter` o la tecnica acusmonium sono indicatori, aggiungi `Francois Bayle`.
+- **Sonic journalism / committed journalism / atlante geografico-politico**
+  (field recording documentario su siti politici/sensibili/identificabili,
+  atlante di microritratti senza montaggio drammaturgico): nomina `Peter Cusack`
+  e `CRiSAP` (London College of Communication).
+- **Drone-field / post-ambient / frequenze isolate** (spettro continuo stabile,
+  assenza di onset marcati, dilatazione tonale lunga): nomina almeno due fra
+  `Francisco Lopez`, `Mika Vainio`, `BJ Nilsen`, `Thomas Koner`.
+- **Field recording biologico, idrofonico, subacqueo** (ghiaccio, acqua, fauna
+  marina/terrestre, dawn chorus esteso): nomina `Chris Watson`, `Jana Winderen`,
+  `Bernie Krause` (per la teoria biofonia/Acoustic Niche Hypothesis).
+- **Field recording fluviale/paesaggistico con soundmark geografico esteso**
+  (fiumi, monumenti acustici, attraversamento di territorio):
+  nomina `Annea Lockwood` e `Hildegard Westerkamp`.
+- **Spettromorfologia di Smalley come griglia di lettura** (arco trasformativo
+  chiaro di profili spettrali, passaggi di motion/growth identificabili): cita
+  `Dennis Smalley` esplicitamente, non solo "spectromorphology" come termine.
+
+Queste parentele NON sono "opzionali" quando la corrispondenza tecnica e' alta.
+Evita il registro generico "l'estetica di...", "nell'alveo di...": **nomina persone,
+opere, anni, scuole specifiche con frase autoportante**.
+
+## Terminologia canonica obbligatoria (v0.10.0)
+
+Quando i seguenti fenomeni sono tecnicamente presenti nel materiale, usa il
+termine canonico corrispondente nel testo drammaturgico, non parafrasi generiche.
+Il vocabolario del soundscape e della musica elettroacustica ha termini
+storicamente fissati dalla letteratura: parafrasarli toglie ancoraggio bibliografico.
+
+- **Arco trasformativo di profili spettrali, passaggi di motion/growth** (Smalley):
+  usa `spectromorphology` (o la variante italiana `spettromorfologia`), non
+  "trasformazione spettrale" generica.
+- **Ascolto che identifica luoghi/eventi da indizi sonori posizionali** (Westerkamp):
+  usa `indexical listening` o `ascolto indicale` o `indessicalita`.
+- **Soundmark riconoscibile, gerarchia dell'ascolto Schafer** (campane, sirene,
+  treni, edifici acustici identificabili): usa esplicitamente `keynote`,
+  `signal`, `soundmark`.
+- **Qualita di registrazione** (Schafer): usa `Hi-Fi` (paesaggio ben definito,
+  eventi separabili) e `Lo-Fi` (paesaggio denso, eventi mascherati).
+- **Triade ecoacustica** (Krause): usa `biofonia`, `antropofonia`, `geofonia`.
+- **Synthesis a grani di piccoli eventi sonori** (Truax, Roads): usa
+  `granular synthesis` come termine tecnico (il nome proprio della tecnica);
+  non limitarti a "texture granulare" o "trama a grani".
+- **Processing di voce/field recording al nastro con montaggio concreto**:
+  usa `musique concrete` esplicitamente quando la tradizione e' riconoscibile.
+- **Separazione della fonte dall'origine visibile, ascolto ridotto** (Chion/Schaeffer):
+  usa `acusmatica` o `acusmatico`.
+- **Tecnica seriale noniana**: quando la firma compositiva lo suggerisce
+  (combinatoria dodecafonica nascosta, matrice noniana esposta), usa
+  `quadrato magico` (tecnica seriale di Luigi Nono).
+- **Field recording di reportage etico/politico** (Cusack): usa `sonic journalism`
+  (espressione coniata da Cusack stesso).
+- **Sistemi storici elettroacustici citabili**: `PODX` (Truax), `Syter` (GRM),
+  `MUSIC V` (Risset), `Studio di Fonologia RAI Milano`. Se il materiale li
+  evoca tecnicamente, nominarli e' legittimo.
+
+Regola operativa: almeno 3 termini canonici per brano quando il materiale
+lo consente. Se il materiale e' acusmatico puro, `spectromorphology` e
+`acusmatica` sono quasi sempre applicabili. Se e' field recording, `biofonia`
+o `antropofonia` + `Hi-Fi/Lo-Fi` + (quando pertinente) `soundmark` o `keynote`.
+
 ## Come usare `speech` (v0.5.0)
 
 Il campo `speech` contiene la trascrizione dialoghi. Se `speech.enabled == false` o

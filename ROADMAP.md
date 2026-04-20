@@ -3,13 +3,14 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.9.0 (20 aprile 2026)
+**Versione corrente**: 0.11.0 (20 aprile 2026)
 **Test suite**: 192 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
+**Ultimo push origin**: `8530bf4` (v0.11.0)
 
 ---
 
-## Stato corrente (v0.9.0)
+## Stato corrente (v0.11.0)
 
 ### Capabilities attive
 
@@ -303,6 +304,33 @@ completamento.
 
 ## Storia release (rimanda a `CHANGELOG.md` per dettagli)
 
+- **v0.11.0** (20/04/2026): leggibilita' PDF + precisione narrative.
+  Aggiunta `_build_narrative_legenda()` (tabella 8x5 soglie
+  PANNs/CLAP/flatness/centroide/onset/LRA/LUFS) prima della Descrizione
+  segmentata. `narrative._describe_panns/clap`: qualificatori
+  linguistici (`tenue/plausibile/marcato`, `affinita' debole/moderata/
+  forte`) integrati con valori in parentesi. Blind cycle completo su 14
+  brani: mediana +0.95 vs v0.10, media -0.87, 5 regressioni e 6
+  migliorie bilanciate. **Lezione**: noise floor stocastico sub-agent
+  misurato a ~±15-20 punti (non ±10 come stimato), da N14 variato di 23
+  punti tra due run identici. Bug italian_context stale (CLAP pre-v0.8.2)
+  risolto via re-analyze con CLAP v1.9 fresh: N12 Fabbrica 13.8 -> 19.5.
+- **v0.10.0** (19/04/2026): regola fondatori + 5 gold Nottoli.
+  Nuova sezione "Regola dei fondatori" in `agent_prompt.md` e
+  `agents/soundscape-composer-analyst.md` che mappa 9 scuole/tecniche
+  con autori canonici da nominare (Schafer+WSP, Truax+Roads,
+  Zuccheri+Fonologia, Risset+GRM+Bayle, Cusack+CRiSAP, Lopez+Vainio+
+  Nilsen+Koner, Watson+Winderen+Krause, Lockwood+Westerkamp, Smalley).
+  Terminologia canonica obbligatoria (spectromorphology, keynote,
+  soundmark, musique concrete, granular synthesis, quadrato magico,
+  sonic journalism, PODX/Syter/MUSIC V). Corpus benchmark da 9 a 14
+  tracce: aggiunti 5 gold Nottoli (Truax Basilica + Song of Songs I,
+  Nono Fabbrica + Non Consumiamo Marx, Risset Sud). Blind cycle:
+  **mediana +5.6 vs v0.9, media +2.9**, 7 migliorie >5 pt. Infrastruttura
+  `blind_benchmark_cycle.py` introdotta in `~/soundscape-training/tools/`.
+  Split iteration/held-out formalizzato: 14 iteration visibili, 6
+  Research Catalogue (Chester/Brito Dias/Pisano/Chattopadhyay/Wright)
+  held-out sigillati per v1.0.
 - **v0.9.0** (20/04/2026): Step A refactor ecoacoustic. Wrapper
   `ecoacoustic_maad.py` contro scikit-maad 1.4.3 (Ulloa 2021). Dispatcher
   `ecoacoustic_summary(backend=...)`. Flag CLI `--ecoacoustic-backend`,

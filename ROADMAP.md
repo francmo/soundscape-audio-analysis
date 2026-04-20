@@ -85,6 +85,105 @@ chi fa cosa. Aggiornato a ogni release.
 
 ## Pianificato (priorita' decrescente)
 
+### Piano v0.13 - v0.17 (20/04/2026): rigore metodologico pre-paper
+
+Driver: review critica esterna dopo v0.12.3 ha identificato che il noise
+floor stocastico ±15-20 punti sub-agent rende non-falsificabili i delta
+delle release v0.9 -> v0.12.3 (+2.1 sull'all mean, dentro il rumore).
+Nessuna claim di miglioramento e' metodologicamente difendibile in un
+paper SMC/NIME/Organised Sound senza intervalli di confidenza e altre
+misure di governance statistica del benchmark.
+
+La review proponeva 10 interventi tutti in v0.13. Scelta operativa:
+distribuire su 4-5 minor release ordinate per costo/beneficio, applicando
+ad ogni step le nuove metriche statistiche.
+
+#### v0.13 - Rigore statistico + similarita' semantica (~8 ore)
+
+Blocker per ogni claim futuro di miglioramento.
+
+- **Paired t-test, N=5-7 run per versione**. `blind_benchmark_cycle.py`
+  deve girare piu' volte per versione, calcolare intervallo di confidenza
+  al 95% via paired t-test (stessa traccia vs stessa traccia), non
+  confronto medie di campioni indipendenti. Il paired test e' piu'
+  potente del t-test unpaired e permette N piu' basso.
+- **Embedding similarity per matching termini**: sostituire Jaccard con
+  cosine similarity su sentence-transformers
+  (paraphrase-multilingual-mpnet-base-v2), soglia 0.7. "Sviluppo timbrico"
+  vs "evoluzione spettrale" oggi score Jaccard=0, con embedding ~0.85.
+  Jaccard resta come metrica secondaria legacy per tracciabilita'.
+- **Ricalcolo retroattivo** v0.9 -> v0.12.3 con nuove metriche. Dichiarare
+  onestamente nel CHANGELOG quali release erano miglioramenti reali e
+  quali rumore.
+
+Criterio di accettazione: tabella versioni con media, deviazione
+standard, CI 95% pre/post embedding, colonna "significativo vs versione
+precedente" (paired t-test p<0.05).
+
+#### v0.14 - Governance corpus (~12 ore)
+
+- **Normalizzazione gold fatti vs cornice**: ogni gold suddiviso in
+  `fatti_analitici` (tassonomia, tecniche, parentele dichiarate) e
+  `cornice_interpretativa` (lettura poetica, programma). Il benchmark
+  confronta agent output solo con `fatti_analitici`. Risolve il bias:
+  attualmente confrontiamo programme notes Cusack (poetico) con Moore
+  eContact WSP (tassonomico) come se fossero lo stesso genere letterario.
+- **Preregistration template held-out**: `heldout_preregistration_v{X}.md`
+  con hash git committato prima di qualsiasi run OOD. Documenta prompt
+  version + pipeline version usati. Evita leak implicito da iterazione
+  sotto osservazione.
+
+#### v0.15 - Payload agent + routing epistemologico (~10 ore)
+
+- **Payload agent rinforzato (non sostituito)**: aggiungere blocco
+  `top_panns_scored` e `top_clap_families_scored` al payload in formato
+  numerico esplicito, accanto alla narrativa 30s esistente. NON rimuovere
+  la narrativa (contiene struttura temporale che l'agent usa per Scene
+  sonore). L'agent vede entrambi: qualificatori linguistici per la grana
+  temporale, numeri per il ranking.
+- **Mode routing esplicito via CLI**: flag `--mode
+  acousmatic|soundscape|hybrid|auto` (default auto con euristica
+  trasparente + soglia esposta). Il prompt agent carica condizionalmente
+  le tassonomie:
+  - acousmatic: Schaeffer/Smalley/Chion
+  - soundscape: Schafer/Krause/Westerkamp
+  - hybrid: tutte + istruzione esplicita di dichiarare quale paradigma
+    si applica a ogni scena
+  Nel PDF: indici ecoacustici mostrati con banner di avviso quando
+  mode=acousmatic (l'applicare Krause a Parmegiani e' error categoriale).
+- **Pydantic parziale su parentele_stilistiche**: enum di compositori/
+  scuole canoniche, output come `list[ComposerEnum]` anziche' testo
+  libero. Abbatte varianza per la sezione piu' critica del benchmark.
+
+#### v0.16 - Inter-rater reliability (~20 ore, umane)
+
+- **Cohen's kappa su 3-4 brani** con un secondo annotatore (candidato:
+  musicologo/compositore di Bologna o Macerata) indipendentemente sullo
+  stesso schema gold. Il kappa fissa il tetto legittimo del benchmark:
+  se due umani concordano al 80%, nessun LLM puo' superare quella
+  soglia eticamente. Step fondamentale per paper.
+
+#### v0.17+ - Architettura speculativa (solo dopo v0.16)
+
+Solo se dopo v0.16 il sistema e' statisticamente stabile e i gap
+residui lo giustificano. Nessun impegno di timeline.
+
+- Conflict resolver CLAP/PANNs con tabella priorita' + flag `conflict=true`
+  quando divergenza > soglia.
+- Multi-agent split (analista_tecnico + analista_semantico +
+  drammaturgo_sintetizzatore) con validazione A/B vs single-agent N=10.
+- RAG few-shot: iteration set come database vettoriale embedding CLAP
+  audio. Inject i 2-3 gold piu' simili come stylistic template nel
+  prompt drammaturgo.
+
+#### Regola operativa per tutte le v0.13+
+
+Ogni release: N=5+ run per misurare, CI al 95%, tabella paired delta
+nel CHANGELOG. Nessun commit dichiara "miglioramento" se gli intervalli
+si sovrappongono.
+
+### Backlog pre-paper (ereditato, ora subordinato alla sequenza sopra)
+
 **Riorientamento di scopo (16/04/2026, sera)**: lo scopo della skill **non e'**
 identificare brani noti del repertorio. Brani noti come Presque Rien N°1
 vengono usati come **gold standard** per insegnare alla skill a riconoscere

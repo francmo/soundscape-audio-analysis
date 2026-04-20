@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "description": "Mapping categoria CLAP -> famiglia semantica aggregata. Usata da timeline grafica (v0.12.1) e narrativa per sezione (v0.12.0) per mostrare macro-categorie colorate invece dei 251 prompt specifici. Il prompt originale resta visibile in Lettura compositiva e in summary.json per tracciabilita'.",
+  "families": {
+    "biofonia": {
+      "label": "biofonia",
+      "color": "#2E7D32",
+      "description": "Suoni di origine biologica: uccelli, insetti, anfibi, mammiferi, dawn chorus"
+    },
+    "geofonia": {
+      "label": "geofonia",
+      "color": "#0277BD",
+      "description": "Suoni di origine non-biologica naturale: acqua, vento, ghiaccio, roccia, fuoco"
+    },
+    "antropofonia_umana": {
+      "label": "antropofonia umana",
+      "color": "#C62828",
+      "description": "Voci, dialoghi, canto, folla, cerimonie, attivita' umane non meccaniche"
+    },
+    "antropofonia_meccanica": {
+      "label": "antropofonia meccanica",
+      "color": "#EF6C00",
+      "description": "Motori, veicoli, macchine industriali, trasporti"
+    },
+    "paesaggio_urbano": {
+      "label": "paesaggio urbano",
+      "color": "#6A1B9A",
+      "description": "Scenario urbano composito: folla + traffico + ambiente costruito"
+    },
+    "paesaggio_geografico": {
+      "label": "paesaggio geografico",
+      "color": "#00838F",
+      "description": "Paesaggi regionali riconoscibili (mediterraneo, nordico, italiano, dalmata, ecc.)"
+    },
+    "musica_processing": {
+      "label": "musica e processing",
+      "color": "#AD1457",
+      "description": "Musica registrata, performance multimediale, elettroacustica, trasformazioni digitali storiche"
+    },
+    "oggetti_astratti": {
+      "label": "oggetti astratti",
+      "color": "#4E342E",
+      "description": "Oggetti sonori schaefferiani, utterance, qualita' astratte, silenzi compositivi"
+    }
+  },
+  "category_to_family": {
+    "biofonia": "biofonia",
+    "geofonia": "geofonia",
+    "geofonia estesa": "geofonia",
+    "antropofonia urbana": "antropofonia_umana",
+    "antropofonia domestica": "antropofonia_umana",
+    "soundscape politico urbano": "antropofonia_umana",
+    "sacralita sonora": "antropofonia_umana",
+    "canto liturgico e cantillazione": "antropofonia_umana",
+    "antropofonia meccanica": "antropofonia_meccanica",
+    "ambienti industriali": "antropofonia_meccanica",
+    "trasporti e mobilita": "antropofonia_meccanica",
+    "paesaggi urbani internazionali": "paesaggio_urbano",
+    "paesaggi italiani specifici": "paesaggio_geografico",
+    "paesaggi mediterranei generici": "paesaggio_geografico",
+    "paesaggi dalmati e adriatici": "paesaggio_geografico",
+    "paesaggi nordici": "paesaggio_geografico",
+    "paesaggi artici": "paesaggio_geografico",
+    "paesaggi anglosassoni": "paesaggio_geografico",
+    "paesaggi europei orientali": "paesaggio_geografico",
+    "ambienti educativi": "paesaggio_geografico",
+    "musica registrata": "musica_processing",
+    "performance multimediale": "musica_processing",
+    "composizione soundscape": "musica_processing",
+    "elektronische Musik storica": "musica_processing",
+    "sintesi digitale storica": "musica_processing",
+    "trasformazioni elettroacustiche": "musica_processing",
+    "oggetto sonoro astratto": "oggetti_astratti",
+    "qualita schaefferiane": "oggetti_astratti",
+    "utterance": "oggetti_astratti",
+    "silenzi compositivi": "oggetti_astratti"
+  }
+}

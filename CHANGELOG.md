@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.12.0] - 2026-04-20
+
+Riorganizzazione completa del PDF, famiglie semantiche CLAP e timeline
+grafica. Intervento piu' ampio dalla v0.6.3: tre milestone fuse in una
+release unica (v0.12.0 + v0.12.1 + v0.12.2) perche' funzionalmente
+accoppiate.
+
+Contesto: feedback esterno osservava che (a) la Lettura compositiva
+arriva a pagina 20+ ed e' "il cuore d'oro" seppellito, (b) la
+Descrizione segmentata 30s produce decine di pagine illeggibili,
+(c) la timeline CLAP top-3 occupa 5+ pagine di tabelle e i prompt
+iper-specifici ("Gallo che canta all'alba in villaggio costiero")
+distraggono dal materiale reale. Riorganizzazione motivata.
+
+### Added
+
+- `scripts/report_pdf.py::_build_executive_summary()`: sintesi iniziale
+  del brano in una pagina (durata/formato, qualita' di registrazione,
+  profilo Schafer, triade Krause, top PANNs, top CLAP, numero sezioni).
+- `scripts/report_pdf.py::_build_narrative_by_section()`: aggrega le
+  finestre narrative 30s per sezione strutturale. Sostituisce il dump
+  di 40+ blocchi con una prosa compatta per ciascuna delle 8 macro-sezioni.
+- `scripts/clap_families.py`: libreria per mappare i 251 prompt CLAP
+  italiani in 8 famiglie semantiche (biofonia, geofonia, antropofonia
+  umana/meccanica, paesaggio urbano/geografico, musica e processing,
+  oggetti astratti). API: `family_for_prompt`, `family_meta`,
+  `aggregate_timeline_to_families`, `dominant_family_per_window`.
+- `references/clap_families_it.json`: mapping categoria CLAP -> famiglia
+  con colori hex per la timeline grafica.
+- `scripts/plotting.py::plot_tags_timeline()`: timeline orizzontale
+  colorata con le famiglie dominanti lungo la durata. Legenda compatta
+  in basso. Intensita' colore proporzionale al cosine score. Sostituisce
+  le tabelle timeline 10s che occupavano 5+ pagine.
+- `scripts/cli.py`: genera automaticamente `<base>_tags_timeline.png`
+  in `graphics_dir` durante `analyze`.
+- `scripts/locale_it.py`: 4 nuove intestazioni (`executive_summary`,
+  `partitura_grafica`, `overview_tecnica`, `appendice`).
+
+### Changed
+
+- **PDF riorganizzato** da 11+ sezioni accumulative a 6 sezioni
+  gerarchiche:
+    1. Copertina
+    2. **Sintesi** (executive summary, nuovo)
+    3. **Lettura compositiva** (spostata da pagina 20+ a pagina 3)
+    4. **Partitura grafica** (spettrogramma + timeline strutturale +
+       timeline famiglie CLAP)
+    5. **Overview tecnica** (metadati, livelli, diagnosi, hum, spettro,
+       ecoacoustica, compattati)
+    6. **Sezioni strutturali + descrizione** (macro-sezioni, non
+       40 finestre 30s)
+    7. **Appendice analitica** (PANNs dettagliato, CLAP top-20, speech,
+       multicanale, GRM quando presente)
+- `clap_vocabulary_it.json`: 2 prompt rinominati per neutralita'
+  contestuale (`edu_01` "Aula di conservatorio con studenti" ->
+  "Aula didattica con lezione in corso"; `ita_11` "Aula di conservatorio
+  con esercizi simultanei" -> "Sala prove con esercizi strumentali
+  simultanei"). Categoria "ambiente didattico AFAM" rinominata
+  "ambienti educativi".
+- `clap_academic_mapping_it.json`: chiave categoria aggiornata a
+  "ambienti educativi" per coerenza.
+- bump 0.11.1 -> 0.12.0.
+
+### Lezione metodologica
+
+Il valore della skill si misura non solo nella qualita' dell'output ma
+anche nella **densita' informativa per pagina**. Un report di 40 pagine
+dove il contenuto interpretativo e' a pagina 20 ha un tasso di lettura
+effettiva prossimo a zero. La riorganizzazione non cambia i numeri del
+benchmark aggregato (il sub-agent vede gli stessi input), ma cambia il
+valore percepito da chi apre il PDF.
+
 ## [0.11.1] - 2026-04-20
 
 Patch di neutralita' contestuale dei Suggerimenti compositivi. L'osservazione

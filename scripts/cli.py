@@ -215,6 +215,23 @@ def _analyze_single(
         )
         plot_paths["structure_timeline"] = timeline_path
 
+    # Timeline famiglie semantiche CLAP (v0.12.1)
+    clap_timeline = (summary.get("clap") or {}).get("timeline") or []
+    if clap_timeline:
+        from . import clap_families
+        try:
+            dominants = clap_families.dominant_family_per_window(clap_timeline)
+            if dominants:
+                tags_path = graphics_dir / f"{base}_tags_timeline.png"
+                plotting.plot_tags_timeline(
+                    dominants,
+                    total_duration_s=duration_s,
+                    out_path=tags_path,
+                )
+                plot_paths["tags_timeline"] = tags_path
+        except Exception as exc:
+            click.echo(f"  avviso: plot tags_timeline saltato ({exc})")
+
     # Narrativa segmentata (v0.2.2): prosa italiana 30s
     narrative_res = {"enabled": False}
     if narrative_mode != "none":
@@ -701,7 +718,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.11.1")
+    click.echo("soundscape-audio-analysis 0.12.0")
 
 
 def main():

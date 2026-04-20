@@ -174,14 +174,6 @@
       "truax": "search",
       "westerkamp_soundwalk_relevance": false
     },
-    "ambiente didattico AFAM": {
-      "krause": "antropofonia",
-      "schafer_role": "signal",
-      "schafer_fidelity": "hi-fi",
-      "chion": "semantico",
-      "truax": "search",
-      "westerkamp_soundwalk_relevance": false
-    },
     "oggetto sonoro astratto": {
       "krause": "mista",
       "schafer_role": "sound-object",
@@ -360,6 +352,14 @@
       "chion": "causale",
       "truax": "search",
       "westerkamp_soundwalk_relevance": true
+    },
+    "ambienti educativi": {
+      "krause": "antropofonia",
+      "schafer_role": "signal",
+      "schafer_fidelity": "hi-fi",
+      "chion": "semantico",
+      "truax": "search",
+      "westerkamp_soundwalk_relevance": false
     }
   },
   "prompts": {

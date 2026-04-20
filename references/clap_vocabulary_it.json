@@ -492,47 +492,47 @@
     },
     {
       "id": "edu_01",
-      "category": "ambiente didattico AFAM",
-      "text": "Aula di conservatorio con studenti"
+      "category": "ambienti educativi",
+      "text": "Aula didattica con lezione in corso"
     },
     {
       "id": "edu_02",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Metronomo meccanico che batte"
     },
     {
       "id": "edu_03",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Pianoforte solista in studio"
     },
     {
       "id": "edu_04",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Accordatura di strumenti orchestrali"
     },
     {
       "id": "edu_05",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Coro in prova a cappella"
     },
     {
       "id": "edu_06",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Voce di insegnante che spiega"
     },
     {
       "id": "edu_07",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Esercizio di dettato musicale a voce"
     },
     {
       "id": "edu_08",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Scale ripetute al pianoforte da studente"
     },
     {
       "id": "edu_09",
-      "category": "ambiente didattico AFAM",
+      "category": "ambienti educativi",
       "text": "Sala concerto vuota con risonanza naturale"
     },
     {
@@ -728,7 +728,7 @@
     {
       "id": "ita_11",
       "category": "paesaggi italiani specifici",
-      "text": "Aula di conservatorio con esercizi simultanei"
+      "text": "Sala prove con esercizi strumentali simultanei"
     },
     {
       "id": "ita_13",

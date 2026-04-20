@@ -195,6 +195,73 @@ def plot_structure_timeline(sections: list[dict], total_duration_s: float,
     return out_path
 
 
+def plot_tags_timeline(dominant_windows: list[dict], total_duration_s: float,
+                       out_path: Path,
+                       title: str = "Timeline famiglie semantiche CLAP") -> Path:
+    """v0.12.1: timeline grafica delle famiglie semantiche CLAP.
+
+    Input: lista di `{t_start_s, t_end_s, family, label, color, score}`
+    come prodotta da `clap_families.dominant_family_per_window`.
+
+    Rende una barra orizzontale continua con colori per famiglia dominante.
+    Legenda compatta sotto. Sostituisce le tabelle "top-3 per segmento"
+    che oggi occupano 5+ pagine del PDF.
+    """
+    if not dominant_windows:
+        return out_path
+    fig, ax = plt.subplots(figsize=(12, 1.8))
+    ax.set_xlim(0, total_duration_s)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    # Raccolta famiglie uniche per legenda
+    family_seen: dict[str, tuple[str, str]] = {}  # key -> (label, color)
+    for w in dominant_windows:
+        fam = w.get("family")
+        if fam and fam not in family_seen:
+            family_seen[fam] = (w.get("label", fam), w.get("color", "#808080"))
+
+    # Banda colorata per ogni finestra
+    for w in dominant_windows:
+        t0 = float(w["t_start_s"])
+        t1 = float(w["t_end_s"])
+        color = w.get("color", "#808080")
+        score = float(w.get("score", 0.0))
+        alpha = min(0.35 + score, 1.0)  # score piu' alto = piu' saturo
+        ax.axvspan(t0, t1, ymin=0.25, ymax=0.80, color=color, alpha=alpha)
+
+    # Asse temporale
+    def _fmt(t: float) -> str:
+        m = int(t) // 60
+        s = int(t) % 60
+        return f"{m:02d}:{s:02d}"
+
+    ax.text(0, 0.90, "00:00", ha="left", va="bottom",
+            fontsize=7, color=config.PALETTE["muted_gray"])
+    ax.text(total_duration_s, 0.90, _fmt(total_duration_s),
+            ha="right", va="bottom",
+            fontsize=7, color=config.PALETTE["muted_gray"])
+
+    # Legenda in basso
+    legend_patches = [
+        plt.Rectangle((0, 0), 1, 1, color=col, alpha=0.85, label=lab)
+        for (lab, col) in family_seen.values()
+    ]
+    ax.legend(
+        handles=legend_patches,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.20),
+        ncol=min(len(legend_patches), 4),
+        fontsize=7,
+        frameon=False,
+    )
+    ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def generate_all_plots(y: np.ndarray, sr: int, spectrum: np.ndarray, freqs: np.ndarray,
                       bands: dict, hum_result: dict, out_dir: Path, base: str) -> dict:
     """Genera tutti i grafici standard e ritorna mapping nome -> path."""

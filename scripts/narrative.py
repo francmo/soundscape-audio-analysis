@@ -122,39 +122,61 @@ def _describe_events(n_events: int, density: float, seed_key: str) -> str:
 
 
 def _describe_panns(top_categories: list[dict]) -> str:
+    """v0.11: qualificatori linguistici per rendere leggibili gli score PANNs.
+
+    Soglie (AudioSet, CNN14):
+    - < 0.03   trascurabile, non citato
+    - 0.03-0.15 tenue (`presenza tenue di ...`)
+    - 0.15-0.40 plausibile (`presenza plausibile di ...`)
+    - > 0.40   marcato (`presenza marcata di ...`, in grassetto)
+    """
     if not top_categories:
         return ""
-    names = []
+    parts = []
     for cat in top_categories[:3]:
         name = _translate_label(cat["name"])
         score = cat.get("score", 0.0)
-        if score > 0.15:
-            names.append(f"<b>{name}</b> ({score:.2f})")
+        if score > 0.40:
+            parts.append(f"<b>presenza marcata di {name}</b> ({score:.2f})")
+        elif score > 0.15:
+            parts.append(f"presenza plausibile di {name} ({score:.2f})")
         elif score > 0.03:
-            names.append(f"{name} ({score:.2f})")
-    if not names:
+            parts.append(f"tenue presenza di {name} ({score:.2f})")
+    if not parts:
         return ""
-    if len(names) == 1:
-        return f"Il classificatore identifica prevalentemente {names[0]}"
-    joined = ", ".join(names[:-1]) + f", più {names[-1]}"
-    return f"Il classificatore identifica {joined}"
+    if len(parts) == 1:
+        return f"Il classificatore restituisce {parts[0]}"
+    joined = ", ".join(parts[:-1]) + f", più {parts[-1]}"
+    return f"Il classificatore restituisce {joined}"
 
 
 def _describe_clap(top_tags: list[dict]) -> str:
+    """v0.11: qualificatori linguistici per rendere leggibili gli score CLAP.
+
+    Soglie (cosine similarity prompt/audio, LAION-CLAP):
+    - < 0.20   incerto, citato solo come ipotesi se nulla d'altro sale
+    - 0.20-0.30 similarità debole (`affinità debole con ...`)
+    - 0.30-0.40 similarità moderata (`affinità con ...`)
+    - > 0.40   forte (`forte affinità con ...`, in corsivo)
+    """
     if not top_tags:
         return ""
-    names = []
+    parts = []
     for t in top_tags[:3]:
         prompt = t.get("prompt") or ""
         score = t.get("score", 0.0)
-        if score > 0.4:
-            names.append(f"<i>{prompt}</i>")
-        elif score > 0.25:
-            names.append(prompt)
-    if not names:
-        # anche con score bassi mostriamo i tag principali come ipotesi di lavoro
-        names = [t.get("prompt", "") for t in top_tags[:2]]
-    return f"CLAP associa prevalentemente {', '.join(names)}"
+        if score > 0.40:
+            parts.append(f"<i>forte affinità con \"{prompt}\"</i> ({score:.2f})")
+        elif score > 0.30:
+            parts.append(f"affinità con \"{prompt}\" ({score:.2f})")
+        elif score > 0.20:
+            parts.append(f"affinità debole con \"{prompt}\" ({score:.2f})")
+    if not parts:
+        # sotto 0.20: mostriamo solo i primi due prompt come ipotesi di lavoro
+        weak = [f"\"{t.get('prompt','')}\" ({t.get('score', 0):.2f})"
+                for t in top_tags[:2]]
+        return f"CLAP non raggiunge soglie di affinità; ipotesi di lavoro: {', '.join(weak)}"
+    return f"CLAP segnala {', '.join(parts)}"
 
 
 def _classify_bands_dominant(bands: dict) -> str:

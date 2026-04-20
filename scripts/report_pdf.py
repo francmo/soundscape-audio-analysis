@@ -662,6 +662,39 @@ def _build_hum_block(hum: dict, styles) -> list:
     return story
 
 
+def _build_narrative_legenda(styles) -> list:
+    """v0.11: legenda dei valori per la Descrizione segmentata.
+
+    Tabella compatta con le soglie qualitative di PANNs, CLAP, flatness,
+    centroide, onset density, LRA e LUFS. Permette di leggere i numeri
+    fra parentesi delle finestre senza doverli interpretare a mente.
+    """
+    intro = Paragraph(
+        "I valori fra parentesi nelle finestre seguenti sono riportati a titolo "
+        "di tracciabilità empirica. I qualificatori linguistici "
+        "(«presenza tenue di ...», «affinità debole con ...», «spettro tonale») "
+        "traducono lo stesso valore in una soglia qualitativa. La tabella "
+        "riassume le soglie usate dalla skill.",
+        styles["body"],
+    )
+    rows = [
+        ["Indicatore", "Trascurabile", "Tenue", "Plausibile", "Marcato"],
+        ["PANNs (classificatore AudioSet)", "<0.03", "0.03-0.15", "0.15-0.40", ">0.40"],
+        ["CLAP (cosine audio/prompt)", "<0.20", "0.20-0.30", "0.30-0.40", ">0.40"],
+        ["Flatness spettrale", "tonale <0.05", "tendenz. tonale 0.05-0.20", "misto 0.20-0.50", "rumoroso >0.50"],
+        ["Centroide spettrale (Hz)", "graves <500", "medi 500-2000", "brillanti 2000-5000", "molto brillanti >5000"],
+        ["Onset density (eventi/s)", "rarefatto <0.3", "sparso 0.3-1.0", "medio 1.0-2.5", "denso >2.5"],
+        ["Dinamica LRA (LU)", "compressa <7", "moderata 7-15", "ampia 15-25", "estrema >25"],
+        ["LUFS integrato", "basso <-23", "standard -23/-14", "loud -14/-9", "pompato >-9"],
+    ]
+    table = report_styles.styled_table(
+        rows,
+        [52 * mm, 26 * mm, 30 * mm, 34 * mm, 34 * mm],
+        styles,
+    )
+    return [intro, Spacer(1, 6), table, Spacer(1, 10)]
+
+
 def _build_composer_section(agent_text: str, styles) -> list:
     story = []
     if not agent_text:
@@ -842,7 +875,7 @@ def build_report(
         story.extend(_build_structure_block(structure, timeline_path, styles))
         story.append(PageBreak())
 
-    # DESCRIZIONE SEGMENTATA (v0.2.2)
+    # DESCRIZIONE SEGMENTATA (v0.2.2, legenda v0.11)
     narrative = summary.get("narrative") or {}
     if narrative.get("enabled") and narrative.get("segments"):
         story.append(Paragraph(INTESTAZIONI["narrativa"], styles["h1"]))
@@ -854,6 +887,7 @@ def build_report(
             styles["body"]
         ))
         story.append(Spacer(1, 6))
+        story.extend(_build_narrative_legenda(styles))
         for seg in narrative["segments"][:60]:
             story.append(Paragraph(
                 f"<b>{seg['t_start_str']} - {seg['t_end_str']}</b>",

@@ -104,7 +104,21 @@ def load_audio_multichannel(path: str | Path, sr: int = config.SR_ANALYSIS) -> d
     import soundfile as sf
     import librosa
 
-    data, sr_orig = sf.read(str(path), always_2d=True, dtype="float32")
+    try:
+        data, sr_orig = sf.read(str(path), always_2d=True, dtype="float32")
+    except sf.LibsndfileError:
+        # v0.12.4: fallback ffmpeg per formati non supportati da libsndfile
+        # (es. AAC in container MP4/m4a di iPhone Voice Memos). ffmpeg
+        # decodifica virtualmente qualsiasi formato, output pipe WAV PCM.
+        import subprocess
+        import io as _io
+        proc = subprocess.run(
+            ["ffmpeg", "-i", str(path), "-f", "wav", "-acodec", "pcm_s16le",
+             "-ar", str(sr), "-hide_banner", "-loglevel", "error", "pipe:1"],
+            capture_output=True, check=True,
+        )
+        data, sr_orig = sf.read(_io.BytesIO(proc.stdout), always_2d=True,
+                                dtype="float32")
     if sr_orig != sr:
         # v0.4.1: fix off-by-one della pre-allocazione. librosa.resample puo'
         # restituire una lunghezza che differisce di +/-1 sample rispetto alla

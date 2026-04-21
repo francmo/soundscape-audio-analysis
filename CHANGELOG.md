@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.12.4] - 2026-04-21
+
+Fallback ffmpeg per formati audio non supportati da libsndfile.
+
+Contesto: tentativo di analyze su una cartella di 18 m4a da iPhone Voice
+Memos (AAC in container MP4) falliva con `LibsndfileError: Format not
+recognised`. libsndfile non decodifica AAC nativamente, ma ffmpeg (gia'
+dipendenza della skill per loudness) lo fa.
+
+### Changed
+
+- `scripts/io_loader.py::load_audio_multichannel()`: aggiunto fallback
+  automatico a `ffmpeg -f wav pipe:1` se `sf.read` lancia
+  `LibsndfileError`. Il fallback decodifica in PCM WAV via pipe
+  subprocess, poi passa il buffer a soundfile come BytesIO. Trasparente
+  al chiamante.
+- bump 0.12.3 -> 0.12.4.
+
+### Supporto formati risultante
+
+Ora decodifica virtualmente qualsiasi container supportato da ffmpeg:
+- `.m4a` (AAC) - iPhone Voice Memos, Zoom, TASCAM
+- `.mov`, `.mp4` - traccia audio dentro container video
+- `.opus`, `.webm`, `.3gp` - formati mobile/web
+- eventuali formati esotici (Ambisonics B-format in container insoliti)
+- i formati storici di libsndfile restano invariati (wav/flac/aiff/ogg)
+
 ## [0.12.3] - 2026-04-20
 
 Patch di correzione basata su feedback esterno sul PDF v0.12.0. Tre

@@ -140,7 +140,36 @@ Tutte gestite dentro il virtualenv della skill. Il primo uso di YAMNet scarica i
 - `references/lessons_learned.md`  bug e correzioni derivate dall'esperienza Villa Ficana
 - `references/taxonomies/`          bande Schafer, indici ecoacustici, vocabolario Schaefferiano
 - `references/grm_profiles/`        profili di riferimento Parmegiani, Westerkamp, Ferrari, Krause
+- `templates/annotation_schema.json`  JSON Schema v1.0 condiviso con la PWA Annotation Atelier
+- `scripts/load_annotation.py`       loader Python del JSON di annotazione
 - `CHANGELOG.md`                    storico versioni
+
+## Integrazione con la PWA Annotation Atelier
+
+La PWA companion `Soundscape Annotation Atelier`
+(https://soundscape-annotation-atelier.vercel.app/, repo
+github.com/francmo/soundscape-annotation-atelier) permette di costruire
+annotazioni first-hand sopra un audio caricato localmente, usando lo stesso
+vocabolario controllato canonico (Schaeffer, Smalley, Schafer, Krause,
+Chion, Truax, Westerkamp, Wishart). L'output e' un JSON v1.0 deterministico,
+schema definito in `templates/annotation_schema.json`.
+
+La skill consuma il JSON via `scripts/load_annotation.py`:
+
+```python
+from scripts.load_annotation import load_annotation
+
+project = load_annotation("./presque_rien.annotation.json")
+expected = project.expected_terms  # lista termId per benchmark
+```
+
+Workflow tipico:
+
+1. L'utente annota un gold standard in browser (drag selection sul waveform,
+   click su termine del vocabolario controllato).
+2. Esporta il JSON, lo deposita in `references/golden_analyses/<id>.json`.
+3. Il benchmark Python confronta l'output dell'agente compositivo contro
+   le annotazioni first-hand caricate via `load_annotation`.
 
 ## Aggancio con l'agente compositivo
 

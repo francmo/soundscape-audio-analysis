@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://soundscape-annotation-atelier.vercel.app/annotation_schema_v1.json",
+  "title": "Soundscape annotation v1.0",
+  "description": "Schema condiviso fra la PWA Soundscape Annotation Atelier (https://soundscape-annotation-atelier.vercel.app/) e la skill soundscape-audio-analysis. La PWA esporta JSON conformi a questo schema; la skill li consuma per benchmark, golden analyses e integrazione nel paper scientifico.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "audio", "metadata", "annotations"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Versione dello schema. Valori non riconosciuti devono essere rifiutati."
+    },
+    "id": {
+      "type": "string",
+      "description": "UUID stabile del progetto di annotazione."
+    },
+    "audio": {
+      "type": "object",
+      "required": ["filename", "durationSeconds", "sampleRate", "channels"],
+      "additionalProperties": false,
+      "properties": {
+        "filename": { "type": "string" },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "sampleRate": { "type": "integer", "minimum": 1 },
+        "channels": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["language", "startedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "year": { "type": "integer" },
+        "genre": { "type": "string" },
+        "annotator": { "type": "string" },
+        "language": { "type": "string", "enum": ["it", "en"] },
+        "startedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "startSec", "endSec", "taxonomy", "termId", "termLabel", "color", "note", "createdAt", "updatedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "startSec": { "type": "number", "minimum": 0 },
+          "endSec": { "type": "number", "minimum": 0 },
+          "taxonomy": {
+            "type": "string",
+            "enum": ["schaeffer", "smalley", "schafer", "krause", "chion", "truax", "westerkamp", "wishart"]
+          },
+          "termId": {
+            "type": "string",
+            "description": "Identificatore stabile del termine controllato, formato `<taxonomy>.<gruppo>.<slug>` o `<taxonomy>.<slug>`."
+          },
+          "termLabel": {
+            "type": "string",
+            "description": "Etichetta umana del termine, nella lingua di annotazione del progetto."
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "description": "Colore associato alla tassonomia, per visualizzazione."
+          },
+          "note": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "structure": {
+      "type": "array",
+      "description": "Annotazioni libere su macroforma e note interpretative, separate dal vocabolario controllato per non inquinare il benchmark.",
+      "items": {
+        "type": "object",
+        "required": ["id", "startSec", "endSec", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "startSec": { "type": "number", "minimum": 0 },
+          "endSec": { "type": "number", "minimum": 0 },
+          "label": { "type": "string" },
+          "note": { "type": "string" },
+          "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": "1.0",
+      "id": "01939a4f-3e8e-7d4d-8a6f-5b2c8d3e9f1a",
+      "audio": {
+        "filename": "presque_rien_1.wav",
+        "durationSeconds": 1260.5,
+        "sampleRate": 44100,
+        "channels": 2
+      },
+      "metadata": {
+        "title": "Presque Rien No. 1, Le Lever du jour au bord de la mer",
+        "author": "Luc Ferrari",
+        "year": 1970,
+        "genre": "soundscape",
+        "annotator": "Francesco Mariano",
+        "language": "it",
+        "startedAt": "2026-05-05T10:30:00Z"
+      },
+      "annotations": [
+        {
+          "id": "8a7b6c5d-4e3f-2a1b-9c8d-7e6f5a4b3c2d",
+          "startSec": 12.3,
+          "endSec": 24.7,
+          "taxonomy": "schaeffer",
+          "termId": "schaeffer.massa.tonica",
+          "termLabel": "Tonica",
+          "color": "#a78bfa",
+          "note": "Voce femminile su drone basso, evolve verso massa complessa.",
+          "createdAt": "2026-05-05T10:34:12Z",
+          "updatedAt": "2026-05-05T10:34:12Z"
+        }
+      ],
+      "structure": [
+        {
+          "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+          "startSec": 0,
+          "endSec": 90,
+          "label": "Apertura, lever du jour",
+          "note": "Esposizione del paesaggio sonoro, transizione lenta verso il drone B."
+        }
+      ]
+    }
+  ]
+}

@@ -77,7 +77,7 @@ chi fa cosa. Aggiornato a ogni release.
 | Narrativa segmentata | `scripts/narrative.py` |
 | Agente compositivo | `scripts/agent_bridge.py`, `templates/agent_prompt.md`, `~/.claude/agents/soundscape-composer-analyst.md` |
 | PDF | `scripts/report_pdf.py` |
-| Tassonomie di riferimento | `references/taxonomies/` |
+| Tassonomie di riferimento | `references/taxonomies/` (note narrative .md), `references/taxonomies.json` (vocabolario canonico v1.0, 128 termini in 8 tassonomie, fonte per la PWA `soundscape-annotation-atelier`) |
 | Profili GRM | `references/grm_profiles/` |
 | Feedback utente | `references/user_feedback/` |
 

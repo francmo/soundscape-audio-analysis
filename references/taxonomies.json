@@ -1,0 +1,418 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-05-05",
+  "source": "soundscape-audio-analysis skill + canonical literature",
+  "taxonomies": [
+    {
+      "id": "schaeffer",
+      "label_it": "Schaeffer, tipo-morfologia",
+      "label_en": "Schaeffer, typo-morphology",
+      "source": "Pierre Schaeffer",
+      "reference": "Schaeffer, P. (1966). Traité des objets musicaux. Seuil.",
+      "color": "#a78bfa",
+      "groups": [
+        {
+          "id": "massa",
+          "label_it": "Massa",
+          "label_en": "Mass",
+          "terms": [
+            { "id": "schaeffer.massa.tonica", "label_it": "Tonica", "label_en": "Tonic", "desc_it": "Altezza definita, armonicità.", "desc_en": "Defined pitch, harmonicity." },
+            { "id": "schaeffer.massa.complessa", "label_it": "Complessa", "label_en": "Complex", "desc_it": "Altezza percepita ma con spettro arricchito.", "desc_en": "Perceived pitch with enriched spectrum." },
+            { "id": "schaeffer.massa.nodo", "label_it": "Nodo", "label_en": "Node", "desc_it": "Altezza ambigua o in transizione.", "desc_en": "Ambiguous or transitional pitch." },
+            { "id": "schaeffer.massa.rumore-intonato", "label_it": "Rumore intonato", "label_en": "Pitched noise", "desc_it": "Massa con colore ma senza altezza precisa.", "desc_en": "Mass with colour but no precise pitch." },
+            { "id": "schaeffer.massa.rumore-bianco", "label_it": "Rumore bianco", "label_en": "White noise", "desc_it": "Massa distribuita senza centro tonale, spettro piatto.", "desc_en": "Distributed mass with flat spectrum, no tonal centre." },
+            { "id": "schaeffer.massa.rumore-rosa", "label_it": "Rumore rosa", "label_en": "Pink noise", "desc_it": "Massa distribuita con energia decrescente verso le alte.", "desc_en": "Distributed mass with energy decreasing towards high frequencies." },
+            { "id": "schaeffer.massa.rumore-colorato", "label_it": "Rumore colorato", "label_en": "Coloured noise", "desc_it": "Massa con caratterizzazione spettrale specifica.", "desc_en": "Mass with specific spectral characterisation." },
+            { "id": "schaeffer.massa.impulsiva", "label_it": "Impulsiva", "label_en": "Impulsive", "desc_it": "Durata prossima a zero, massa istantanea.", "desc_en": "Near-zero duration, instantaneous mass." },
+            { "id": "schaeffer.massa.tenuta", "label_it": "Tenuta", "label_en": "Sustained", "desc_it": "Massa stabile nel tempo.", "desc_en": "Mass stable over time." },
+            { "id": "schaeffer.massa.iterativa", "label_it": "Iterativa", "label_en": "Iterative", "desc_it": "Ripetizione di unità brevi.", "desc_en": "Repetition of brief units." },
+            { "id": "schaeffer.massa.variabile", "label_it": "Variabile", "label_en": "Variable", "desc_it": "Massa in evoluzione, non stabile.", "desc_en": "Evolving, non-stable mass." },
+            { "id": "schaeffer.massa.cannelée", "label_it": "Cannellata", "label_en": "Channelled", "desc_it": "Massa armonica con bande di accentuazione spettrale (formanti).", "desc_en": "Harmonic mass with bands of spectral accentuation (formants)." }
+          ]
+        },
+        {
+          "id": "grain",
+          "label_it": "Grain",
+          "label_en": "Grain",
+          "terms": [
+            { "id": "schaeffer.grain.liscio", "label_it": "Liscio", "label_en": "Smooth", "desc_it": "Senza micro-struttura percepibile.", "desc_en": "No perceivable micro-structure." },
+            { "id": "schaeffer.grain.fine", "label_it": "Fine", "label_en": "Fine", "desc_it": "Liscio, omogeneo (seno puro, voce tenuta).", "desc_en": "Smooth, homogeneous (pure tone, sustained voice)." },
+            { "id": "schaeffer.grain.grosso", "label_it": "Grosso", "label_en": "Coarse", "desc_it": "Granuloso, discontinuo (foglie mosse, pioggia).", "desc_en": "Granular, discontinuous (rustling leaves, rain)." },
+            { "id": "schaeffer.grain.rugoso", "label_it": "Rugoso", "label_en": "Rough", "desc_it": "Irregolare, complesso (rumore meccanico, voce soffiata).", "desc_en": "Irregular, complex (mechanical noise, breathy voice)." },
+            { "id": "schaeffer.grain.scintillante", "label_it": "Scintillante", "label_en": "Sparkling", "desc_it": "Granulazione rapida con accentuazione delle alte frequenze.", "desc_en": "Rapid granulation with high-frequency emphasis." }
+          ]
+        },
+        {
+          "id": "allure",
+          "label_it": "Allure",
+          "label_en": "Allure",
+          "terms": [
+            { "id": "schaeffer.allure.ferma", "label_it": "Ferma", "label_en": "Steady", "desc_it": "Stabile, senza oscillazioni.", "desc_en": "Steady, without oscillation." },
+            { "id": "schaeffer.allure.ondulante", "label_it": "Ondulante", "label_en": "Undulating", "desc_it": "Movimento lento, regolare.", "desc_en": "Slow, regular movement." },
+            { "id": "schaeffer.allure.ciclica", "label_it": "Ciclica", "label_en": "Cyclic", "desc_it": "Movimento periodico riconoscibile.", "desc_en": "Recognisable periodic movement." },
+            { "id": "schaeffer.allure.disordinata", "label_it": "Disordinata", "label_en": "Disordered", "desc_it": "Oscillazioni irregolari.", "desc_en": "Irregular oscillations." },
+            { "id": "schaeffer.allure.oscillante", "label_it": "Oscillante", "label_en": "Oscillating", "desc_it": "Oscillazione regolare percepibile (vibrato, tremolo).", "desc_en": "Perceivable regular oscillation (vibrato, tremolo)." }
+          ]
+        },
+        {
+          "id": "mantenimento",
+          "label_it": "Criterio di mantenimento",
+          "label_en": "Maintenance criterion",
+          "terms": [
+            { "id": "schaeffer.mantenimento.impulsivo", "label_it": "Impulsivo", "label_en": "Impulsive", "desc_it": "L'oggetto si esaurisce nell'attacco.", "desc_en": "Object exhausts itself in the attack." },
+            { "id": "schaeffer.mantenimento.tenuto", "label_it": "Tenuto", "label_en": "Sustained", "desc_it": "Si mantiene omogeneamente.", "desc_en": "Maintained homogeneously." },
+            { "id": "schaeffer.mantenimento.iterativo", "label_it": "Iterativo", "label_en": "Iterative", "desc_it": "Si mantiene per ripetizione.", "desc_en": "Maintained through repetition." }
+          ]
+        },
+        {
+          "id": "calibre",
+          "label_it": "Calibre",
+          "label_en": "Calibre",
+          "terms": [
+            { "id": "schaeffer.calibre.grande", "label_it": "Grande calibro", "label_en": "Large calibre", "desc_it": "Tessitura ampia, registro esteso.", "desc_en": "Wide tessitura, extended register." },
+            { "id": "schaeffer.calibre.medio", "label_it": "Medio calibro", "label_en": "Medium calibre", "desc_it": "Tessitura intermedia.", "desc_en": "Intermediate tessitura." },
+            { "id": "schaeffer.calibre.piccolo", "label_it": "Piccolo calibro", "label_en": "Small calibre", "desc_it": "Tessitura ristretta, registro limitato.", "desc_en": "Narrow tessitura, limited register." },
+            { "id": "schaeffer.calibre.acuto", "label_it": "Acuto", "label_en": "Acute", "desc_it": "Concentrazione nel registro alto.", "desc_en": "Concentration in the high register." },
+            { "id": "schaeffer.calibre.grave", "label_it": "Grave", "label_en": "Grave", "desc_it": "Concentrazione nel registro basso.", "desc_en": "Concentration in the low register." }
+          ]
+        },
+        {
+          "id": "profilo",
+          "label_it": "Profilo dinamico",
+          "label_en": "Dynamic profile",
+          "terms": [
+            { "id": "schaeffer.profilo.continuo", "label_it": "Continuo", "label_en": "Continuous", "desc_it": "Andamento dinamico senza interruzioni.", "desc_en": "Dynamic flow without interruptions." },
+            { "id": "schaeffer.profilo.discontinuo", "label_it": "Discontinuo", "label_en": "Discontinuous", "desc_it": "Interruzioni e ripartenze nell'intensità.", "desc_en": "Interruptions and restarts in intensity." },
+            { "id": "schaeffer.profilo.abrupto", "label_it": "Abrupto", "label_en": "Abrupt", "desc_it": "Variazioni dinamiche rapide e nette.", "desc_en": "Rapid and sharp dynamic variations." },
+            { "id": "schaeffer.profilo.smorzato", "label_it": "Smorzato", "label_en": "Damped", "desc_it": "Decadimento progressivo dell'intensità.", "desc_en": "Progressive decay of intensity." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smalley",
+      "label_it": "Smalley, spettromorfologia",
+      "label_en": "Smalley, spectromorphology",
+      "source": "Denis Smalley",
+      "reference": "Smalley, D. (1997). Spectromorphology: explaining sound-shapes. Organised Sound, 2(2), 107-126.",
+      "color": "#fb923c",
+      "groups": [
+        {
+          "id": "spectral-typology",
+          "label_it": "Tipologia spettrale",
+          "label_en": "Spectral typology",
+          "terms": [
+            { "id": "smalley.spectral.note", "label_it": "Note", "label_en": "Note", "desc_it": "Spettro armonico, altezza chiara.", "desc_en": "Harmonic spectrum, clear pitch." },
+            { "id": "smalley.spectral.node", "label_it": "Node", "label_en": "Node", "desc_it": "Spettro con concentrazione di energia parziale.", "desc_en": "Spectrum with partial energy concentration." },
+            { "id": "smalley.spectral.noise", "label_it": "Noise", "label_en": "Noise", "desc_it": "Spettro distribuito senza centro.", "desc_en": "Distributed spectrum, no centre." }
+          ]
+        },
+        {
+          "id": "spectral-space",
+          "label_it": "Spazio spettrale",
+          "label_en": "Spectral space",
+          "terms": [
+            { "id": "smalley.space.empty", "label_it": "Empty", "label_en": "Empty", "desc_it": "Spazio spettrale vuoto, presenza minima.", "desc_en": "Empty spectral space, minimal presence." },
+            { "id": "smalley.space.filled", "label_it": "Filled", "label_en": "Filled", "desc_it": "Spazio spettrale completamente riempito.", "desc_en": "Spectral space completely filled." },
+            { "id": "smalley.space.dense", "label_it": "Dense", "label_en": "Dense", "desc_it": "Densità di componenti spettrali alta.", "desc_en": "High density of spectral components." },
+            { "id": "smalley.space.sparse", "label_it": "Sparse", "label_en": "Sparse", "desc_it": "Componenti spettrali rade, isolate.", "desc_en": "Rare, isolated spectral components." },
+            { "id": "smalley.space.plenum", "label_it": "Plenum", "label_en": "Plenum", "desc_it": "Massima saturazione spettrale.", "desc_en": "Maximum spectral saturation." },
+            { "id": "smalley.space.condensed", "label_it": "Condensed", "label_en": "Condensed", "desc_it": "Componenti compresse in fascia ristretta.", "desc_en": "Components compressed in a narrow band." },
+            { "id": "smalley.space.packed", "label_it": "Packed", "label_en": "Packed", "desc_it": "Componenti ravvicinate ma distinguibili.", "desc_en": "Closely packed but distinguishable components." }
+          ]
+        },
+        {
+          "id": "spectral-occupancy",
+          "label_it": "Occupazione spettrale",
+          "label_en": "Spectral occupancy",
+          "terms": [
+            { "id": "smalley.occ.composite", "label_it": "Composite", "label_en": "Composite", "desc_it": "Composizione di tipologie miste in coesistenza.", "desc_en": "Composition of mixed types in coexistence." },
+            { "id": "smalley.occ.nondelegated", "label_it": "Non-delegated", "label_en": "Non-delegated", "desc_it": "Tutte le componenti agiscono direttamente.", "desc_en": "All components act directly." },
+            { "id": "smalley.occ.delegated", "label_it": "Delegated", "label_en": "Delegated", "desc_it": "Una componente principale media le altre.", "desc_en": "A primary component mediates the others." }
+          ]
+        },
+        {
+          "id": "motion",
+          "label_it": "Movimento",
+          "label_en": "Motion",
+          "terms": [
+            { "id": "smalley.motion.flow", "label_it": "Flow", "label_en": "Flow", "desc_it": "Movimento continuo, fluido.", "desc_en": "Continuous, fluid motion." },
+            { "id": "smalley.motion.oscillation", "label_it": "Oscillation", "label_en": "Oscillation", "desc_it": "Oscillazione tra polarità.", "desc_en": "Oscillation between polarities." },
+            { "id": "smalley.motion.rotation", "label_it": "Rotation", "label_en": "Rotation", "desc_it": "Movimento rotatorio nello spazio spettrale.", "desc_en": "Rotational movement in spectral space." },
+            { "id": "smalley.motion.push", "label_it": "Push", "label_en": "Push", "desc_it": "Spinta in avanti, impulso direzionale.", "desc_en": "Forward thrust, directional impulse." },
+            { "id": "smalley.motion.drag", "label_it": "Drag", "label_en": "Drag", "desc_it": "Trascinamento, resistenza.", "desc_en": "Dragging, resistance." },
+            { "id": "smalley.motion.ascent", "label_it": "Ascent", "label_en": "Ascent", "desc_it": "Salita verso l'alto registro.", "desc_en": "Ascent towards higher register." },
+            { "id": "smalley.motion.descent", "label_it": "Descent", "label_en": "Descent", "desc_it": "Discesa verso il basso registro.", "desc_en": "Descent towards lower register." },
+            { "id": "smalley.motion.plane", "label_it": "Plane", "label_en": "Plane", "desc_it": "Stato planare, immobile o quasi.", "desc_en": "Planar, immobile or near-immobile state." },
+            { "id": "smalley.motion.linear", "label_it": "Linear", "label_en": "Linear", "desc_it": "Traiettoria lineare in una direzione.", "desc_en": "Linear trajectory in one direction." },
+            { "id": "smalley.motion.multidirectional", "label_it": "Multidirectional", "label_en": "Multidirectional", "desc_it": "Più direzioni simultanee.", "desc_en": "Multiple simultaneous directions." },
+            { "id": "smalley.motion.reciprocal", "label_it": "Reciprocal", "label_en": "Reciprocal", "desc_it": "Andata e ritorno bilanciati.", "desc_en": "Balanced back-and-forth." },
+            { "id": "smalley.motion.arc", "label_it": "Arc", "label_en": "Arc", "desc_it": "Traiettoria ad arco.", "desc_en": "Arc-shaped trajectory." }
+          ]
+        },
+        {
+          "id": "growth",
+          "label_it": "Crescita",
+          "label_en": "Growth",
+          "terms": [
+            { "id": "smalley.growth.dilation", "label_it": "Dilation", "label_en": "Dilation", "desc_it": "Espansione interna del materiale.", "desc_en": "Internal expansion of material." },
+            { "id": "smalley.growth.endogeny", "label_it": "Endogeny", "label_en": "Endogeny", "desc_it": "Crescita dall'interno, autonoma.", "desc_en": "Inward growth, autonomous." },
+            { "id": "smalley.growth.multiplication", "label_it": "Multiplication", "label_en": "Multiplication", "desc_it": "Moltiplicazione di unità sonore.", "desc_en": "Multiplication of sound units." },
+            { "id": "smalley.growth.exogeny", "label_it": "Exogeny", "label_en": "Exogeny", "desc_it": "Crescita verso l'esterno, espansiva.", "desc_en": "Outward, expansive growth." }
+          ]
+        },
+        {
+          "id": "behaviour",
+          "label_it": "Comportamento",
+          "label_en": "Behaviour",
+          "terms": [
+            { "id": "smalley.behaviour.passive", "label_it": "Passive", "label_en": "Passive", "desc_it": "Comportamento inerte, recettivo.", "desc_en": "Inert, receptive behaviour." },
+            { "id": "smalley.behaviour.reactive", "label_it": "Reactive", "label_en": "Reactive", "desc_it": "Risposta a stimoli esterni.", "desc_en": "Response to external stimuli." },
+            { "id": "smalley.behaviour.active", "label_it": "Active", "label_en": "Active", "desc_it": "Iniziativa propria, propulsivo.", "desc_en": "Self-initiated, propulsive." },
+            { "id": "smalley.behaviour.neutral", "label_it": "Neutral", "label_en": "Neutral", "desc_it": "Senza orientamento di intenzione.", "desc_en": "Without intentional orientation." }
+          ]
+        },
+        {
+          "id": "onset",
+          "label_it": "Attacco",
+          "label_en": "Onset",
+          "terms": [
+            { "id": "smalley.onset.attack", "label_it": "Attack", "label_en": "Attack", "desc_it": "Esordio rapido e definito.", "desc_en": "Rapid and defined entry." },
+            { "id": "smalley.onset.attack-decay", "label_it": "Attack-decay", "label_en": "Attack-decay", "desc_it": "Attacco seguito da decadimento immediato.", "desc_en": "Attack followed by immediate decay." },
+            { "id": "smalley.onset.graduated", "label_it": "Graduated", "label_en": "Graduated", "desc_it": "Esordio progressivo.", "desc_en": "Progressive entry." },
+            { "id": "smalley.onset.emerging", "label_it": "Emerging", "label_en": "Emerging", "desc_it": "Emersione lenta dal silenzio.", "desc_en": "Slow emergence from silence." }
+          ]
+        },
+        {
+          "id": "continuant",
+          "label_it": "Continuante",
+          "label_en": "Continuant",
+          "terms": [
+            { "id": "smalley.cont.maintained", "label_it": "Maintained", "label_en": "Maintained", "desc_it": "Continua mantenendo la massa stabile.", "desc_en": "Continues with stable mass." },
+            { "id": "smalley.cont.iterative", "label_it": "Iterative", "label_en": "Iterative", "desc_it": "Continua per ripetizione interna.", "desc_en": "Continues through internal repetition." },
+            { "id": "smalley.cont.oscillating", "label_it": "Oscillating", "label_en": "Oscillating", "desc_it": "Continua oscillando.", "desc_en": "Continues by oscillating." }
+          ]
+        },
+        {
+          "id": "termination",
+          "label_it": "Terminazione",
+          "label_en": "Termination",
+          "terms": [
+            { "id": "smalley.term.closed", "label_it": "Closed", "label_en": "Closed", "desc_it": "Chiusura definita, conclusiva.", "desc_en": "Defined, conclusive closure." },
+            { "id": "smalley.term.open", "label_it": "Open", "label_en": "Open", "desc_it": "Conclusione aperta, sospesa.", "desc_en": "Open, suspended ending." },
+            { "id": "smalley.term.abrupt", "label_it": "Abrupt", "label_en": "Abrupt", "desc_it": "Interruzione netta.", "desc_en": "Sharp interruption." },
+            { "id": "smalley.term.dissipating", "label_it": "Dissipating", "label_en": "Dissipating", "desc_it": "Dispersione progressiva nel silenzio.", "desc_en": "Progressive dispersion into silence." }
+          ]
+        },
+        {
+          "id": "surrogacy",
+          "label_it": "Surrogacy",
+          "label_en": "Surrogacy",
+          "terms": [
+            { "id": "smalley.surr.first", "label_it": "First-order", "label_en": "First-order surrogacy", "desc_it": "Riconoscimento diretto della sorgente fisica.", "desc_en": "Direct recognition of the physical source." },
+            { "id": "smalley.surr.second", "label_it": "Second-order", "label_en": "Second-order surrogacy", "desc_it": "Trasformazione di una sorgente riconoscibile.", "desc_en": "Transformation of a recognisable source." },
+            { "id": "smalley.surr.third", "label_it": "Third-order", "label_en": "Third-order surrogacy", "desc_it": "Allusione a un gesto, ma astratta.", "desc_en": "Allusion to a gesture, but abstracted." },
+            { "id": "smalley.surr.remote", "label_it": "Remote", "label_en": "Remote surrogacy", "desc_it": "Nessun legame con sorgente fisica.", "desc_en": "No bond with a physical source." }
+          ]
+        },
+        {
+          "id": "gesture-texture",
+          "label_it": "Gesto e tessitura",
+          "label_en": "Gesture and texture",
+          "terms": [
+            { "id": "smalley.gt.gesture-launching", "label_it": "Launching gesture", "label_en": "Launching gesture", "desc_it": "Gesto iniziale che propulsiona il movimento.", "desc_en": "Initial gesture that propels the motion." },
+            { "id": "smalley.gt.texture-bound", "label_it": "Bound texture", "label_en": "Bound texture", "desc_it": "Tessitura tenuta da un gesto strutturante.", "desc_en": "Texture held by a structuring gesture." },
+            { "id": "smalley.gt.texture-free", "label_it": "Free texture", "label_en": "Free texture", "desc_it": "Tessitura senza gesto strutturante.", "desc_en": "Texture without structuring gesture." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "schafer",
+      "label_it": "Schafer, paesaggio sonoro",
+      "label_en": "Schafer, soundscape",
+      "source": "R. Murray Schafer",
+      "reference": "Schafer, R. M. (1977). The Tuning of the World. Knopf.",
+      "color": "#34d399",
+      "groups": [
+        {
+          "id": "tipologia",
+          "label_it": "Tipologia",
+          "label_en": "Typology",
+          "terms": [
+            { "id": "schafer.type.keynote", "label_it": "Keynote", "label_en": "Keynote", "desc_it": "Suono di sottofondo che dà il tono al paesaggio (analogia con la tonica musicale).", "desc_en": "Background sound that gives the tone to the soundscape (analogous to musical keynote)." },
+            { "id": "schafer.type.signal", "label_it": "Signal", "label_en": "Signal", "desc_it": "Suono in primo piano, ascoltato consapevolmente (campane, sirene, richiami).", "desc_en": "Foreground sound, consciously listened to (bells, sirens, calls)." },
+            { "id": "schafer.type.soundmark", "label_it": "Soundmark", "label_en": "Soundmark", "desc_it": "Suono caratterizzante e identitario di un luogo.", "desc_en": "Characterising and identitarian sound of a place." },
+            { "id": "schafer.type.archetypal", "label_it": "Archetypal", "label_en": "Archetypal", "desc_it": "Suono con forza simbolica universale, mitica.", "desc_en": "Sound with universal, mythical symbolic force." }
+          ]
+        },
+        {
+          "id": "qualita",
+          "label_it": "Qualità acustica",
+          "label_en": "Acoustic quality",
+          "terms": [
+            { "id": "schafer.quality.hi-fi", "label_it": "Hi-Fi", "label_en": "Hi-Fi", "desc_it": "Basso rapporto rumore/segnale, eventi sonori distinti.", "desc_en": "Low noise/signal ratio, distinct sound events." },
+            { "id": "schafer.quality.lo-fi", "label_it": "Lo-Fi", "label_en": "Lo-Fi", "desc_it": "Alto rapporto rumore/segnale, eventi sovrapposti.", "desc_en": "High noise/signal ratio, overlapping events." }
+          ]
+        },
+        {
+          "id": "bande",
+          "label_it": "Bande spettrali",
+          "label_en": "Spectral bands",
+          "terms": [
+            { "id": "schafer.band.sub-bass", "label_it": "Sub-bass (20-60 Hz)", "label_en": "Sub-bass (20-60 Hz)", "desc_it": "Vibrazione fisica, percepita più col corpo che con l'orecchio.", "desc_en": "Physical vibration, perceived more by body than ear." },
+            { "id": "schafer.band.bass", "label_it": "Bass (60-250 Hz)", "label_en": "Bass (60-250 Hz)", "desc_it": "Corpo, calore, fondamentali di voci maschili e motori.", "desc_en": "Body, warmth, fundamentals of male voices and engines." },
+            { "id": "schafer.band.low-mid", "label_it": "Low-mid (250-500 Hz)", "label_en": "Low-mid (250-500 Hz)", "desc_it": "Pienezza, corpo delle voci medie.", "desc_en": "Fullness, body of mid-range voices." },
+            { "id": "schafer.band.mid", "label_it": "Mid (500-2000 Hz)", "label_en": "Mid (500-2000 Hz)", "desc_it": "Presenza, chiarezza, fascia della parola.", "desc_en": "Presence, clarity, speech band." },
+            { "id": "schafer.band.high-mid", "label_it": "High-mid (2000-4000 Hz)", "label_en": "High-mid (2000-4000 Hz)", "desc_it": "Intelligibilità del parlato, sibilanti.", "desc_en": "Speech intelligibility, sibilants." },
+            { "id": "schafer.band.presence", "label_it": "Presence (4000-6000 Hz)", "label_en": "Presence (4000-6000 Hz)", "desc_it": "Brillantezza, dettagli ambientali.", "desc_en": "Brilliance, environmental details." },
+            { "id": "schafer.band.brilliance", "label_it": "Brilliance (6000-20000 Hz)", "label_en": "Brilliance (6000-20000 Hz)", "desc_it": "Aria, spazialità, alte formanti.", "desc_en": "Air, spatiality, high formants." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "krause",
+      "label_it": "Krause, ipotesi della nicchia acustica",
+      "label_en": "Krause, acoustic niche hypothesis",
+      "source": "Bernie Krause",
+      "reference": "Krause, B. (2012). The Great Animal Orchestra. Little, Brown.",
+      "color": "#22d3ee",
+      "groups": [
+        {
+          "id": "fonti",
+          "label_it": "Fonti sonore",
+          "label_en": "Sound sources",
+          "terms": [
+            { "id": "krause.biophony", "label_it": "Biofonia", "label_en": "Biophony", "desc_it": "Suoni prodotti da organismi viventi non umani (animali, insetti).", "desc_en": "Sounds produced by non-human living organisms (animals, insects)." },
+            { "id": "krause.anthrophony", "label_it": "Antropofonia", "label_en": "Anthrophony", "desc_it": "Suoni prodotti dall'attività umana (motori, voci, macchinari).", "desc_en": "Sounds produced by human activity (engines, voices, machinery)." },
+            { "id": "krause.geophony", "label_it": "Geofonia", "label_en": "Geophony", "desc_it": "Suoni naturali non biologici (vento, acqua, terremoti, fuoco).", "desc_en": "Non-biological natural sounds (wind, water, earthquakes, fire)." }
+          ]
+        },
+        {
+          "id": "nicchia",
+          "label_it": "Ipotesi della nicchia acustica",
+          "label_en": "Acoustic niche hypothesis",
+          "terms": [
+            { "id": "krause.niche.spectral", "label_it": "Nicchia spettrale", "label_en": "Spectral niche", "desc_it": "Specie diverse occupano bande di frequenza distinte per evitare il mascheramento.", "desc_en": "Different species occupy distinct frequency bands to avoid masking." },
+            { "id": "krause.niche.temporal", "label_it": "Nicchia temporale", "label_en": "Temporal niche", "desc_it": "Specie diverse vocalizzano in finestre temporali distinte.", "desc_en": "Different species vocalise in distinct temporal windows." },
+            { "id": "krause.niche.frequency-partitioning", "label_it": "Frequency partitioning", "label_en": "Frequency partitioning", "desc_it": "Divisione del paesaggio sonoro in bande non sovrapposte fra specie.", "desc_en": "Division of the soundscape into non-overlapping bands among species." },
+            { "id": "krause.niche.competition", "label_it": "Competizione acustica", "label_en": "Acoustic competition", "desc_it": "Concorrenza per la stessa nicchia spettrale o temporale.", "desc_en": "Competition for the same spectral or temporal niche." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chion",
+      "label_it": "Chion, modi di ascolto",
+      "label_en": "Chion, listening modes",
+      "source": "Michel Chion",
+      "reference": "Chion, M. (1994). Audio-Vision. Columbia University Press.",
+      "color": "#f472b6",
+      "groups": [
+        {
+          "id": "modi",
+          "label_it": "Modi di ascolto",
+          "label_en": "Listening modes",
+          "terms": [
+            { "id": "chion.causal", "label_it": "Causale", "label_en": "Causal", "desc_it": "Ascolto rivolto a identificare la sorgente (cosa l'ha prodotto?).", "desc_en": "Listening aimed at identifying the source (what produced it?)." },
+            { "id": "chion.semantic", "label_it": "Semantico", "label_en": "Semantic", "desc_it": "Ascolto rivolto a decifrare un codice (linguaggio, segnali).", "desc_en": "Listening aimed at decoding a code (language, signals)." },
+            { "id": "chion.reduced", "label_it": "Ridotto", "label_en": "Reduced", "desc_it": "Ascolto delle qualità intrinseche del suono, indipendente dalla fonte.", "desc_en": "Listening to the intrinsic qualities of sound, independent of source." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "truax",
+      "label_it": "Truax, comunicazione acustica",
+      "label_en": "Truax, acoustic communication",
+      "source": "Barry Truax",
+      "reference": "Truax, B. (1984/2001). Acoustic Communication. Ablex.",
+      "color": "#60a5fa",
+      "groups": [
+        {
+          "id": "modi-ascolto",
+          "label_it": "Modi di ascolto",
+          "label_en": "Listening modes",
+          "terms": [
+            { "id": "truax.listening.search", "label_it": "Listening-in-search", "label_en": "Listening-in-search", "desc_it": "Ascolto attivo finalizzato a un obiettivo specifico.", "desc_en": "Active listening directed to a specific goal." },
+            { "id": "truax.listening.readiness", "label_it": "Listening-in-readiness", "label_en": "Listening-in-readiness", "desc_it": "Ascolto pronto, in attesa di stimoli rilevanti.", "desc_en": "Ready listening, alert to relevant stimuli." },
+            { "id": "truax.listening.background", "label_it": "Background listening", "label_en": "Background listening", "desc_it": "Ascolto di sottofondo, non diretto.", "desc_en": "Background listening, not directed." }
+          ]
+        },
+        {
+          "id": "comunicazione",
+          "label_it": "Livelli di comunicazione",
+          "label_en": "Communication levels",
+          "terms": [
+            { "id": "truax.comm.definitional", "label_it": "Definitional", "label_en": "Definitional", "desc_it": "Riconoscimento dell'identità del suono e della sorgente.", "desc_en": "Recognition of sound identity and source." },
+            { "id": "truax.comm.structural", "label_it": "Structural", "label_en": "Structural", "desc_it": "Riconoscimento della forma e dell'organizzazione sonora.", "desc_en": "Recognition of sound form and organisation." },
+            { "id": "truax.comm.contextual", "label_it": "Contextual", "label_en": "Contextual", "desc_it": "Comprensione del significato situato nel contesto.", "desc_en": "Understanding of meaning situated in context." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "westerkamp",
+      "label_it": "Westerkamp, soundwalking",
+      "label_en": "Westerkamp, soundwalking",
+      "source": "Hildegard Westerkamp",
+      "reference": "Westerkamp, H. (2007). Soundwalking. In Carlyle, A. (ed.) Autumn Leaves.",
+      "color": "#facc15",
+      "groups": [
+        {
+          "id": "pratiche",
+          "label_it": "Pratiche di ascolto",
+          "label_en": "Listening practices",
+          "terms": [
+            { "id": "westerkamp.soundwalk", "label_it": "Soundwalk", "label_en": "Soundwalk", "desc_it": "Cammino dedicato all'ascolto attivo del paesaggio sonoro.", "desc_en": "Walk dedicated to active listening of the soundscape." },
+            { "id": "westerkamp.indexical", "label_it": "Ascolto indessicale", "label_en": "Indexical listening", "desc_it": "Ascolto del suono come indice della propria collocazione.", "desc_en": "Listening to sound as index of one's own location." },
+            { "id": "westerkamp.inductive", "label_it": "Ascolto induttivo", "label_en": "Inductive listening", "desc_it": "Ascolto che induce stati di consapevolezza tramite l'attenzione protratta.", "desc_en": "Listening that induces states of awareness through sustained attention." },
+            { "id": "westerkamp.composition", "label_it": "Soundscape composition", "label_en": "Soundscape composition", "desc_it": "Composizione che mantiene la traccia dell'ambiente di provenienza del materiale.", "desc_en": "Composition that maintains the trace of the source environment of its material." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wishart",
+      "label_it": "Wishart, sonic art",
+      "label_en": "Wishart, sonic art",
+      "source": "Trevor Wishart",
+      "reference": "Wishart, T. (1985/1996). On Sonic Art. Routledge. Wishart, T. (1994). Audible Design.",
+      "color": "#c084fc",
+      "groups": [
+        {
+          "id": "topologie",
+          "label_it": "Topologie sonore",
+          "label_en": "Sonic topologies",
+          "terms": [
+            { "id": "wishart.topo.extension", "label_it": "Extension", "label_en": "Extension", "desc_it": "Espansione del materiale lungo una dimensione.", "desc_en": "Expansion of material along one dimension." },
+            { "id": "wishart.topo.contraction", "label_it": "Contraction", "label_en": "Contraction", "desc_it": "Contrazione, restrizione del materiale.", "desc_en": "Contraction, restriction of material." },
+            { "id": "wishart.topo.dilation", "label_it": "Dilation", "label_en": "Dilation", "desc_it": "Dilatazione interna delle componenti.", "desc_en": "Internal dilation of components." }
+          ]
+        },
+        {
+          "id": "continuita",
+          "label_it": "Continuità",
+          "label_en": "Continuity",
+          "terms": [
+            { "id": "wishart.cont.continuant", "label_it": "Continuant", "label_en": "Continuant", "desc_it": "Suono mantenuto, fluido.", "desc_en": "Maintained, flowing sound." },
+            { "id": "wishart.cont.discontinuant", "label_it": "Discontinuant", "label_en": "Discontinuant", "desc_it": "Suono interrotto, frammentato.", "desc_en": "Broken, fragmented sound." },
+            { "id": "wishart.cont.oscillant", "label_it": "Oscillant", "label_en": "Oscillant", "desc_it": "Suono oscillante in modo regolare.", "desc_en": "Sound oscillating regularly." }
+          ]
+        },
+        {
+          "id": "aggregati",
+          "label_it": "Aggregazioni",
+          "label_en": "Aggregations",
+          "terms": [
+            { "id": "wishart.agg.stream", "label_it": "Stream", "label_en": "Stream", "desc_it": "Flusso lineare di eventi sonori connessi.", "desc_en": "Linear flow of connected sound events." },
+            { "id": "wishart.agg.cluster", "label_it": "Cluster", "label_en": "Cluster", "desc_it": "Aggregazione densa di eventi simultanei.", "desc_en": "Dense aggregation of simultaneous events." },
+            { "id": "wishart.agg.grain", "label_it": "Grain", "label_en": "Grain", "desc_it": "Particella sonora minima usata come unità compositiva.", "desc_en": "Minimal sound particle used as compositional unit." },
+            { "id": "wishart.agg.lattice", "label_it": "Lattice", "label_en": "Lattice", "desc_it": "Struttura reticolare di eventi sonori.", "desc_en": "Lattice-like structure of sound events." }
+          ]
+        }
+      ]
+    }
+  ]
+}

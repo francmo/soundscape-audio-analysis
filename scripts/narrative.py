@@ -121,33 +121,84 @@ def _describe_events(n_events: int, density: float, seed_key: str) -> str:
     return f"{opening} è densa con {n_events} onset ({density:.1f}/s), sovrapposizioni frequenti"
 
 
-def _describe_panns(top_categories: list[dict]) -> str:
+def _describe_panns(top_categories: list[dict],
+                     profile: str = "acousmatic") -> str:
     """v0.11: qualificatori linguistici per rendere leggibili gli score PANNs.
+    v0.12.6 (P4 caso Marozzi): aggiunto parametro `profile` per modulare il
+    cut-off di citazione.
 
-    Soglie (AudioSet, CNN14):
+    Soglie standard (AudioSet, CNN14):
     - < 0.03   trascurabile, non citato
     - 0.03-0.15 tenue (`presenza tenue di ...`)
     - 0.15-0.40 plausibile (`presenza plausibile di ...`)
     - > 0.40   marcato (`presenza marcata di ...`, in grassetto)
+
+    Profile `acousmatic`: cita solo da 0.15 in su (taglia i tenui).
+    Profile `didactic`: cita anche i tenui (>= 0.03) come "presenza marginale".
     """
     if not top_categories:
         return ""
+    thresholds = config.NARRATIVE_PROFILE_THRESHOLDS.get(
+        profile, config.NARRATIVE_PROFILE_THRESHOLDS["acousmatic"]
+    )
+    min_cite = thresholds["panns_min_cite"]
+
     parts = []
-    for cat in top_categories[:3]:
+    for cat in top_categories[:5 if profile == "didactic" else 3]:
         name = _translate_label(cat["name"])
         score = cat.get("score", 0.0)
         if score > 0.40:
             parts.append(f"<b>presenza marcata di {name}</b> ({score:.2f})")
         elif score > 0.15:
             parts.append(f"presenza plausibile di {name} ({score:.2f})")
-        elif score > 0.03:
-            parts.append(f"tenue presenza di {name} ({score:.2f})")
+        elif score >= min_cite:
+            parts.append(f"presenza marginale di {name} ({score:.2f})")
     if not parts:
         return ""
     if len(parts) == 1:
         return f"Il classificatore restituisce {parts[0]}"
     joined = ", ".join(parts[:-1]) + f", più {parts[-1]}"
     return f"Il classificatore restituisce {joined}"
+
+
+def _describe_onset_events(window_t_start: float, window_t_end: float,
+                            onset_times: list[float]) -> str:
+    """v0.12.6 (P4 caso Marozzi): cita timestamp degli onset puntuali nella
+    finestra corrente. Usato solo in profilo `didactic`.
+
+    Limita a 3 onset per finestra. Se piu' di 3 cadono nella finestra,
+    cita i primi 3 + segnale "e altri N".
+    """
+    in_window = [t for t in onset_times if window_t_start <= t < window_t_end]
+    if not in_window:
+        return ""
+    quoted = [f"{int(t)//60:02d}:{int(t)%60:02d}" for t in in_window[:3]]
+    if len(in_window) <= 3:
+        return f"Onset puntuali nella finestra: {', '.join(quoted)}"
+    return f"Onset puntuali nella finestra: {', '.join(quoted)} (e altri {len(in_window) - 3})"
+
+
+def _resolve_narrative_profile(summary: dict, profile_arg: str) -> str:
+    """v0.12.6 (P4 caso Marozzi): risolve il profilo narrativo richiesto.
+
+    - `acousmatic` o `didactic`: usato letteralmente.
+    - `auto` (default): euristica su durata, flatness, top-1 PANNs domestico.
+    """
+    if profile_arg in ("acousmatic", "didactic"):
+        return profile_arg
+    # auto
+    duration = float((summary.get("metadata") or {}).get("duration_s") or 0)
+    flatness = float(((summary.get("spectral") or {}).get("timbre") or {}).get("spectral_flatness") or 0)
+    top_globals = ((summary.get("semantic") or {}).get("classifier") or {}).get("top_global") or []
+    top_names = {t.get("name", "") for t in top_globals[:10]}
+    domestic_hit = bool(top_names & config.NARRATIVE_AUTO_DOMESTIC_LABELS)
+    if (
+        duration <= config.NARRATIVE_AUTO_MAX_DURATION_S
+        and flatness >= config.NARRATIVE_AUTO_MIN_FLATNESS
+        and domestic_hit
+    ):
+        return "didactic"
+    return "acousmatic"
 
 
 def _describe_clap(top_tags: list[dict]) -> str:
@@ -308,6 +359,7 @@ def build_full_narrative(
     waveform: np.ndarray,
     sr: int,
     window_seconds: float = config.NARRATIVE_WINDOW_S,
+    profile: str = "auto",
 ) -> list[SegmentNarrative]:
     """Costruisce la narrativa segmentata per tutto il file.
 
@@ -328,6 +380,15 @@ def build_full_narrative(
 
     classifier_timeline = (summary.get("semantic", {}).get("classifier") or {}).get("timeline", [])
     clap_timeline = (summary.get("clap") or {}).get("timeline", [])
+
+    # v0.12.6 (P4 caso Marozzi): risolvi profilo narrativo. Se `auto`, decide
+    # in base a durata/flatness/top-1 domestic. Imposta soglie e flag onset.
+    resolved_profile = _resolve_narrative_profile(summary, profile)
+    profile_cfg = config.NARRATIVE_PROFILE_THRESHOLDS.get(
+        resolved_profile, config.NARRATIVE_PROFILE_THRESHOLDS["acousmatic"]
+    )
+    include_onsets = profile_cfg.get("include_onset_timestamps", False)
+    onset_times = ((summary.get("spectral") or {}).get("onsets") or {}).get("events_times_s", []) or []
 
     segments = _rms_per_segment(waveform, sr, window_seconds)
     if not segments:
@@ -393,13 +454,17 @@ def build_full_narrative(
                 int((t_end - t_start) * feat["density"]),
                 feat["density"], seed_key,
             )
-            panns_desc = _describe_panns(panns_win)
+            panns_desc = _describe_panns(panns_win, profile=resolved_profile)
             clap_desc = _describe_clap(clap_win)
             pieces = [lev, spec, ev]
             if panns_desc:
                 pieces.append(panns_desc)
             if clap_desc:
                 pieces.append(clap_desc)
+            if include_onsets:
+                onset_desc = _describe_onset_events(t_start, t_end, onset_times)
+                if onset_desc:
+                    pieces.append(onset_desc)
             paragraph = ". ".join(pieces) + "."
             paragraph = sanitize_italiano(paragraph)
             narratives.append(SegmentNarrative(
@@ -435,11 +500,16 @@ def narrative_summary(
     sr: int,
     window_seconds: float = config.NARRATIVE_WINDOW_S,
     mode: str = "full",
+    profile: str = "auto",
 ) -> dict:
-    """Wrapper che ritorna il dict serializzabile da inserire in summary['narrative']."""
+    """Wrapper che ritorna il dict serializzabile da inserire in summary['narrative'].
+
+    v0.12.6 (P4 caso Marozzi): aggiunto `profile` (acousmatic/didactic/auto).
+    """
     if mode == "none":
         return {"enabled": False, "mode": "none"}
-    narratives = build_full_narrative(summary, waveform, sr, window_seconds)
+    resolved_profile = _resolve_narrative_profile(summary, profile)
+    narratives = build_full_narrative(summary, waveform, sr, window_seconds, profile=resolved_profile)
     if mode == "summary" and len(narratives) > 12:
         # In summary mode, prende 12 finestre equispaziate per file molto lunghi
         step = max(1, len(narratives) // 12)
@@ -447,6 +517,8 @@ def narrative_summary(
     return {
         "enabled": True,
         "mode": mode,
+        "profile_requested": profile,
+        "profile_used": resolved_profile,
         "window_seconds": window_seconds,
         "segments": [n.to_dict() for n in narratives],
         "markdown": narrative_to_markdown(narratives),

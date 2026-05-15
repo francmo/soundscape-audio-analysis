@@ -48,6 +48,7 @@ def _analyze_single(
     do_transcribe_speech: bool = False,
     known_piece: str = "",
     ecoacoustic_backend: str | None = None,
+    narrative_profile: str = "auto",
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     from . import io_loader, technical, hum, spectral, ecoacoustic, semantic
@@ -152,6 +153,20 @@ def _analyze_single(
         semantic_res, flag_active=do_transcribe_speech
     )
 
+    # v0.12.6 (P1 caso Marozzi): distinzione parlato diretto vs mediato.
+    # Si applica quando PANNs Speech e' dominante (>= 5% dei frame), in
+    # modo da non sprecare calcoli su file musicali o silenziosi.
+    speech_mediation_res = {"enabled": False}
+    if do_semantic:
+        from . import speech_mediation as sm_mod
+        summary_for_sm = {
+            "semantic": semantic_res,
+            "spectral": spec,
+        }
+        speech_mediation_res = sm_mod.speech_mediation_summary(
+            waveform=y, sr=sr, summary=summary_for_sm,
+        )
+
     speech_res = {"enabled": False, "reason": "disabled"}
     if do_transcribe_speech:
         from . import speech
@@ -182,7 +197,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.6.1",
+        "version": "0.12.6",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -192,6 +207,7 @@ def _analyze_single(
         "semantic": semantic_res,
         "clap": clap_res,
         "speech": speech_res,
+        "speech_mediation": speech_mediation_res,
         "multichannel": mc_res,
     }
 
@@ -243,12 +259,15 @@ def _analyze_single(
             click.echo(f"  avviso: plot tags_timeline saltato ({exc})")
 
     # Narrativa segmentata (v0.2.2): prosa italiana 30s
+    # v0.12.6 (P4 caso Marozzi): profilo `acousmatic|didactic|auto` differenzia
+    # le soglie PANNs e l'inclusione dei timestamp di onset puntuali.
     narrative_res = {"enabled": False}
     if narrative_mode != "none":
         from . import narrative as narrative_mod
-        click.echo(f"  Costruzione narrativa segmentata (mode={narrative_mode})")
+        click.echo(f"  Costruzione narrativa segmentata (mode={narrative_mode}, profile={narrative_profile})")
         narrative_res = narrative_mod.narrative_summary(
-            summary, waveform=y, sr=sr, mode=narrative_mode
+            summary, waveform=y, sr=sr, mode=narrative_mode,
+            profile=narrative_profile,
         )
     summary["narrative"] = narrative_res
 
@@ -328,7 +347,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.6.1", prog_name="soundscape")
+@click.version_option(version="0.12.5", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -364,6 +383,16 @@ def cli():
 @click.option("--clap/--no-clap", default=True, help="Auto-tagging CLAP con vocabolario italiano")
 @click.option("--narrative", "narrative_mode", type=click.Choice(["full", "summary", "none"]),
               default="full", help="Descrizione segmentata italiana (v0.2.2)")
+@click.option("--narrative-profile", "narrative_profile",
+              type=click.Choice(["auto", "acousmatic", "didactic"]),
+              default="auto",
+              help="Profilo soglie/citazioni della narrative (v0.12.6). "
+                   "`acousmatic` filtra PANNs >=0.15 (default storico per "
+                   "brani gold); `didactic` cita anche tag tenui (>=0.03) e "
+                   "timestamp di onset puntuali (utile su file domestici "
+                   "didattici); `auto` (default) sceglie didactic se durata "
+                   "<=5min, flatness>=0.1 e top PANNs domestico, altrimenti "
+                   "acousmatic.")
 @click.option("--speech", is_flag=True, default=False,
               help="Trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana via claude -p (opt-in, v0.5.0)")
 @click.option("--known-piece", "known_piece", type=str, default="",
@@ -376,7 +405,7 @@ def cli():
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 ecoacoustic_backend, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
-                speech, known_piece, lang):
+                narrative_profile, speech, known_piece, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
@@ -419,6 +448,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 do_transcribe_speech=speech,
                 known_piece=known_piece,
                 ecoacoustic_backend=ecoacoustic_backend,
+                narrative_profile=narrative_profile,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))
@@ -728,7 +758,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.12.4")
+    click.echo("soundscape-audio-analysis 0.12.5")
 
 
 def main():

@@ -423,6 +423,16 @@ def aggregate_academic_hints(
         "n_tags_used": len(resolved),
         "mean_score_top_used": mean_score,
         "min_score": min_score,
+        # v0.12.6 (P2 caso Marozzi): documenta il metodo di calcolo di tutte
+        # le distribuzioni academic_hints. Il payload lo propaga all'agente e
+        # il prompt impone suffisso metodo inline ai numerali citati.
+        "methodology": (
+            "Distribuzioni pesate per score cosine CLAP sui top-{n} tag con "
+            "score >= {min}. Ogni distribuzione e' normalizzata sulla somma "
+            "degli score dei tag che hanno mapping accademico definito per la "
+            "rispettiva tassonomia. Sigla compatta per citazione: 'CLAP w-{n}'."
+        ).format(n=len(resolved), min=min_score),
+        "methodology_short": f"CLAP w-{len(resolved)}",
         "krause": {
             "distribution": krause_dist,
             "dominant": dominant_with_confidence(krause_dist),

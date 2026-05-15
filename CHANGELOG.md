@@ -1,5 +1,117 @@
 # Changelog
 
+## [0.12.6] - 2026-05-15
+
+Primo case study didattico documentato: caso Marozzi (Soundscape Annotation, ABA Macerata, corso PTSM). Nove interventi atomici raggruppati in una sola release, perche' nascono da un unico episodio di confronto a triangolo (dossier studente, scheda first-hand, PDF skill) e si rinforzano l'un l'altro nella pipeline. La release modifica come la skill descrive il materiale didattico, senza toccare l'infrastruttura statistica v0.13-v0.17.
+
+Driver: il 15 maggio 2026 il primo dei quattro studenti del corso ha consegnato dossier completo (JSON PWA con 28 marker su 8 tassonomie + scheda discorsiva + audio bagno domestico di 180.7 s). Il confronto cronologico fra dossier e PDF skill ha generato sei pattern di errore (P21-P26 nel research log) che hanno l'aspetto formativo della "skill che inferisce in modo plausibile ma sbagliato" piuttosto che dell'"errore tecnico". Sei interventi sulla skill + tre sui template didattici. Piano completo in `ROADMAP_ADDENDUM_marozzi_2026-05-15.md`.
+
+### Template didattici (P7, P8, P9)
+
+- `~/Documents/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md` modificato. **Sezione 1** divisa in `1.a Primo ascolto` (5 minuti senza appunti, impressione globale) e `1.b Secondo ascolto` (10 minuti in cuffia con appunti). Forza il doppio passaggio che il prompt unico non garantiva. **Sezione 3** ora include un mini-glossario operativo inline (esempio canonico keynote/signal/soundmark su soundscape urbano) con invito esplicito a costruirne uno proprio: due studenti su due avevano confuso le tre categorie. **Sezione 6** trasformata da esempio illustrativo a stencil di sintassi vero e proprio, con slot da riempire e due esempi (domestico + urbano). Formati derivati (.docx, .html, .pdf) rigenerati via pandoc + Chrome headless.
+
+### Framework di confidenza (P6, P3)
+
+- `scripts/agent_payload.py` esporta `signature.inference_confidence` con `panns_concentration`, `clap_concentration`, `aggregate (low|medium|high)`. Formula `top1/(top1+top2+top3)`. L'agente legge il valore aggregato per scegliere il registro linguistico delle inferenze di ambientazione: dichiarativo solo se `high`, ipotetico esplicito su `medium`, fortemente ipotetico + dichiarazione di dispersione su `low`. Regola codificata in `templates/agent_prompt.md` e nel mirror `~/.claude/agents/soundscape-composer-analyst.md`.
+- `scripts/contextual_hints.py` nuova regola `low_inference_confidence` che attiva un blocco hint quando l'aggregate e' low e i top non sono vuoti, rinforzando la regola al livello del prompt. Caso Marozzi: scattava in modo netto, l'agente ha conseguentemente sostituito "soglia domestica" dichiarativa con "gli indizi acustici suggeriscono un interno domestico ... ma la distribuzione semantica resta dispersa".
+- `scripts/structure.py` aggiunge `dominant_panns_confidence` per sezione, calcolato su soglie di durata fisse (`<2s low`, `<5s medium`, `>=5s high`). Quando confidence e' low, la famiglia Krause antropofonia/biofonia/geofonia viene neutralizzata a `mista` (un PANNs su 0-1 frame non basta per attribuire famiglia), e `signature_label` diventa `impulso e coda` invece del descrittore Krause classico. Caso Marozzi S5 (0.74s): da "Music dominante" a "impulso e coda" + krause mista, senza forzature.
+- `scripts/report_pdf.py` rendering corsivo grigio + asterisco sulle sezioni con confidence low + caption a piè di tabella che spiega la non-affidabilita'.
+
+### Segmentazione fine su famiglie omogenee (P5)
+
+- `scripts/structure.py` aggiunge secondo passo di sub-segmentazione interna. Sulle sezioni geofoniche o biofoniche con durata >= 30 s, valuta la Jaccard similarity dei top-3 PANNs fra finestre adiacenti; quando scende sotto `0.5` apre un cut interno. Le sub-sezioni si nominano `S3a`, `S3b`, ecc.; preservano la sezione padre come record di alto livello, l'API per gli agenti che leggono solo `S1..Sn` resta retrocompatibile. Cap a `SUBSEGMENT_MAX_PER_PARENT=3` sub-sezioni per padre, configurabile in `scripts/config.py`. Caso Marozzi S3 (80 s di Water): correttamente divisa in `S3a` (doccia, Water tap + Speech residuo) e `S3b` (lavandino, Water tap + Sink + Fill), citate dall'agente con i loro id.
+
+### Riconoscimento eventi e narrative trasparente (P1, P4, P2)
+
+- `scripts/speech_mediation.py` nuovo modulo. Distingue parlato in presa diretta da parlato mediato (TV in stanza adiacente, radio, telefono, PA) quando PANNs ha Speech dominante in almeno il 5% dei frame. Strategia: override PANNs su label esplicitamente mediate (`Television`, `Radio`, `Loudspeaker`, `Telephone bell ringing`, `Public address system`); fallback `uncertain` su flatness > 0.3 (acusmatica trasformata); euristica spettrale composita su rolloff 85%, shoulder slope 2.5-5 kHz, HNR proxy, stazionarieta'. Limite noto su S1 Marozzi: senza label `Television` nei top globali, l'euristica torna `direct` confidence medium invece di `mediated` perche' lo shoulder slope e' solo -1.5 dB. La calibrazione delle soglie spettrali richiede un corpus dedicato (4-6 file TV/radio/telefono/secco) previsto in v0.12.7+. Per ora il modulo degrada con onesta' a uncertain o medium-confidence, senza inquinare la narrativa.
+- `scripts/spectral.py::onset_analysis` ora ritorna `events_times_s` (lista di timestamp degli onset, capata a 200) accanto a `events_count` e `events_per_sec`. La narrative segmentata legge la lista e cita gli onset puntuali nella finestra di 30 s quando il profilo lo prevede.
+- `scripts/narrative.py` introduce il flag `profile` (`acousmatic | didactic | auto`) e il nuovo CLI `--narrative-profile`. Il profilo `acousmatic` (soglia PANNs >= 0.15) e' il default storico, adatto a brani gold dove la classificazione e' rumorosa. Il profilo `didactic` (soglia 0.03) cita anche le presenze "marginali" e include i timestamp di onset, perche' sui file domestici didattici eventi puntuali come cane abbaiante (Animal 0.045) o motore esterno (sotto soglia plausibile) sono drammaturgicamente rilevanti. Il profilo `auto` (default) sceglie `didactic` se durata <= 5 min e flatness >= 0.10 e top PANNs contiene label domestiche; altrimenti `acousmatic`. Caso Marozzi: auto -> didactic, 7 citazioni onset puntuali nel markdown (00:00, 00:17, 00:18, 00:33, 00:59, 01:00, 02:29, ...) coprono cane (00:38 vs 00:33), motore (00:35 vs 00:33), eventi domestici prima invisibili alla narrative.
+- `scripts/clap_mapping.py::aggregate_academic_hints` aggiunge `methodology` e `methodology_short`. Il payload propaga la sigla compatta `CLAP w-N` agli agenti. Il prompt impone: numerali da `clap.academic_hints` ammessi solo con suffisso metodo inline (`(CLAP w-19)`); qualificatori qualitativi preferiti al numero; max 1 numerale per paragrafo; le metriche tecniche dirette (LUFS, RMS, durata, hum) non richiedono il suffisso. Caso Marozzi: la frase "Smalley growth: dilation domina al 66%" della v0.12.5 e' diventata "spettromorfologicamente prevale la dilatazione (CLAP w-19), un gesto unico che si distende" in v0.12.6.
+
+### Test suite
+
+219 passed + 2 skipped (+ 27 nuovi: 10 inference_confidence + 8 speech_mediation + 9 caveat-sezioni-brevi e sub-segmentazione). Tempo totale 58 s.
+
+### Versionamento
+
+Bump `pyproject.toml` 0.12.5 -> 0.12.6. Sync stringhe stale `scripts/cli.py` e `scripts/report_cmd.py` (erano fossilizzate a 0.6.1 e 0.6.8).
+
+### Validazione end-to-end
+
+Rilancio analyze su `marozzi_francesco_file1_audio.mp3` (180.7 s). Tempo totale pipeline 2 min 39 s (agente compositivo 159.4 s su 600 s di timeout). PDF v0.12.6 conservato accanto a v0.12.5 per confronto:
+- v0.12.5: `marozzi_francesco_file1_audio.mp3_report.pdf` (immutato dal 15/05 18:08).
+- v0.12.6: `marozzi_francesco_file1_audio.mp3_report_v0.12.6.pdf` (15/05 22:11).
+
+Tutti e cinque i criteri di verifica del piano (a-e) confermati nel PDF prodotto. Diff narrativo dettagliato nel research log `project_soundscape_research_log.md` voce 2026-05-15 sera.
+
+### Lezione per il paper
+
+Il caso didattico e' una sorgente di pattern qualitativamente diversa sia dal corpus gold accademico (Ferrari, Nono, Truax, ecc.) sia dal corpus utente field-recording personale (Massa-Catania, 18 file iPhone). Tre fonti distinte producono tre error taxonomy parzialmente sovrapposte. Il caso Marozzi fonda inoltre una nuova categoria, la "field correction reversibile": la skill ha corretto la stima Krause dello studente (40 biofonia / 10 antropofonia / 50 geofonia -> ~17 / 22 / 44 + silenzio), mostrando che il confronto first-hand vs second-hand non e' binario ma dialogico. Materiale utile per la Sezione 5 del paper (Risultati e analisi degli errori).
+
+bump 0.12.5 -> 0.12.6.
+
+## [0.12.5] - 2026-04-24
+
+Patch 1 anti-filename/path leakage al prompt agent. Prima applicazione
+della pipeline sul primo test sul campo con corpus proprio dell'utente
+(18 file iPhone viaggio Massa-Catania, 20-21 aprile 2026, documentati
+in `references/field_corrections/2026-04-23_massa_catania_corpus.md`).
+
+Contesto: la review critica del corpus Massa-Catania ha identificato
+che in 8 report su 11, la Lettura compositiva costruisce la scena a
+partire dal nome del file (es. "Via dei Rutuli" > "microritratto di
+strada" su materiale che e' un treno in corsa) o dal nome della
+cartella parent (es. "registrazioni audio viaggio massa catania" >
+itinerario Toscana-Sicilia inventato nei suggerimenti). Il pattern
+e' qualitativo, non richiede banda di confidence per essere
+riconosciuto. Viene quindi applicato fuori dal piano statistico
+v0.13-v0.17.
+
+### Changed
+
+- `templates/agent_prompt.md`: nuova sezione "Regola anti-filename/
+  path leakage (v0.12.5, non negoziabile)" inserita prima di Step 0.
+  Vieta esplicitamente di dedurre scene, luoghi, itinerari, contesti
+  geografici dal nome del file o della cartella. Elenca tre sorgenti
+  toponomastiche ammesse (trascrizione `speech.transcript_it`, tag
+  CLAP con prompt toponimico e score >= 0.30 e `plausibility` != low,
+  attribuzione utente `signature.user_attribution`). In assenza di
+  queste, l'agent descrive il materiale senza collocazione geografica.
+- `templates/agent_prompt.md` Step 1: rimossa istruzione "Leggi anche
+  `file.name` per eventuali metadati di titolo/artista nel filename"
+  sostituita da istruzione a ignorare `metadata.filename` e
+  `metadata.path` perche' mascherati a monte.
+- `templates/agent_prompt.md` header: bump v0.6.6 -> v0.12.5.
+- `scripts/agent_bridge.py`: aggiunta funzione
+  `_sanitize_summary_for_agent()` che prima dell'invocazione crea una
+  copia temp del summary con `metadata.path` e `metadata.filename`
+  mascherati con il placeholder `<mascherato per agent>`. La copia
+  temp viene scritta in tempfile e rimossa in un blocco `finally` a
+  fine invocazione, anche in caso di timeout o eccezione. Il summary
+  originale su disco resta invariato.
+
+### Rationale
+
+La sanificazione e' duplice: mascheramento a livello dato + istruzione
+esplicita a livello prompt. In casi dove l'agent ignorasse la regola
+del prompt, il payload non contiene comunque il filename vero.
+Viceversa, nei casi in cui il payload transita attraverso percorsi
+non sanificati, il prompt ha comunque la regola. Ridondanza difensiva.
+
+Non validata statisticamente (v0.12.5 non dichiara miglioramento in
+senso strong). La validazione quantitativa avverra' in v0.13 insieme
+al paired t-test N>=5 run, sui casi di test documentati: Via dei
+Rutuli, Roma Termini, Reg 24 (tre casi di filename leakage puro).
+
+### Added
+
+- `references/field_corrections/` - nuova cartella parallela a
+  `references/user_feedback/`, dedicata a feedback su materiale non-gold
+  dell'utente. Primo file: `2026-04-23_massa_catania_corpus.md` (error
+  taxonomy empirica a 20 pattern, 11 file annotati).
+
+bump 0.12.4 -> 0.12.5.
+
 ## [0.12.4] - 2026-04-21
 
 Fallback ffmpeg per formati audio non supportati da libsndfile.

@@ -168,12 +168,47 @@ def _aggregate_top1_for_window(timeline: list[dict], t_start: float, t_end: floa
     return best[0]
 
 
+def _aggregate_topk_for_window(timeline: list[dict], t_start: float, t_end: float,
+                                key: str = "top", k: int = 3,
+                                score_min: float = 0.05) -> list[str]:
+    """v0.12.6 (P5 caso Marozzi): estrae i top-k tag PANNs/CLAP della finestra
+    (per score medio) sopra `score_min`. Ritorna lista di etichette ordinate.
+
+    Usato per la sub-segmentazione interna su famiglie geofoniche/biofoniche:
+    il segnale di cut e' il cambio del *set* di sub-class fra finestre
+    adiacenti, anche quando il top-1 resta invariato (caso doccia -> lavandino:
+    top-1 sempre `Water`, ma top-3 cambia da {Water tap, Bathtub} a {Sink}).
+    """
+    label_key = "name" if key == "top" else "prompt"
+    scores: dict[str, list[float]] = {}
+    for entry in timeline:
+        seg_start = entry.get("t_start_s", 0)
+        seg_end = entry.get("t_end_s", 0)
+        if seg_end <= t_start or seg_start >= t_end:
+            continue
+        for item in entry.get(key, []):
+            name = item.get(label_key, "")
+            if not name:
+                continue
+            score = float(item.get("score", 0.0))
+            if score < score_min:
+                continue
+            scores.setdefault(name, []).append(score)
+    if not scores:
+        return []
+    means = [(n, sum(v) / len(v)) for n, v in scores.items()]
+    means.sort(key=lambda nv: -nv[1])
+    return [n for n, _ in means[:k]]
+
+
 def _extract_features_per_window(waveform: np.ndarray, sr: int,
                                    window_seconds: float,
                                    classifier_timeline: list[dict],
                                    clap_timeline: list[dict]) -> list[dict]:
     """Per ogni finestra calcola [rms_db, centroide, flatness, top-1 PANNs,
-    top-1 CLAP]. Vettore base per il changepoint detection."""
+    top-1 CLAP, top-3 PANNs (v0.12.6)]. Vettore base per il changepoint
+    detection globale; il top-3 PANNs alimenta la sub-segmentazione interna
+    delle sezioni geofoniche/biofoniche."""
     from . import spectral as spec_mod
     indices = _build_window_indices(len(waveform), sr, window_seconds)
     out: list[dict] = []
@@ -185,6 +220,10 @@ def _extract_features_per_window(waveform: np.ndarray, sr: int,
         centroid = float(timbre["spectral_centroid_hz"])
         flatness = float(timbre["spectral_flatness"])
         panns_top1 = _aggregate_top1_for_window(classifier_timeline, t_start, t_end, key="top")
+        panns_top3 = _aggregate_topk_for_window(
+            classifier_timeline, t_start, t_end, key="top",
+            k=3, score_min=config.SUBSEGMENT_PANNS_TOP3_SCORE_MIN,
+        )
         clap_top1 = _aggregate_top1_for_window(clap_timeline, t_start, t_end, key="tags")
         out.append({
             "t_start_s": t_start,
@@ -193,9 +232,120 @@ def _extract_features_per_window(waveform: np.ndarray, sr: int,
             "centroid_hz": centroid,
             "flatness": flatness,
             "panns_top1": panns_top1,
+            "panns_top3": panns_top3,
             "clap_top1": clap_top1,
         })
     return out
+
+
+def _subsegment_section(section: dict, features: list[dict],
+                         window_seconds: float) -> list[dict]:
+    """v0.12.6 (P5 caso Marozzi): sub-segmenta una sezione lunga su famiglia
+    geofonica/biofonica usando il cambiamento del top-3 PANNs nel tempo.
+
+    Algoritmo:
+    1. Estrai le finestre `features` interne alla sezione.
+    2. Per ogni coppia adiacente calcola Jaccard similarity dei top-3 PANNs.
+    3. Cut potenziali dove Jaccard < `SUBSEGMENT_JACCARD_CUT_MAX` (default 0.5).
+    4. Vincolo: ciascuna sub-sezione deve durare almeno `window_seconds` * 2
+       (cioe' 20 s con window=10s) per evitare frammentazione eccessiva.
+    5. Cap a `SUBSEGMENT_MAX_PER_PARENT` (default 3) sub-sezioni; tieni i
+       cut con Jaccard piu' basso (massima dissimilarita').
+
+    Ritorna lista di dict con `id_suffix: 'a'|'b'|'c'`, range, dominante,
+    aggiornati. Se non ci sono cut significativi, ritorna lista vuota.
+    """
+    krause = section.get("krause", "")
+    duration = section.get("duration_s", 0.0)
+    if krause not in config.SUBSEGMENT_FAMILIES:
+        return []
+    if duration < config.SUBSEGMENT_MIN_PARENT_DURATION_S:
+        return []
+
+    t0 = section.get("t_start_s", 0.0)
+    t1 = section.get("t_end_s", 0.0)
+    inner = [f for f in features if f["t_start_s"] >= t0 and f["t_end_s"] <= t1]
+    if len(inner) < 3:
+        return []
+
+    def _jaccard(a: list[str], b: list[str]) -> float:
+        sa, sb = set(a or []), set(b or [])
+        if not sa and not sb:
+            return 1.0
+        u = sa | sb
+        if not u:
+            return 1.0
+        return len(sa & sb) / len(u)
+
+    # Identifica i candidati di cut: indici interni dove Jaccard < soglia
+    candidates: list[tuple[int, float]] = []
+    min_distance_windows = 2  # almeno 2 finestre fra cut consecutivi
+    for i in range(1, len(inner)):
+        j = _jaccard(inner[i - 1]["panns_top3"], inner[i]["panns_top3"])
+        if j < config.SUBSEGMENT_JACCARD_CUT_MAX:
+            candidates.append((i, j))
+
+    if not candidates:
+        return []
+
+    # Tieni i cut con Jaccard piu' basso, rispettando min_distance
+    candidates.sort(key=lambda c: c[1])
+    max_cuts = config.SUBSEGMENT_MAX_PER_PARENT - 1
+    accepted: list[int] = []
+    for idx, _ in candidates:
+        if any(abs(idx - a) < min_distance_windows for a in accepted):
+            continue
+        accepted.append(idx)
+        if len(accepted) >= max_cuts:
+            break
+    if not accepted:
+        return []
+    accepted.sort()
+
+    # Costruisci sub-sezioni
+    cuts = [0] + accepted + [len(inner)]
+    suffixes = "abcdefgh"
+    parent_id = section.get("id", "")
+    sub_sections: list[dict] = []
+    for k in range(len(cuts) - 1):
+        a, b = cuts[k], cuts[k + 1]
+        chunk = inner[a:b]
+        if not chunk:
+            continue
+        sub_t0 = chunk[0]["t_start_s"]
+        sub_t1 = chunk[-1]["t_end_s"]
+        # Top-1 PANNs aggregato (mode) e top-3 unione delle finestre
+        def _mode(values: list[str]) -> str:
+            counts: dict[str, int] = {}
+            for v in values:
+                if not v:
+                    continue
+                counts[v] = counts.get(v, 0) + 1
+            if not counts:
+                return ""
+            return max(counts.items(), key=lambda kv: kv[1])[0]
+        dom_panns = _mode([c["panns_top1"] for c in chunk])
+        # Le sub-class che caratterizzano la sub-sezione (top-3 per frequenza
+        # in finestre interne, esclusa la dominante stessa per evitare
+        # ridondanza).
+        sub_class_counts: dict[str, int] = {}
+        for c in chunk:
+            for lbl in (c.get("panns_top3") or []):
+                if lbl and lbl != dom_panns:
+                    sub_class_counts[lbl] = sub_class_counts.get(lbl, 0) + 1
+        top_subclass = sorted(sub_class_counts.items(), key=lambda kv: -kv[1])[:2]
+        sub_class_names = [n for n, _ in top_subclass]
+        sub_sections.append({
+            "id": f"{parent_id}{suffixes[k]}",
+            "parent_id": parent_id,
+            "t_start_s": round(sub_t0, 2),
+            "t_end_s": round(sub_t1, 2),
+            "duration_s": round(sub_t1 - sub_t0, 2),
+            "dominant_panns": dom_panns,
+            "sub_class_top": sub_class_names,
+            "krause": krause,  # eredita la famiglia del padre
+        })
+    return sub_sections
 
 
 def _detect_changepoints(features: list[dict],
@@ -288,10 +438,24 @@ def _detect_changepoints(features: list[dict],
 
 def _label_section_signature(section: dict) -> str:
     """Genera una stringa breve italiana che descrive la sezione, basata
-    su krause + caratteristiche dinamiche e timbriche. Max ~40 caratteri."""
+    su krause + caratteristiche dinamiche e timbriche. Max ~40 caratteri.
+
+    v0.12.6 (P3 caso Marozzi): override su sezioni brevissime con
+    classificazione PANNs inaffidabile. Se la sezione coincide con un onset
+    isolato + decadimento, evita di assegnare Krause antropofonia/biofonia/
+    geofonia e ritorna 'impulso e coda'.
+    """
     krause = section.get("krause", "mista")
     rms_db = section.get("mean_rms_db", -60.0)
     flatness = section.get("mean_flatness", 0.5)
+    duration_s = section.get("duration_s", 0.0)
+    panns_conf = section.get("dominant_panns_confidence", "high")
+
+    # Sezione molto breve con classificazione inaffidabile: regola di override.
+    # Tipico: impulso meccanico finale (caso Marozzi S5) o click di stop
+    # registrazione, dove PANNs scambia la coda armonica per "Music".
+    if duration_s < config.STRUCTURE_PANNS_CONF_LOW_MAX_S and panns_conf == "low":
+        return "impulso e coda"
 
     if rms_db < -50.0:
         return "quasi-silenzio"
@@ -321,6 +485,20 @@ def _label_section_signature(section: dict) -> str:
     if krause == "geofonia":
         return f"geofonia {dyn} {timbre}"
     return f"sezione mista {dyn}"
+
+
+def _panns_confidence_for_duration(duration_s: float) -> str:
+    """v0.12.6 (P3 caso Marozzi): mappa durata in confidence del top-1 PANNs.
+
+    Sotto 2s: la classificazione e' costruita su 0-1 frame PANNs (lo schema
+    segmenta in finestre da 1s), inaffidabile. Fra 2-5s: cautela. Oltre 5s:
+    robusta.
+    """
+    if duration_s < config.STRUCTURE_PANNS_CONF_LOW_MAX_S:
+        return "low"
+    if duration_s < config.STRUCTURE_PANNS_CONF_MEDIUM_MAX_S:
+        return "medium"
+    return "high"
 
 
 def _build_sections(features: list[dict],
@@ -360,15 +538,26 @@ def _build_sections(features: list[dict],
         if mean_rms < -50.0:
             krause = "silenzio"
 
+        # v0.12.6 (P3): confidence sul dominant_panns basata su durata.
+        duration = t_end - t_start
+        panns_conf = _panns_confidence_for_duration(duration)
+        # Quando la classificazione e' inaffidabile, evita di forzare la
+        # famiglia Krause antropofonia/biofonia/geofonia (es. impulso 1s
+        # classificato Music -> falsa antropofonia). Lascia 'silenzio' se
+        # gia' assegnato per RMS.
+        if panns_conf == "low" and krause != "silenzio":
+            krause = "mista"
+
         section = {
             "id": f"S{k + 1}",
             "t_start_s": round(t_start, 2),
             "t_end_s": round(t_end, 2),
-            "duration_s": round(t_end - t_start, 2),
+            "duration_s": round(duration, 2),
             "mean_rms_db": round(mean_rms, 2),
             "mean_centroid_hz": round(mean_centroid, 1),
             "mean_flatness": round(mean_flatness, 4),
             "dominant_panns": dominant_panns,
+            "dominant_panns_confidence": panns_conf,
             "dominant_clap_prompt": dominant_clap,
             "krause": krause,
         }
@@ -404,6 +593,7 @@ def compute_structure(waveform: np.ndarray, sr: int, summary: dict,
                 "mean_centroid_hz": 0.0,
                 "mean_flatness": 0.0,
                 "dominant_panns": "",
+                "dominant_panns_confidence": _panns_confidence_for_duration(duration_s),
                 "dominant_clap_prompt": "",
                 "krause": "mista",
                 "signature_label": "sezione unica",
@@ -419,9 +609,23 @@ def compute_structure(waveform: np.ndarray, sr: int, summary: dict,
     boundaries = _detect_changepoints(features, window_seconds)
     sections = _build_sections(features, boundaries)
 
+    # v0.12.6 (P5 caso Marozzi): secondo passo di sub-segmentazione interna
+    # sulle sezioni geofoniche/biofoniche lunghe, usando il cambio del top-3
+    # PANNs nel tempo. Le sub-sezioni si aggiungono alla lista padre con id
+    # "S3a", "S3b" etc., preservando la sezione padre come record di alto
+    # livello (gli agenti che leggono solo le S1..Sn continuano a funzionare).
+    sub_sections_all: list[dict] = []
+    for s in sections:
+        sub = _subsegment_section(s, features, window_seconds)
+        if sub:
+            s["has_sub_sections"] = True
+            s["sub_sections"] = sub
+            sub_sections_all.extend(sub)
+
     return {
         "enabled": True,
         "n_sections": len(sections),
+        "n_sub_sections": len(sub_sections_all),
         "window_seconds": window_seconds,
         "sections": sections,
     }

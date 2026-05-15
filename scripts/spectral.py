@@ -70,15 +70,24 @@ def top_peaks(spectrum: np.ndarray, freqs: np.ndarray, k: int = 5, dedup_hz: flo
 
 
 def onset_analysis(y: np.ndarray, sr: int, duration_s: float) -> dict:
+    """Rileva onset e ritorna conteggi, densità, **lista di timestamp**
+    (v0.12.6, P4 caso A).
+
+    La lista `events_times_s` permette alla narrative di citare onset puntuali
+    rilevanti senza dover ricalcolare l'onset detection. Capata a 200 elementi
+    per evitare payload enormi su file molto densi (dawn chorus, mercato).
+    """
     import librosa
     onset_env = librosa.onset.onset_strength(y=y, sr=sr)
     onsets = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr, units="time")
     count = int(len(onsets))
     density = count / max(duration_s, 1e-6)
+    times = [round(float(t), 2) for t in onsets[:200]]
     return {
         "events_count": count,
         "events_per_sec": round(density, 3),
         "density_label": categoria_densita(density),
+        "events_times_s": times,
     }
 
 

@@ -375,6 +375,43 @@ PANNS_LABEL_TO_KRAUSE = {
 NARRATIVE_WINDOW_S = 30.0
 NARRATIVE_MODE_DEFAULT = "full"  # "full" | "summary" | "none"
 
+# v0.12.6 (P4 caso A): soglie PANNs differenziate per profilo narrativo.
+# `acousmatic` (default storico): filtro 0.15 - solo presenze plausibili o
+# marcate (adatto a brani acusmatici dove la classificazione PANNs e' spesso
+# rumorosa).
+# `didactic`: filtro 0.03 - cita anche le tenui presenze, importanti su
+# registrazioni domestiche didattiche dove eventi puntuali (cane, motore,
+# forchetta) hanno score 0.03-0.15 ma sono drammaturgicamente rilevanti.
+NARRATIVE_PROFILE_THRESHOLDS = {
+    "acousmatic": {
+        "panns_min_cite": 0.15,
+        "panns_tenue": 0.15,
+        "panns_plausibile": 0.40,
+        "include_onset_timestamps": False,
+    },
+    "didactic": {
+        "panns_min_cite": 0.03,
+        "panns_tenue": 0.15,
+        "panns_plausibile": 0.40,
+        "include_onset_timestamps": True,
+    },
+}
+
+# Auto-detection profilo narrativo (P4 caso A):
+# - durata < 5 minuti
+# - flatness > 0.1 (non puramente tonale-acusmatico)
+# - PANNs top-1 contiene una label "domestica" o "ambiente quotidiano"
+# Default: profile auto -> didactic se le tre coincidono, acousmatic altrimenti.
+NARRATIVE_AUTO_MAX_DURATION_S = 300.0
+NARRATIVE_AUTO_MIN_FLATNESS = 0.10
+NARRATIVE_AUTO_DOMESTIC_LABELS = {
+    "Inside, small room", "Domestic sounds, home sounds", "Bathroom sounds",
+    "Sink (filling or washing)", "Water tap, faucet", "Bathtub (filling or washing)",
+    "Toilet flush", "Frying (food)", "Microwave oven", "Door", "Sliding door",
+    "Cupboard open or close", "Drawer open or close", "Cutlery, silverware",
+    "Chopping (food)", "Vacuum cleaner", "Television",
+}
+
 # Narrativa delta-based (v0.6.0): la prima finestra ha descrizione completa,
 # le successive vengono descritte solo se almeno una di queste feature
 # cambia significativamente rispetto alla finestra precedente. Le finestre
@@ -393,6 +430,24 @@ STRUCTURE_MIN_SECTIONS = 2  # almeno 2 sezioni anche su file omogenei
 STRUCTURE_MAX_SECTIONS = 8  # massimo 8 sezioni anche su file frammentati
 STRUCTURE_MIN_SECTION_DURATION_S = 30.0  # min distance fra confini consecutivi
 STRUCTURE_GRADIENT_THRESHOLD_MAD_K = 2.0  # soglia adattiva: mediana + K*MAD
+
+# v0.12.6 (P3 caso A): soglie di confidenza sul `dominant_panns` di una
+# sezione, basate sulla durata. Sotto 2s la classificazione PANNs e' costruita
+# su 0-1 frame e statisticamente inaffidabile; fra 2 e 5s richiede cautela;
+# oltre 5s la dominante e' robusta. Driver: caso S5 A (0.74s) classificato
+# come "Music" per impulso meccanico con coda armonica.
+STRUCTURE_PANNS_CONF_LOW_MAX_S = 2.0
+STRUCTURE_PANNS_CONF_MEDIUM_MAX_S = 5.0
+
+# v0.12.6 (P5 caso A): sub-segmentazione interna di sezioni geofoniche/
+# biofoniche lunghe quando i PANNs sub-class variano nel tempo. Driver: S3
+# A 80s collassa doccia (Water tap dominante) + lavandino (Sink
+# dominante) in un'unica sezione "Acqua continua".
+SUBSEGMENT_FAMILIES = ("geofonia", "biofonia")  # solo su queste famiglie
+SUBSEGMENT_MIN_PARENT_DURATION_S = 30.0  # solo se la sezione padre dura >= 30s
+SUBSEGMENT_JACCARD_CUT_MAX = 0.5  # se Jaccard top-3 fra finestre adiacenti < 0.5, possibile cut
+SUBSEGMENT_PANNS_TOP3_SCORE_MIN = 0.05  # ignora label PANNs sotto questa soglia nel top-3
+SUBSEGMENT_MAX_PER_PARENT = 3  # max sub-sezioni per ogni sezione padre
 # Mappa colori per la timeline grafica (per categoria Krause dominante)
 STRUCTURE_TIMELINE_COLORS = {
     "biofonia": "#2e7d32",  # verde scuro

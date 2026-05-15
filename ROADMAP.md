@@ -3,10 +3,12 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.11.0 (20 aprile 2026)
+**Versione corrente**: 0.12.5 (24 aprile 2026)
 **Test suite**: 192 passed + 2 skipped (benchmark e whisper reale gated)
 **Branch**: `main`
-**Ultimo push origin**: `8530bf4` (v0.11.0)
+**Ultimo commit**: `c02ef3f` (taxonomies.json per PWA Annotation Atelier)
+**Ultima release tagged**: v0.12.5 (Patch 1 anti-filename/path leakage)
+**Aggiornamento ROADMAP**: 15 maggio 2026 (caso A, vedi addendum)
 
 ---
 
@@ -84,6 +86,19 @@ chi fa cosa. Aggiornato a ogni release.
 ---
 
 ## Pianificato (priorita' decrescente)
+
+### Addendum 15/05/2026 - caso A (Soundscape Annotation ABA Macerata)
+
+Nove interventi (6 sulla skill, 3 sui template) emersi dal primo dossier
+didattico del corso PTSM. Schede di valutazione, ordine, decisioni di
+design aperte: `ROADMAP_ADDENDUM_caso_a_2026-05-15.md`. Non sostituisce
+la sequenza statistica v0.13-v0.17, la affianca: i 3 interventi a impatto
+quantitativo (speech mediation, onset citation, confidenza narrative
+numerica) entrano sotto regime paired t-test, i 6 qualitativi/strutturali
+possono essere shippati con sola verifica di non regressione su corpus
+iteration v0.10. Aggregazione proposta: **v0.12.5 - integrazione caso
+A** (una sola release con i 3 interventi quantitativi). Decisioni
+di design aperte in §4 dell'addendum, da risolvere prima di iniziare.
 
 ### Piano v0.13 - v0.17 (20/04/2026): rigore metodologico pre-paper
 

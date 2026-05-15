@@ -31,6 +31,67 @@ from . import config
 from .serialization import dump as dump_json
 
 
+def _compute_inference_confidence(
+    classifier: dict,
+    clap: dict,
+) -> dict:
+    """Concentrazione delle distribuzioni top-K PANNs/CLAP (v0.12.6, P6 A).
+
+    Misura quanto i classificatori convergono su pochi tag dominanti vs si
+    disperdono su molti. Concentrazione alta -> high confidence sulle
+    inferenze di ambientazione costruite dall'agente. Concentrazione bassa
+    -> tag dispersi, agente deve usare marcatori di ipotesi.
+
+    Formula (PANNs): concentration = top1_pct / sum(top1, top2, top3).
+    Range teorico: 0.33 (perfettamente dispersi) -> 1.0 (top1 unico).
+
+    Formula (CLAP): concentration = top1_score / sum(top1, top2, top3).
+    Stesso range teorico.
+
+    Soglie discrete: < 0.5 = low, 0.5-0.75 = medium, > 0.75 = high.
+    Confidence aggregata = peggiore (min) fra PANNs e CLAP, perche' inferenze
+    di scena richiedono accordo fra le due fonti.
+    """
+    def _conc(values: list[float]) -> float:
+        vs = [float(v or 0) for v in values[:3] if (v or 0) > 0]
+        if not vs:
+            return 0.0
+        total = sum(vs)
+        if total < 1e-9:
+            return 0.0
+        return float(vs[0] / total)
+
+    def _bucket(conc: float) -> str:
+        if conc >= 0.75:
+            return "high"
+        if conc >= 0.5:
+            return "medium"
+        return "low"
+
+    panns_top = (classifier.get("top_dominant_frames", []) or [])[:3]
+    panns_pcts = [t.get("pct", 0) for t in panns_top]
+    panns_conc = _conc(panns_pcts)
+
+    clap_top = (clap.get("top_global", []) or [])[:3]
+    clap_scores = [t.get("score", 0) for t in clap_top]
+    clap_conc = _conc(clap_scores)
+
+    panns_bucket = _bucket(panns_conc)
+    clap_bucket = _bucket(clap_conc)
+
+    rank = {"high": 3, "medium": 2, "low": 1}
+    aggregate = min(panns_bucket, clap_bucket, key=lambda b: rank[b])
+
+    return {
+        "panns_concentration": round(panns_conc, 3),
+        "panns_bucket": panns_bucket,
+        "clap_concentration": round(clap_conc, 3),
+        "clap_bucket": clap_bucket,
+        "aggregate": aggregate,
+        "method": "top1 / (top1 + top2 + top3); PANNs su pct dei dominant_frames, CLAP su score dei top_global",
+    }
+
+
 def _build_signature(
     meta: dict,
     tech: dict,
@@ -44,6 +105,11 @@ def _build_signature(
     Non inventa etichette (es. "porto peschereccio"): fornisce all'agente
     dati grezzi ordinati in modo leggibile. Il riconoscimento del brano e'
     responsabilita' del ragionamento LLM, non della skill.
+
+    v0.12.6 (P6 caso A): aggiunto `inference_confidence` che misura
+    la concentrazione delle distribuzioni top-K. L'agente usa il valore
+    aggregato per scegliere il registro epistemico delle inferenze di
+    ambientazione (dichiarativo vs ipotetico).
     """
     duration_s = float(meta.get("duration_s", 0) or 0)
     mins = int(duration_s // 60)
@@ -85,6 +151,7 @@ def _build_signature(
             "language_detected": speech.get("language_detected", ""),
         },
         "user_attribution": meta.get("user_known_piece", ""),
+        "inference_confidence": _compute_inference_confidence(classifier, clap),
     }
 
 
@@ -154,6 +221,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
     classifier = (summary.get("semantic", {}) or {}).get("classifier", {}) or {}
     clap = summary.get("clap", {}) or {}
     speech = summary.get("speech", {}) or {}
+    speech_mediation = summary.get("speech_mediation", {}) or {}
     mc = summary.get("multichannel", {}) or {}
     structure = summary.get("structure", {}) or {}
 
@@ -229,7 +297,14 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
         "structure": {
             "enabled": structure.get("enabled", False),
             "n_sections": structure.get("n_sections", 0),
+            "n_sub_sections": structure.get("n_sub_sections", 0),
             "sections": structure.get("sections", [])[:8],
+        },
+        "speech_mediation": {
+            "enabled": speech_mediation.get("enabled", False),
+            "speech_dominant_pct": speech_mediation.get("speech_dominant_pct"),
+            "global": speech_mediation.get("global"),
+            "reason": speech_mediation.get("reason", ""),
         },
         "narrative_markdown": narrative_md,
     }

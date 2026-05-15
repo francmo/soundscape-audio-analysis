@@ -7,11 +7,20 @@ v0.5.1: diagnostica arricchita su stderr per visibilita' dei failure mode
 (returncode, stderr completo, dimensione prompt, durata, n. tentativi).
 Il dict ritornato include anche prompt_size_bytes e last_returncode per
 ispezione successiva nel summary JSON.
+
+v0.12.5: sanificazione payload per l'agent (Patch 1 anti-filename/path
+leakage). Prima dell'invocazione una copia temporanea del summary viene
+scritta con `metadata.path` e `metadata.filename` mascherati. L'agent
+non puo' piu' dedurre toponimi, itinerari o scene dal nome del file o
+dal path della cartella parent. Il summary originale su disco resta
+invariato ed e' ancora quello usato dal PDF e dalla catena di analisi.
 """
 import json
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -23,6 +32,7 @@ from .locale_it import MESSAGGI_SISTEMA
 
 AGENT_NAME = "soundscape-composer-analyst"
 PROMPT_TEMPLATE_PATH = config.TEMPLATES_DIR / "agent_prompt.md"
+AGENT_PAYLOAD_MASK = "<mascherato per agent>"
 
 
 def _load_summary_safe(summary_path: Path) -> dict | None:
@@ -34,6 +44,61 @@ def _load_summary_safe(summary_path: Path) -> dict | None:
             file=sys.stderr, flush=True,
         )
         return None
+
+
+def _sanitize_summary_for_agent(summary_path: Path) -> Path:
+    """v0.12.5: crea una copia sanificata del summary per l'invocazione agent.
+
+    Maschera `metadata.path` e `metadata.filename` con il placeholder
+    `AGENT_PAYLOAD_MASK`. Evita che il nome del file o della cartella parent
+    inneschino inferenze di scena, luogo, itinerario non supportate dal
+    contenuto audio (Patch 1 anti-filename/path leakage, v0.12.5).
+
+    Il summary originale su disco resta invariato. Il file temporaneo
+    ritornato va rimosso a cura del chiamante.
+
+    Se la sanificazione fallisce, ritorna il path originale (comportamento
+    di degradazione: meglio correre il rischio di leakage che bloccare la
+    lettura compositiva).
+    """
+    try:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — degrada al path originale
+        print(
+            f"[agent_bridge] sanitize fallito, uso path originale: {e}",
+            file=sys.stderr, flush=True,
+        )
+        return summary_path
+
+    meta = summary.get("metadata") or {}
+    if isinstance(meta, dict):
+        if "path" in meta:
+            meta["path"] = AGENT_PAYLOAD_MASK
+        if "filename" in meta:
+            meta["filename"] = AGENT_PAYLOAD_MASK
+        summary["metadata"] = meta
+
+    fd, tmp = tempfile.mkstemp(prefix="soundscape_agent_payload_", suffix=".json")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(summary, fh, ensure_ascii=False, indent=2)
+    except Exception as e:  # noqa: BLE001
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        try:
+            Path(tmp).unlink(missing_ok=True)
+        except OSError:
+            pass
+        print(
+            f"[agent_bridge] scrittura payload sanificato fallita, uso path "
+            f"originale: {e}",
+            file=sys.stderr, flush=True,
+        )
+        return summary_path
+
+    return Path(tmp)
 
 
 def _build_prompt(summary_path: Path, narrative_md: str | None = None) -> str:
@@ -101,102 +166,114 @@ def invoke_composer_analyst(summary_path: Path,
             "last_stderr_excerpt": "",
         }
 
-    prompt = _build_prompt(summary_path, narrative_md=narrative_md)
-    prompt_size = len(prompt.encode("utf-8"))
-    print(
-        f"[agent_bridge] invoco claude -p --agents {AGENT_NAME}, prompt "
-        f"{prompt_size} byte, timeout {timeout_s} s, retries={retries}",
-        file=sys.stderr, flush=True,
-    )
+    # v0.12.5: payload sanificato per evitare filename/path leakage.
+    sanitized_path = _sanitize_summary_for_agent(summary_path)
+    sanitized_is_temp = sanitized_path != summary_path
 
-    last_error: str | None = None
-    last_returncode: int | None = None
-    last_stderr: str = ""
-    attempts = 0
-    for attempt in range(retries + 1):
-        attempts = attempt + 1
-        t0 = time.perf_counter()
-        try:
-            result = subprocess.run(
-                ["claude", "-p", prompt, "--agents", AGENT_NAME],
-                capture_output=True,
-                text=True,
-                timeout=timeout_s,
-            )
-            elapsed = time.perf_counter() - t0
-            last_returncode = result.returncode
-            last_stderr = (result.stderr or "").strip()
-            stdout_clean = (result.stdout or "").strip()
-            if result.returncode == 0 and stdout_clean:
+    try:
+        prompt = _build_prompt(sanitized_path, narrative_md=narrative_md)
+        prompt_size = len(prompt.encode("utf-8"))
+        print(
+            f"[agent_bridge] invoco claude -p --agents {AGENT_NAME}, prompt "
+            f"{prompt_size} byte, timeout {timeout_s} s, retries={retries}",
+            file=sys.stderr, flush=True,
+        )
+
+        last_error: str | None = None
+        last_returncode: int | None = None
+        last_stderr: str = ""
+        attempts = 0
+        for attempt in range(retries + 1):
+            attempts = attempt + 1
+            t0 = time.perf_counter()
+            try:
+                result = subprocess.run(
+                    ["claude", "-p", prompt, "--agents", AGENT_NAME],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_s,
+                )
+                elapsed = time.perf_counter() - t0
+                last_returncode = result.returncode
+                last_stderr = (result.stderr or "").strip()
+                stdout_clean = (result.stdout or "").strip()
+                if result.returncode == 0 and stdout_clean:
+                    print(
+                        f"[agent_bridge] OK tentativo {attempts}/{retries + 1} "
+                        f"in {elapsed:.1f} s, output {len(stdout_clean)} char",
+                        file=sys.stderr, flush=True,
+                    )
+                    return {
+                        "text": stdout_clean,
+                        "fallback_used": False,
+                        "error": None,
+                        "prompt_size_bytes": prompt_size,
+                        "attempts": attempts,
+                        "last_returncode": result.returncode,
+                        "last_stderr_excerpt": last_stderr[:500],
+                        "elapsed_s": round(elapsed, 1),
+                    }
+                # returncode 0 ma stdout vuoto, oppure returncode != 0
+                if result.returncode == 0:
+                    last_error = "output vuoto (returncode 0 ma stdout vuoto)"
+                else:
+                    last_error = f"returncode {result.returncode}"
                 print(
-                    f"[agent_bridge] OK tentativo {attempts}/{retries + 1} "
-                    f"in {elapsed:.1f} s, output {len(stdout_clean)} char",
+                    f"[agent_bridge] tentativo {attempts}/{retries + 1} fallito "
+                    f"in {elapsed:.1f} s: {last_error}. stderr "
+                    f"({len(last_stderr)} char): {last_stderr[:300]}",
                     file=sys.stderr, flush=True,
                 )
-                return {
-                    "text": stdout_clean,
-                    "fallback_used": False,
-                    "error": None,
-                    "prompt_size_bytes": prompt_size,
-                    "attempts": attempts,
-                    "last_returncode": result.returncode,
-                    "last_stderr_excerpt": last_stderr[:500],
-                    "elapsed_s": round(elapsed, 1),
-                }
-            # returncode 0 ma stdout vuoto, oppure returncode != 0
-            if result.returncode == 0:
-                last_error = "output vuoto (returncode 0 ma stdout vuoto)"
-            else:
-                last_error = f"returncode {result.returncode}"
-            print(
-                f"[agent_bridge] tentativo {attempts}/{retries + 1} fallito "
-                f"in {elapsed:.1f} s: {last_error}. stderr ({len(last_stderr)} "
-                f"char): {last_stderr[:300]}",
-                file=sys.stderr, flush=True,
-            )
-        except subprocess.TimeoutExpired as te:
-            elapsed = time.perf_counter() - t0
-            last_error = f"timeout dopo {timeout_s} s"
-            last_returncode = None
-            # v0.6.2: subprocess.TimeoutExpired espone stdout/stderr catturati
-            # fino al kill quando capture_output=True. Senza leggerli perdiamo
-            # ogni diagnostica sul failure (PDF audio7 mostrava "Stderr: .").
-            def _decode(x):
-                if x is None:
-                    return ""
-                if isinstance(x, bytes):
-                    return x.decode("utf-8", errors="replace")
-                return x
-            last_stderr = _decode(te.stderr).strip()
-            partial_stdout = _decode(te.stdout).strip()
-            print(
-                f"[agent_bridge] tentativo {attempts}/{retries + 1} TIMEOUT "
-                f"a {elapsed:.1f} s. stderr ({len(last_stderr)} char): "
-                f"{last_stderr[:300] or '<vuoto>'}. stdout parziale: "
-                f"{len(partial_stdout)} char",
-                file=sys.stderr, flush=True,
-            )
-        except Exception as e:
-            last_error = f"{type(e).__name__}: {e}"
-            last_returncode = None
-            print(
-                f"[agent_bridge] tentativo {attempts}/{retries + 1} eccezione: "
-                f"{last_error}",
-                file=sys.stderr, flush=True,
-            )
+            except subprocess.TimeoutExpired as te:
+                elapsed = time.perf_counter() - t0
+                last_error = f"timeout dopo {timeout_s} s"
+                last_returncode = None
+                # v0.6.2: subprocess.TimeoutExpired espone stdout/stderr catturati
+                # fino al kill quando capture_output=True. Senza leggerli perdiamo
+                # ogni diagnostica sul failure (PDF audio7 mostrava "Stderr: .").
+                def _decode(x):
+                    if x is None:
+                        return ""
+                    if isinstance(x, bytes):
+                        return x.decode("utf-8", errors="replace")
+                    return x
+                last_stderr = _decode(te.stderr).strip()
+                partial_stdout = _decode(te.stdout).strip()
+                print(
+                    f"[agent_bridge] tentativo {attempts}/{retries + 1} TIMEOUT "
+                    f"a {elapsed:.1f} s. stderr ({len(last_stderr)} char): "
+                    f"{last_stderr[:300] or '<vuoto>'}. stdout parziale: "
+                    f"{len(partial_stdout)} char",
+                    file=sys.stderr, flush=True,
+                )
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                last_returncode = None
+                print(
+                    f"[agent_bridge] tentativo {attempts}/{retries + 1} "
+                    f"eccezione: {last_error}",
+                    file=sys.stderr, flush=True,
+                )
 
-    return {
-        "text": (
-            "La lettura compositiva automatica non è stata generata. "
-            f"Errore: {last_error}. "
-            f"Tentativi: {attempts}. Stderr: {last_stderr[:200]}. "
-            "Puoi invocare manualmente l'agente con: "
-            f"claude -p '...' --agents {AGENT_NAME}"
-        ),
-        "fallback_used": True,
-        "error": last_error,
-        "prompt_size_bytes": prompt_size,
-        "attempts": attempts,
-        "last_returncode": last_returncode,
-        "last_stderr_excerpt": last_stderr[:500],
-    }
+        return {
+            "text": (
+                "La lettura compositiva automatica non è stata generata. "
+                f"Errore: {last_error}. "
+                f"Tentativi: {attempts}. Stderr: {last_stderr[:200]}. "
+                "Puoi invocare manualmente l'agente con: "
+                f"claude -p '...' --agents {AGENT_NAME}"
+            ),
+            "fallback_used": True,
+            "error": last_error,
+            "prompt_size_bytes": prompt_size,
+            "attempts": attempts,
+            "last_returncode": last_returncode,
+            "last_stderr_excerpt": last_stderr[:500],
+        }
+    finally:
+        # v0.12.5: pulizia payload temporaneo sanificato.
+        if sanitized_is_temp:
+            try:
+                sanitized_path.unlink(missing_ok=True)
+            except OSError:
+                pass

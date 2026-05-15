@@ -287,6 +287,71 @@ def _check_river_long(summary: dict) -> tuple[bool, str]:
     return False, ""
 
 
+def _inference_confidence(data: dict) -> dict:
+    """Estrae il blocco inference_confidence dal payload (signature.inference_confidence
+    o, su summary completo, costruito on-the-fly da classifier + clap)."""
+    sig = (data.get("signature") or {})
+    ic = sig.get("inference_confidence")
+    if ic:
+        return ic
+    # summary completo: ricalcola al volo
+    cls = _classifier(data)
+    clap = data.get("clap") or {}
+    panns_top = (cls.get("top_dominant_frames") or [])[:3]
+    panns_pcts = [float(t.get("pct", 0) or 0) for t in panns_top if (t.get("pct") or 0) > 0]
+    clap_top = (clap.get("top_global") or [])[:3]
+    clap_scores = [float(t.get("score", 0) or 0) for t in clap_top if (t.get("score") or 0) > 0]
+    def _conc(vs):
+        if not vs:
+            return 0.0
+        s = sum(vs)
+        return float(vs[0] / s) if s > 1e-9 else 0.0
+    def _bucket(c):
+        if c >= 0.75:
+            return "high"
+        if c >= 0.5:
+            return "medium"
+        return "low"
+    pc = _conc(panns_pcts)
+    cc = _conc(clap_scores)
+    rank = {"high": 3, "medium": 2, "low": 1}
+    return {
+        "panns_concentration": round(pc, 3),
+        "panns_bucket": _bucket(pc),
+        "clap_concentration": round(cc, 3),
+        "clap_bucket": _bucket(cc),
+        "aggregate": min(_bucket(pc), _bucket(cc), key=lambda b: rank[b]),
+    }
+
+
+def _check_low_inference_confidence(summary: dict) -> tuple[bool, str]:
+    """v0.12.6 (P6 caso A): se l'aggregate confidence e' low, attiva
+    un blocco hint che esplicita all'agente la dispersione e richiama la
+    regola del tono ipotetico. Skippa quando il summary e' vuoto (nessun
+    PANNs e nessun CLAP top): non c'e' nulla da disambiguare."""
+    cls = _classifier(summary)
+    has_panns = bool(cls.get("top_dominant_frames") or cls.get("top_global"))
+    has_clap = bool((summary.get("clap") or {}).get("top_global"))
+    if not has_panns and not has_clap:
+        return False, ""
+    ic = _inference_confidence(summary)
+    if ic.get("aggregate") == "low":
+        pc = ic.get("panns_concentration", 0)
+        cc = ic.get("clap_concentration", 0)
+        msg = (
+            f"Concentrazione bassa delle distribuzioni semantiche "
+            f"(PANNs top-1/top-3 = {pc:.2f}, CLAP top-1/top-3 = {cc:.2f}). "
+            "Le inferenze di ambientazione costruite da indizi acustici sono "
+            "fragili: nessun tag emerge come dominante. Usa registro "
+            "fortemente ipotetico in 'Lettura drammaturgica' e 'Scene sonore', "
+            "non costruire scene a partire da un singolo top-1 marginale. Se i "
+            "tag dispersi sono coerenti su una famiglia (es. tutti domestici, "
+            "tutti urbani), descrivi la famiglia, non la scena specifica."
+        )
+        return True, msg
+    return False, ""
+
+
 def _check_hum_without_fonologia(summary: dict) -> tuple[bool, str]:
     has_hum = _has_hum_at(summary, 50) or _has_hum_at(summary, 100)
     lang = _speech_lang(summary)
@@ -310,6 +375,7 @@ CHECKS = (
     ("drone_metal", _check_drone_metal),
     ("river_long", _check_river_long),
     ("hum_no_fonologia", _check_hum_without_fonologia),
+    ("low_inference_confidence", _check_low_inference_confidence),
 )
 
 

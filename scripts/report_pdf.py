@@ -562,14 +562,25 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
 
     # Tabella sezioni
     rows = [["ID", "Inizio", "Fine", "Durata", "Signature", "Krause", "RMS dB", "Centroide Hz"]]
+    any_low_conf = False  # v0.12.6: traccia se servir la nota di confidenza
     for s in sections:
+        sig_label = (s.get("signature_label") or "")[:28]
+        krause = s.get("krause", "")
+        conf = s.get("dominant_panns_confidence", "high")
+        # v0.12.6 (P3 caso A): sezioni con confidence low (durata < 2s)
+        # marcate in corsivo grigio + asterisco. Coerente con il pattern gia'
+        # usato per i tag CLAP a plausibilita' bassa.
+        if conf == "low":
+            sig_label = f"<i><font color='#6b7280'>{sig_label}*</font></i>"
+            krause = f"<i><font color='#6b7280'>{krause}*</font></i>"
+            any_low_conf = True
         rows.append([
             s.get("id", ""),
             _fmt_time(s.get("t_start_s", 0)),
             _fmt_time(s.get("t_end_s", 0)),
             f"{s.get('duration_s', 0):.0f} s",
-            (s.get("signature_label") or "")[:28],
-            s.get("krause", ""),
+            sig_label,
+            krause,
             _fmt(s.get("mean_rms_db"), "{:+.1f}"),
             _fmt(s.get("mean_centroid_hz"), "{:.0f}"),
         ])
@@ -578,6 +589,16 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
         [12 * mm, 16 * mm, 16 * mm, 16 * mm, 50 * mm, 22 * mm, 18 * mm, 22 * mm],
         styles,
     ))
+    if any_low_conf:
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            "<i><font color='#6b7280'>* Sezione di durata inferiore a 2 secondi:"
+            " la classificazione PANNs e' costruita su pochi frame ed e' "
+            "statisticamente inaffidabile. La etichetta di famiglia Krause "
+            "viene neutralizzata a 'mista' e la signature riporta "
+            "'impulso e coda' quando appropriato.</font></i>",
+            styles.get("caption") or styles.get("body"),
+        ))
     return story
 
 

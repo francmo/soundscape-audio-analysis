@@ -70,20 +70,44 @@ Libre Baskerville e Source Sans Pro sotto SIL OFL 1.1).
 
 ## Come citare
 
-Se utilizzi questa skill in un lavoro accademico, in un report, in
-un workshop o in un progetto derivato, cita come segue (formato BibTeX):
+Per citare questa skill in un lavoro accademico, in un report, in
+un workshop o in un progetto derivato, usare la citazione canonica
+del methodology paper associato:
+
+> Mariano, F. (2026). *Soundscape Annotation: workflow iterativo,
+> stratificazione interpretativa e calibrazione di una skill di
+> analisi audio in didattica AFAM*. Working Paper v1.0. Accademia
+> di Belle Arti di Macerata.
+> https://doi.org/10.5281/zenodo.20282496
+
+In formato BibTeX:
 
 ```bibtex
-@software{mariano2026soundscape,
-  author = {Mariano, Francesco},
-  title  = {Soundscape Audio Analysis: una skill Claude Code per
-            l'analisi tecnica e compositiva di soundscape e musica
-            elettroacustica},
-  year   = {2026},
-  url    = {https://github.com/francmo/soundscape-audio-analysis},
-  note   = {Codice Apache 2.0, vocabolari e tassonomie CC BY 4.0}
+@techreport{mariano2026soundscape,
+  author       = {Mariano, Francesco},
+  title        = {{Soundscape Annotation: workflow iterativo,
+                   stratificazione interpretativa e calibrazione di
+                   una skill di analisi audio in didattica AFAM}},
+  institution  = {Accademia di Belle Arti di Macerata},
+  year         = {2026},
+  type         = {Working Paper},
+  number       = {v1.0},
+  doi          = {10.5281/zenodo.20282496},
+  url          = {https://zenodo.org/records/20282496}
+}
+
+@software{mariano2026soundscapeskill,
+  author       = {Mariano, Francesco},
+  title        = {{Soundscape Audio Analysis: una skill Claude Code
+                   per l'analisi tecnica e compositiva di soundscape
+                   e musica elettroacustica}},
+  year         = {2026},
+  version      = {v0.12.6},
+  url          = {https://github.com/francmo/soundscape-audio-analysis},
+  note         = {Codice Apache 2.0, vocabolari e tassonomie CC BY 4.0}
 }
 ```
 
 In forma discorsiva: "Analisi condotta con Soundscape Audio Analysis
-(Mariano, 2026), disponibile su GitHub."
+(Mariano, 2026), documentata nel methodology paper Soundscape Annotation
+(Mariano, 2026, DOI 10.5281/zenodo.20282496)."

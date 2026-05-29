@@ -224,6 +224,94 @@ def test_check_speech_suggestion_none_if_semantic_disabled():
     ) is None
 
 
+# =====================================================================
+# v0.13.0 (Intervento C dossier P&T): auto-attivazione speech.
+# =====================================================================
+
+
+def test_speech_dominant_pct_returns_speech_share():
+    """Estrae correttamente il pct di Speech dominante (caso B 83.33%)."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": 83.33},
+                {"name": "Music", "pct": 10.0},
+                {"name": "Silence", "pct": 6.67},
+            ]
+        }
+    }
+    assert speech.speech_dominant_pct(semantic_res) == pytest.approx(83.33, abs=0.01)
+
+
+def test_speech_dominant_pct_zero_when_no_speech():
+    """Senza Speech nei top frames, ritorna 0.0."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Music", "pct": 95.0},
+                {"name": "Silence", "pct": 5.0},
+            ]
+        }
+    }
+    assert speech.speech_dominant_pct(semantic_res) == 0.0
+
+
+def test_speech_dominant_pct_zero_empty_semantic():
+    """Gestisce gracefully payload vuoto."""
+    assert speech.speech_dominant_pct({}) == 0.0
+    assert speech.speech_dominant_pct({"classifier": {}}) == 0.0
+
+
+def test_should_auto_enable_speech_above_threshold():
+    """B 83.33% > 80% -> attivazione automatica."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": 83.33},
+            ]
+        }
+    }
+    assert speech.should_auto_enable_speech(semantic_res) is True
+
+
+def test_should_auto_enable_speech_below_threshold():
+    """40% Speech: sotto la soglia auto (80%), non si attiva."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": 40.0},
+            ]
+        }
+    }
+    assert speech.should_auto_enable_speech(semantic_res) is False
+
+
+def test_should_auto_enable_speech_at_threshold_inclusive():
+    """Esattamente alla soglia (80%): attivazione (>=)."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": config.SPEECH_AUTO_DOMINANT_PCT},
+            ]
+        }
+    }
+    assert speech.should_auto_enable_speech(semantic_res) is True
+
+
+def test_should_auto_enable_speech_custom_threshold():
+    """Soglia configurabile, utile per pipeline didattiche con file
+    parlati al 50-70% (es. lezione in stanza con ambient)."""
+    semantic_res = {
+        "classifier": {
+            "top_dominant_frames": [
+                {"name": "Speech", "pct": 55.0},
+            ]
+        }
+    }
+    assert speech.should_auto_enable_speech(semantic_res, threshold_pct=50.0) is True
+    assert speech.should_auto_enable_speech(semantic_res, threshold_pct=80.0) is False
+
+
 def test_agent_payload_includes_speech_when_enabled():
     """Il payload agente deve contenere il campo `speech` con transcript_it
     capped a 3000 char, segments top-15, quando speech e' abilitato."""

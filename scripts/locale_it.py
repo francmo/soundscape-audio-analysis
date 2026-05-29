@@ -134,6 +134,91 @@ def categoria_densita(eventi_per_sec: float) -> str:
     return DENSITA_EVENTI["densa"]
 
 
+# v0.13.0 (Intervento D addendum dossier P&T): etichette brevi italiane per
+# signature_label a 4 dimensioni. Le forme estese restano in DENSITA_EVENTI
+# (usate nella partitura grafica e nel PDF dettagliato); qui servono varianti
+# compatte da incastrare in un'etichetta sotto i 50 caratteri.
+
+SIGNATURE_CENTROID_BANDS = {
+    "scura": "scura",          # centroide < 250 Hz, dominio sub-bass + bass
+    "media": "media",          # centroide 250-1000 Hz, dominio low-mid
+    "chiara": "chiara",        # centroide 1000-4000 Hz, dominio mid + high-mid
+    "brillante": "brillante",  # centroide >= 4000 Hz, dominio presence + brilliance
+}
+
+SIGNATURE_DENSITY_SHORT = {
+    "sparsa": "sparsa",
+    "media": "media",
+    "densa": "densa",
+}
+
+SIGNATURE_TONALITY_SHORT = {
+    "molto_tonale": "molto tonale",
+    "moderatamente_tonale": "moderatamente tonale",
+    "tonale": "tonale",
+    "tendenzialmente_tonale": "tendenzialmente tonale",
+    "misto": "misto",
+    "molto_rumoroso": "molto rumoroso",
+}
+
+
+def signature_centroid_band(centroid_hz: float) -> str:
+    """Mappa il centroide spettrale in una delle 4 bande qualitative per
+    signature_label: scura/media/chiara/brillante. Soglie in config.
+    """
+    from .config import (
+        SIGNATURE_CENTROID_BAND_SCURO_MAX_HZ,
+        SIGNATURE_CENTROID_BAND_MEDIO_MAX_HZ,
+        SIGNATURE_CENTROID_BAND_CHIARO_MAX_HZ,
+    )
+    if centroid_hz < SIGNATURE_CENTROID_BAND_SCURO_MAX_HZ:
+        return SIGNATURE_CENTROID_BANDS["scura"]
+    if centroid_hz < SIGNATURE_CENTROID_BAND_MEDIO_MAX_HZ:
+        return SIGNATURE_CENTROID_BANDS["media"]
+    if centroid_hz < SIGNATURE_CENTROID_BAND_CHIARO_MAX_HZ:
+        return SIGNATURE_CENTROID_BANDS["chiara"]
+    return SIGNATURE_CENTROID_BANDS["brillante"]
+
+
+def signature_density(eventi_per_sec: float) -> str:
+    """Variante breve di categoria_densita per signature_label (sparsa/media/
+    densa, senza descrittore espanso). Stesse soglie di ONSET_DENSITY_*.
+    """
+    from .config import ONSET_DENSITY_SPARSE, ONSET_DENSITY_DENSE
+    if eventi_per_sec < ONSET_DENSITY_SPARSE:
+        return SIGNATURE_DENSITY_SHORT["sparsa"]
+    if eventi_per_sec < ONSET_DENSITY_DENSE:
+        return SIGNATURE_DENSITY_SHORT["media"]
+    return SIGNATURE_DENSITY_SHORT["densa"]
+
+
+def signature_tonality(flatness: float) -> str:
+    """Mappa flatness in una delle 6 categorie tonale. Soglie raffinate
+    v0.13.0 (pattern 6 caso B): la soglia storica 0.05 era troppo alta
+    e classificava come "tonale" file urbani con flatness 0.007-0.013 che
+    sono percettivamente noisy. Ora "molto tonale" e' riservato a flatness
+    sub-0.005 (sinusoidi pure, droni armonici stretti).
+    """
+    from .config import (
+        FLATNESS_MOLTO_TONALE_MAX,
+        FLATNESS_MODERATAMENTE_TONALE_MAX,
+        FLATNESS_TONALE_MAX,
+        FLATNESS_TENDENZIALMENTE_TONALE_MAX,
+        FLATNESS_MISTO_MAX,
+    )
+    if flatness < FLATNESS_MOLTO_TONALE_MAX:
+        return SIGNATURE_TONALITY_SHORT["molto_tonale"]
+    if flatness < FLATNESS_MODERATAMENTE_TONALE_MAX:
+        return SIGNATURE_TONALITY_SHORT["moderatamente_tonale"]
+    if flatness < FLATNESS_TONALE_MAX:
+        return SIGNATURE_TONALITY_SHORT["tonale"]
+    if flatness < FLATNESS_TENDENZIALMENTE_TONALE_MAX:
+        return SIGNATURE_TONALITY_SHORT["tendenzialmente_tonale"]
+    if flatness < FLATNESS_MISTO_MAX:
+        return SIGNATURE_TONALITY_SHORT["misto"]
+    return SIGNATURE_TONALITY_SHORT["molto_rumoroso"]
+
+
 def sanitize_italiano(text: str) -> str:
     """Rimuove em dash e li sostituisce con virgola + spazio.
 

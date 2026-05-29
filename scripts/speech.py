@@ -336,6 +336,36 @@ def check_speech_suggestion(
     return None
 
 
+def speech_dominant_pct(semantic_res: dict) -> float:
+    """v0.13.0 (Intervento C dossier P&T): estrae la percentuale di
+    Speech dominante nei top_dominant_frames di PANNs. Ritorna 0.0 se
+    Speech non e' presente. Helper riusato da `should_auto_enable_speech`
+    e dal suggerimento stderr per evitare duplicazione di logica.
+    """
+    top_dom = (semantic_res.get("classifier", {}) or {}).get(
+        "top_dominant_frames", []
+    )
+    for item in top_dom:
+        if item.get("name") == "Speech":
+            return float(item.get("pct", 0))
+    return 0.0
+
+
+def should_auto_enable_speech(semantic_res: dict,
+                                threshold_pct: float = None) -> bool:
+    """v0.13.0 (Intervento C dossier P&T): decide se attivare automaticamente
+    la trascrizione speech sulla base dei dominant_frames PANNs.
+
+    Caso scuola: B bar Mamo' 83.33% Speech dominante. Sopra 80% la
+    trascrizione e' concretamente utile e va attivata senza richiedere
+    rilancio esplicito. Soglia cauta (default 80%) per non sprecare cicli
+    Whisper su file dove Speech e' presente ma non dominante.
+    """
+    if threshold_pct is None:
+        threshold_pct = config.SPEECH_AUTO_DOMINANT_PCT
+    return speech_dominant_pct(semantic_res) >= threshold_pct
+
+
 def translate_transcript(
     speech_dict: dict,
     target_lang: str = "it",

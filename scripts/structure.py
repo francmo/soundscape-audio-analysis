@@ -437,17 +437,29 @@ def _detect_changepoints(features: list[dict],
 
 
 def _label_section_signature(section: dict) -> str:
-    """Genera una stringa breve italiana che descrive la sezione, basata
-    su krause + caratteristiche dinamiche e timbriche. Max ~40 caratteri.
+    """Genera una stringa breve italiana che descrive la sezione, basata su
+    quattro dimensioni: krause x intensita x centroide_banda x onset_density.
+    Max ~50 caratteri (vincolo tabella PDF).
 
     v0.12.6 (P3 caso A): override su sezioni brevissime con
     classificazione PANNs inaffidabile. Se la sezione coincide con un onset
     isolato + decadimento, evita di assegnare Krause antropofonia/biofonia/
     geofonia e ritorna 'impulso e coda'.
+
+    v0.13.0 (P5 caso B, Intervento D dossier P&T): il template a 3
+    dimensioni produceva etichette ripetute fra sezioni distinte (S1 e S2
+    bar Mamo' entrambe "antropofonia moderata tonale"). Aggiunte le
+    dimensioni centroide_banda (4 valori: scura/media/chiara/brillante) e
+    onset_density (3 valori: sparsa/media/densa). 3 x 3 x 4 x 3 = 108
+    combinazioni utili (escludendo silenzio/impulso che restano fissi).
+    onset_density si aggiunge solo se `events_per_sec` e' presente nel
+    section (assente -> retrocompatibilita' con l'output v0.12.x).
     """
     krause = section.get("krause", "mista")
     rms_db = section.get("mean_rms_db", -60.0)
     flatness = section.get("mean_flatness", 0.5)
+    centroid_hz = section.get("mean_centroid_hz", 0.0)
+    events_per_sec = section.get("events_per_sec")
     duration_s = section.get("duration_s", 0.0)
     panns_conf = section.get("dominant_panns_confidence", "high")
 
@@ -457,10 +469,10 @@ def _label_section_signature(section: dict) -> str:
     if duration_s < config.STRUCTURE_PANNS_CONF_LOW_MAX_S and panns_conf == "low":
         return "impulso e coda"
 
-    if rms_db < -50.0:
+    if rms_db < -50.0 or krause == "silenzio":
         return "quasi-silenzio"
 
-    # Aggettivo dinamico
+    # Aggettivo dinamico (3 livelli oltre quasi-silenzio)
     if rms_db < -35.0:
         dyn = "soffusa"
     elif rms_db < -20.0:
@@ -468,23 +480,28 @@ def _label_section_signature(section: dict) -> str:
     else:
         dyn = "intensa"
 
-    # Carattere timbrico
-    if flatness < 0.05:
-        timbre = "tonale"
-    elif flatness < 0.3:
-        timbre = "mista"
-    else:
-        timbre = "rumorosa"
+    # Banda centroide (4 valori), via locale_it per coerenza
+    from . import locale_it as L
+    timbro = L.signature_centroid_band(centroid_hz)
 
-    if krause == "silenzio":
-        return "quasi-silenzio"
-    if krause == "biofonia":
-        return f"biofonia {dyn} {timbre}"
-    if krause == "antropofonia":
-        return f"antropofonia {dyn} {timbre}"
-    if krause == "geofonia":
-        return f"geofonia {dyn} {timbre}"
-    return f"sezione mista {dyn}"
+    # Prefisso di famiglia
+    if krause in ("biofonia", "antropofonia", "geofonia"):
+        prefix = krause
+    else:
+        prefix = "sezione mista"
+
+    base = f"{prefix} {dyn} {timbro}"
+
+    # Onset density (3 valori) appesa solo se calcolabile. Sotto un piancito
+    # minimo di durata (5s) la stima e' rumorosa: in quel caso omettiamo per
+    # non introdurre rumore nel label.
+    if events_per_sec is not None and duration_s >= 5.0:
+        density = L.signature_density(float(events_per_sec))
+        candidate = f"{base} {density}"
+        if len(candidate) <= 50:
+            return candidate
+
+    return base
 
 
 def _panns_confidence_for_duration(duration_s: float) -> str:
@@ -501,13 +518,35 @@ def _panns_confidence_for_duration(duration_s: float) -> str:
     return "high"
 
 
+def _events_per_sec_in_section(onset_times: list[float], t_start: float,
+                                  t_end: float) -> float:
+    """v0.13.0 (Intervento D dossier P&T): conta gli onset cadenti
+    nell'intervallo [t_start, t_end) e ritorna la densita' (eventi/sec).
+    Ritorna 0.0 se `onset_times` e' vuoto o la durata e' nulla.
+    """
+    duration = max(t_end - t_start, 1e-6)
+    if not onset_times:
+        return 0.0
+    count = sum(1 for t in onset_times if t_start <= t < t_end)
+    return count / duration
+
+
 def _build_sections(features: list[dict],
-                     boundaries: list[int]) -> list[dict]:
+                     boundaries: list[int],
+                     onset_times: list[float] | None = None) -> list[dict]:
     """Costruisce le sezioni a partire dalle feature per finestra e dai
-    confini. Aggrega medie e dominanti per ciascuna sezione."""
+    confini. Aggrega medie e dominanti per ciascuna sezione.
+
+    v0.13.0: accetta `onset_times` opzionale (lista di timestamp di onset
+    in secondi, esposti da spectral.onset_analysis come `events_times_s`)
+    per calcolare la densita' locale di onset per sezione. Il campo
+    risultante `events_per_sec` alimenta la 4a dimensione di
+    `_label_section_signature`.
+    """
     n = len(features)
     if n == 0:
         return []
+    onset_times = onset_times or []
     cuts = [0] + sorted(boundaries) + [n]
     sections: list[dict] = []
     for k in range(len(cuts) - 1):
@@ -548,6 +587,8 @@ def _build_sections(features: list[dict],
         if panns_conf == "low" and krause != "silenzio":
             krause = "mista"
 
+        events_per_sec = _events_per_sec_in_section(onset_times, t_start, t_end)
+
         section = {
             "id": f"S{k + 1}",
             "t_start_s": round(t_start, 2),
@@ -556,6 +597,7 @@ def _build_sections(features: list[dict],
             "mean_rms_db": round(mean_rms, 2),
             "mean_centroid_hz": round(mean_centroid, 1),
             "mean_flatness": round(mean_flatness, 4),
+            "events_per_sec": round(events_per_sec, 3),
             "dominant_panns": dominant_panns,
             "dominant_panns_confidence": panns_conf,
             "dominant_clap_prompt": dominant_clap,
@@ -564,6 +606,39 @@ def _build_sections(features: list[dict],
         section["signature_label"] = _label_section_signature(section)
         sections.append(section)
     return sections
+
+
+def _annotate_sections_with_hifi_lofi(sections: list[dict], waveform: np.ndarray,
+                                         sr: int) -> None:
+    """v0.13.0 (Intervento A dossier P&T): popola `hi_fi_lo_fi` per ciascuna
+    sezione in-place. Mutate `sections`.
+
+    Strategia: per ogni sezione prende lo slice di waveform sull'intervallo
+    [t_start_s, t_end_s], calcola il dynamic_range locale (P95 - P10 dei
+    frame RMS via technical.compute_levels), combina con la `mean_flatness`
+    gia' calcolata e applica `categoria_hifi` per ottenere label + score.
+    Il campo globale `hi_fi_lo_fi` in summary.spectral resta invariato.
+
+    Robustezza: sezioni con slice troppo corto per librosa (sotto ~0.2s,
+    raro ma possibile su sub-sezioni) ricadono sul global; la fallback non
+    contamina il dato ma evita NaN nella tabella PDF.
+    """
+    from . import technical as tech_mod
+    from . import spectral as spec_mod
+
+    for section in sections:
+        t_start = float(section.get("t_start_s", 0.0))
+        t_end = float(section.get("t_end_s", 0.0))
+        a = max(0, int(t_start * sr))
+        b = min(len(waveform), int(t_end * sr))
+        if b - a < int(0.2 * sr):
+            section["hi_fi_lo_fi"] = None
+            continue
+        slice_y = waveform[a:b]
+        levels = tech_mod.compute_levels(slice_y)
+        dr_local = levels.get("dynamic_range_db", 0.0)
+        flat_local = float(section.get("mean_flatness", 0.5))
+        section["hi_fi_lo_fi"] = spec_mod.hifi_lofi_score(dr_local, flat_local)
 
 
 def compute_structure(waveform: np.ndarray, sr: int, summary: dict,
@@ -592,6 +667,7 @@ def compute_structure(waveform: np.ndarray, sr: int, summary: dict,
                 "mean_rms_db": -60.0,
                 "mean_centroid_hz": 0.0,
                 "mean_flatness": 0.0,
+                "events_per_sec": 0.0,
                 "dominant_panns": "",
                 "dominant_panns_confidence": _panns_confidence_for_duration(duration_s),
                 "dominant_clap_prompt": "",
@@ -602,12 +678,24 @@ def compute_structure(waveform: np.ndarray, sr: int, summary: dict,
 
     classifier_timeline = (summary.get("semantic", {}).get("classifier") or {}).get("timeline", [])
     clap_timeline = (summary.get("clap") or {}).get("timeline", [])
+    # v0.13.0 (Intervento D dossier P&T): lista degli onset timestamps esposta
+    # da spectral.onset_analysis come `events_times_s` in summary.spectral.onsets.
+    # La passiamo a _build_sections per calcolare `events_per_sec` per sezione.
+    onset_times = ((summary.get("spectral") or {}).get("onsets") or {}).get("events_times_s") or []
 
     features = _extract_features_per_window(
         waveform, sr, window_seconds, classifier_timeline, clap_timeline
     )
     boundaries = _detect_changepoints(features, window_seconds)
-    sections = _build_sections(features, boundaries)
+    sections = _build_sections(features, boundaries, onset_times=onset_times)
+
+    # v0.13.0 (Intervento A dossier P&T): hi-fi/lo-fi per sezione. Riusa
+    # compute_levels su slice di waveform per dynamic_range locale, combinato
+    # con mean_flatness gia' presente. Necessario per soundscape con marcata
+    # variabilita' strutturale (caso B bar Mamo': S1 distinguibile,
+    # S2 chiacchiericcio infittito, S3 ricostruito hi-fi).
+    if config.HIFI_LOFI_PER_SECTION:
+        _annotate_sections_with_hifi_lofi(sections, waveform, sr)
 
     # v0.12.6 (P5 caso A): secondo passo di sub-segmentazione interna
     # sulle sezioni geofoniche/biofoniche lunghe, usando il cambio del top-3

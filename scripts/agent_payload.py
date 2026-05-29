@@ -254,6 +254,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "bands_schafer_pct": {
                 k: v.get("energy_pct") for k, v in (spec.get("bands_schafer") or {}).items()
             },
+            "bands_schafer_alert": spec.get("bands_schafer_alert"),
             "centroid_hz": (spec.get("timbre") or {}).get("spectral_centroid_hz"),
             "rolloff_hz": (spec.get("timbre") or {}).get("spectral_rolloff_hz"),
             "flatness": (spec.get("timbre") or {}).get("spectral_flatness"),

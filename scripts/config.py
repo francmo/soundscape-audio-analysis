@@ -107,6 +107,15 @@ SILERO_VAD_MIN_TOTAL_SPEECH_S = 2.0  # soglia per saltare Whisper (risparmia ~1.
 # Speech suggerimento automatico stderr (v0.5.0)
 SPEECH_SUGGEST_DOMINANT_PCT = 25.0  # soglia PANNs top_dominant_frames per suggerire --speech
 
+# v0.13.0 (Intervento C dossier P&T): auto-attivazione di --speech quando
+# PANNs rileva Speech dominante in >= 80% dei top_dominant_frames. Caso scuola:
+# B v2 bar Mamo' 83.33% Speech dominante, file dove la trascrizione e'
+# concretamente utile per la lettura compositiva. Sopra questa soglia la
+# trascrizione viene attivata automaticamente; resta possibile inibirla con
+# --no-speech per controllo esplicito. La soglia "soft" (25%) continua a
+# generare il suggerimento stderr nella fascia intermedia 25-80%.
+SPEECH_AUTO_DOMINANT_PCT = 80.0
+
 # Traduzione via claude -p (v0.5.0)
 TRANSLATION_MODEL = "claude-haiku-4-5"
 TRANSLATION_TIMEOUT_S = 120
@@ -473,6 +482,44 @@ ONSET_DENSITY_DENSE = 2.0
 HIFI_DR_HIGH = 25.0
 HIFI_DR_MID = 15.0
 HIFI_FLATNESS_MAX = 0.3
+
+# v0.13.0 (P3 caso B): Hi-Fi/Lo-Fi per sezione strutturale (Intervento A
+# dell'addendum dossier P&T 22/05/2026). Un soundscape con marcata variabilita'
+# strutturale (bar Mamo' 00:03-00:30 canzone distinguibile vs 01:00 chiacchiericcio
+# infittito) merita una lettura locale e non solo globale. Il calcolo riusa
+# categoria_hifi su slice di waveform per ciascuna sezione di structure.sections.
+HIFI_LOFI_PER_SECTION = True
+
+# v0.13.0 (P4 caso B): alert sub-bass+bass anomalo (Intervento B).
+# Quando la somma delle bande Sub-bass + Bass supera la soglia, plausibile
+# artefatto di handling/microfono mobile/vibrazione del piano d'appoggio.
+# Caso scuola: B iPhone 8 in mano + appoggiato -> Sub-bass 41.48 +
+# Bass 40.66 = 82.14%. Soglia conservativa 60% per evitare falsi positivi su
+# soundscape genuinamente low-energy.
+BANDS_SCHAFER_ALERT_LOW_SUM_PCT = 60.0
+
+# v0.13.0 (P5 + P6 caso B): signature_label a 4 dimensioni e soglie
+# tonale piu' fini (Intervento D). Le sezioni strutturali ricevevano etichette
+# ripetute (S1/S2 entrambe "antropofonia moderata tonale") perche' il template
+# combinava 3 dimensioni a basso numero di valori discreti. Espansione a 4
+# dimensioni: krause x intensita x centroide_banda x onset_density.
+#
+# Soglie centroide_banda (4 fasce): aggregate dalle bande Schafer.
+SIGNATURE_CENTROID_BAND_SCURO_MAX_HZ = 250.0
+SIGNATURE_CENTROID_BAND_MEDIO_MAX_HZ = 1000.0
+SIGNATURE_CENTROID_BAND_CHIARO_MAX_HZ = 4000.0
+# Sopra 4000 Hz: brillante.
+#
+# Soglie tonale fini (pattern 6): sotto 0.005 "molto tonale", 0.005-0.015
+# "moderatamente tonale", 0.015-0.05 "tonale", 0.05-0.2 "tendenzialmente
+# tonale", 0.2-0.5 "misto", >=0.5 "molto rumoroso". Soglie applicate sia in
+# narrative._describe_spectrum sia in structure._label_section_signature
+# (per coerenza fra blocco narrativo e tabella sezioni).
+FLATNESS_MOLTO_TONALE_MAX = 0.005
+FLATNESS_MODERATAMENTE_TONALE_MAX = 0.015
+FLATNESS_TONALE_MAX = 0.05
+FLATNESS_TENDENZIALMENTE_TONALE_MAX = 0.2
+FLATNESS_MISTO_MAX = 0.5
 
 # Ecoacoustic
 ECO_BIOPHONY_BAND = (2000, 8000)

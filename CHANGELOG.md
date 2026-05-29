@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.13.0] - 2026-05-22
+
+Secondo round di interventi didattici motivati dal confronto cronologico fra output skill (PDF + summary.json + agent_payload.json) e ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata. I dossier sorgenti sono in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).
+
+Driver: il caso scuola B v2 (bar Mamo' Macerata, iPhone 8 tenuto in mano poi appoggiato, ora di pranzo) ha messo in evidenza quattro pattern di forzatura non coperti dalla release A v0.12.6: (P3) etichetta Hi-Fi/Lo-Fi globale che maschera la variabilita' fra sezioni; (P4) distribuzione spettrale dominata da sub-bass+bass (82.14%) non interpretata come potenziale artefatto di handling; (P5) signature_label ripetute fra sezioni strutturali distinte; (P6) soglia "molto tonale" troppo larga, attivata su soundscape urbani con flatness 0.007-0.013. Piano in `ROADMAP_ADDENDUM_dossiers_p_t_2026-05-22.md`. Quattro interventi sicuri (A, B, C, D) implementati e validati; due interventi (E, F: CLAP hallucinations e PANNs filter per fauna) rimandati in attesa di 5+ casi documentati.
+
+### Intervento D - signature_label a 4 dimensioni (P5 + P6)
+
+- `scripts/structure.py::_label_section_signature` riscritta. Il template combinava 3 dimensioni (krause + intensita + timbre binarizzata) con 12 combinazioni discrete totali, producendo etichette identiche per sezioni acusticamente simili ma drammaturgicamente distinte (S1 e S2 B entrambe "antropofonia moderata tonale"). Ora combina 4 dimensioni: krause (3 valori) x intensita (3 valori) x centroide_banda (4 valori: scura/media/chiara/brillante) x onset_density (3 valori: sparsa/media/densa). Circa 108 combinazioni utili. Validazione su A: 5 sezioni con 5 etichette diverse (S1 "antropofonia soffusa chiara media", S2 "sezione mista soffusa chiara sparsa", S3 "geofonia soffusa brillante sparsa", S4 "quasi-silenzio", S5 "impulso e coda"). Validazione su B: 3 sezioni con 2 etichette uniche (vs 1 sola prima), miglioramento netto.
+- `scripts/structure.py::_events_per_sec_in_section` nuova funzione: correla `events_times_s` di `spectral.onset_analysis` con la finestra temporale [t_start_s, t_end_s) di ciascuna sezione e calcola la densita' locale di onset. Campo `events_per_sec` esposto in ogni record `structure.sections`. Sopra durata minima 5s (sotto la stima e' rumorosa), partecipa alla 4a dimensione di signature_label.
+- `scripts/structure.py::compute_structure` legge `summary.spectral.onsets.events_times_s` e lo propaga a `_build_sections`. Retrocompatibile: senza summary spettrale, `events_per_sec` resta 0 e signature_label cade graziosamente sulle 3 dimensioni base.
+- `scripts/locale_it.py` nuove funzioni helper: `signature_centroid_band(hz)` (4 fasce), `signature_density(events_per_sec)` (sparsa/media/densa breve), `signature_tonality(flatness)` (6 livelli).
+- `scripts/narrative.py::_describe_spectrum` aggiorna le soglie di flatness in coerenza: "molto tonale" ora <0.005 (era <0.05), nuova categoria "moderatamente tonale" 0.005-0.015, "tonale" 0.015-0.05, "tendenzialmente tonale" 0.05-0.2, "misto" 0.2-0.5, "molto rumoroso" >=0.5. Pattern 6 risolto: il bar Mamo' (flatness 0.007-0.013) ora viene etichettato "moderatamente tonale", non "molto tonale".
+
+### Intervento A - Hi-Fi/Lo-Fi per sezione (P3)
+
+- `scripts/structure.py::_annotate_sections_with_hifi_lofi` nuova funzione. Per ogni sezione di `structure.sections` prende lo slice di waveform `[int(t_start*sr):int(t_end*sr)]`, calcola il dynamic_range locale via `technical.compute_levels` (P95 - P10 dei frame RMS) e applica `spectral.hifi_lofi_score(dr_local, mean_flatness)`. Il campo `hi_fi_lo_fi` con `label` + `score_5` viene aggiunto a ciascun record di sezione, mantenendo il campo globale `spectral.hifi_lofi` per backward compat. Robustezza: sezioni con slice < 0.2s ricevono `hi_fi_lo_fi: null`.
+- `scripts/report_pdf.py::_build_structure_block` aggiunge la colonna "Hi-Fi/Lo-Fi" nella tabella sezioni con larghezza ricalibrata (10 mm: 11/14/14/14/42/18/16/18/22 = 169 mm). Larghezza "Signature" ridotta da 50 a 42 mm a vantaggio della nuova colonna; il signature_label ora puo' essere lungo fino a 48 char (era troncato a 28).
+- `scripts/report_pdf.py::_format_section_hifi` nuovo helper: ritorna formato compatto "Hi-Fi 4/5", "Medio 3/5", "Lo-Fi 2/5" per la cella stretta, "n.d." per sezioni troppo brevi.
+- `scripts/agent_payload.py`: il campo `hi_fi_lo_fi` di sezione e' gia' incluso nel payload via `structure.sections[:8]` (nessuna modifica esplicita necessaria, propagazione automatica).
+- `templates/agent_prompt.md` documenta `hi_fi_lo_fi` per sezione e il caso d'uso "stessa registrazione che oscilla fra Hi-Fi e Lo-Fi fra sezioni: quando il globale dice Lo-Fi ma una sezione e' Hi-Fi, la scena di quella sezione e' percettivamente piu' articolata di quanto la media globale suggerirebbe". Validazione su A: S1 Medio (inizio domestico), S2 Lo-Fi (dispersione), S3 Lo-Fi (doccia saturata), S4 Lo-Fi (quasi-silenzio), S5 Hi-Fi (impulso finale con coda).
+
+### Intervento B - Alert sub-bass+bass anomalo (P4)
+
+- `scripts/spectral.py::compute_bands_schafer_alert` nuova funzione. Quando la somma delle bande Sub-bass + Bass supera la soglia (default 60%), ritorna un dict warning con `level`, `low_sum_pct`, `threshold_pct`, `message` italiano interpretativo. La soglia conservativa 60% evita falsi positivi su soundscape genuinamente low-energy. Soglia configurabile via `config.BANDS_SCHAFER_ALERT_LOW_SUM_PCT`.
+- `scripts/spectral.py::spectral_summary` espone il nuovo campo `bands_schafer_alert` (`None` quando sotto soglia).
+- `scripts/agent_payload.py` espone `spectral.bands_schafer_alert` nel payload agente per consumo dal sub-agent compositivo.
+- `scripts/report_pdf.py::_build_bands_alert_callout` nuovo helper: callout warning in italiano subito sotto la tabella `_build_bande_table`, con prefisso "<b>Avviso spettrale:</b>" in colore terracotta scura.
+- `templates/agent_prompt.md` documenta il nuovo campo: quando attivo, "non interpretare il contenuto basso come materiale significativo del soundscape: il tappeto grave e' probabilmente rumore della registrazione". L'agente cita l'avviso come riserva tecnica nella Criticita' tecniche, non come tratto drammaturgico.
+- Validazione su B v2: alert attivo, low_sum_pct=82.14, messaggio coerente. Validazione su A v1: alert NON attivo, low_sum=19.71% (Sub-bass 1.49 + Bass 18.22).
+
+### Intervento C - Trascrizione speech auto-attivata
+
+- `scripts/speech.py::should_auto_enable_speech` e `speech.py::speech_dominant_pct` due nuove funzioni helper. La prima ritorna True quando la frazione di frame PANNs dominanti con label `Speech` >= soglia configurabile (default `config.SPEECH_AUTO_DOMINANT_PCT = 80.0`).
+- `scripts/cli.py` flag CLI tri-stato `--speech/--no-speech` (era opt-in boolean). Default `None` (auto): la skill valuta `speech.should_auto_enable_speech` dopo la pipeline PANNs e attiva Whisper se >= 80%. `--speech`: forza attivazione (override esplicito). `--no-speech`: forza disattivazione. Il messaggio cyan stampato su stderr ("Auto-attivazione trascrizione: Speech dominante 83.3% dei frame PANNs ... per disabilitare: --no-speech") rende esplicito quando l'auto e' scattata.
+- Il suggerimento giallo storico (>25% Speech con flag non attivo) resta operativo nella fascia 25-80%: utente avvisato che la trascrizione potrebbe servire, ma non si attiva senza esplicito --speech.
+- Validazione su B v2: Speech dominante 83.3% (sopra soglia 80%), auto-attivazione attesa quando si rilancia senza flag esplicito. Validazione su A v1: Speech 21.05% (sotto soglia 25%), nessun suggerimento ne' auto-attivazione (corretto: file dominato da Water + handling).
+
+### Interventi rimandati (E, F)
+
+- **Intervento E (CLAP allucinazioni storiche/geografiche su materiali ordinari)**: 2 casi documentati (B "Registrazione d'archivio Sessantotto" 0.355 + A prompt analoghi nella rilettura comparativa). Insufficienti per intervenire mirato sui prompt "calamita" senza rischio di rimuovere prompt utili. Aspettare 5+ casi (self-FC B + v2 di D/C/A).
+- **Intervento F (filtro post-processing PANNs su classi fauna in contesto antropico)**: 1 caso (B tacchi -> "horse" + "clip-clop"). Insufficiente. Aspettare almeno 3+ casi per generalizzare la logica "panns animale + krause stimato antropofonia -> declassare animale del 30%".
+
+### Test suite
+
+243 passed + 2 skipped. Nuovi test mirati ai quattro interventi:
+- 10 in `tests/test_structure.py` per signature_label 4D, correlazione onset/sezione e soglie tonale finite (`test_events_per_sec_in_section_*`, `test_signature_label_4d_*`, `test_signature_centroid_band_thresholds`, `test_signature_tonality_thresholds_pattern_6`).
+- 3 in `tests/test_structure.py` per hi-fi/lo-fi per sezione (`test_annotate_sections_*`, `test_compute_structure_populates_hifi_lofi_per_section`).
+- 4 in `tests/test_spectral.py` per `compute_bands_schafer_alert` (`test_bands_alert_*`).
+- 7 in `tests/test_speech.py` per `speech_dominant_pct` + `should_auto_enable_speech`.
+
+Tempo totale ~60 s.
+
+### Versionamento
+
+Bump `pyproject.toml` 0.12.6 -> 0.13.0. Sync `scripts/cli.py::analyze_cmd::summary` e `scripts/cli.py::cli` version_option a `0.13.0`. Sync `scripts/report_cmd.py` run_meta.version.
+
+### Validazione end-to-end
+
+Rilanci analyze (--no-agent --no-speech, ~18-25 s ciascuno) su:
+- `caso_b_file1_audio.mp3` (bar Mamo' 2 min): conferma tutti i pattern attesi A/B/C/D.
+- `caso_a_file1_audio.mp3` (bagno domestico 3 min): conferma alert NON attivo, 5 etichette signature distinte, hi-fi/lo-fi differenziato fra le 5 sezioni.
+
+Output salvati in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/<studente>/_skill_outputs/v0.13.0_fast/`.
+
+### Lezione per il paper
+
+Il caso B ha fornito una sorgente di pattern qualitativamente nuova rispetto al caso A: l'iPhone tenuto in mano e poi appoggiato introduce artefatti spettrali (handling noise sub-bass) che non sono riducibili a errore di classificazione. La skill ora distingue fra "contenuto basso significativo" e "tappeto grave da handling", asse compositivo che si aggiunge alle altre fonti di pattern (corpus gold accademico, corpus utente Massa-Catania, caso A). Quattro fonti distinte producono ora quattro error taxonomy parzialmente sovrapposte, materiale utile per la Sezione 5 del paper (Risultati e analisi degli errori).
+
+bump 0.12.6 -> 0.13.0.
+
 ## [0.12.6] - 2026-05-15
 
 Primo case study didattico documentato: caso A (Soundscape Annotation, ABA Macerata, corso PTSM). Nove interventi atomici raggruppati in una sola release, perche' nascono da un unico episodio di confronto a triangolo (dossier studente, scheda first-hand, PDF skill) e si rinforzano l'un l'altro nella pipeline. La release modifica come la skill descrive il materiale didattico, senza toccare l'infrastruttura statistica v0.13-v0.17.

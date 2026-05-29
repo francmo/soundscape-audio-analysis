@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.14.0] - 2026-05-29
+
+Terzo round di interventi didattici: calibrazione delle allucinazioni semantiche, motivata dal consolidamento di tre dossier del corso "Processi e Tecniche dello Spettacolo Multimediale" (ABA Macerata): C (finestra domestica), B (bar), A (bagno). Fonte empirica: `~/Documents/aba-macerata-sprint-soundscape/_internal_pattern_allucinazioni_clap.md`. Cinque interventi sui layer interpretativi (i dati duri CLAP/PANNs sono version-stable, cambia la lettura a valle); due rimandati a v0.14.1.
+
+### INT-1 - Allucinazioni su categorie CLAP "marcate"
+
+- `config.MARKED_HALLUCINATION_CATEGORIES`: categorie geograficamente remote o storico-sociali (paesaggi nordici/artici/anglosassoni/dalmati/europei orientali/urbani internazionali, soundscape politico urbano, performance multimediale). Soglia `MARKED_HALLUCINATION_SCORE_MAX = 0.40` + parametri di concentrazione tematica.
+- `clap_mapping.mark_marked_category_hallucinations`: marca `likely_hallucination` + `marked_category` i prompt di categoria marcata sotto soglia; aggiunge `thematic_overconcentration` quando >= 2 dei primi 5 prompt sono marcati (auto-rinforzo per accumulo, relazione C). Hook in `cli.py` dopo `mark_geo_specific_tags`. Non sovrascrive un `likely_hallucination` gia' alzato. Validazione sui dati reali: B "Registrazione d'archivio di manifestazione del Sessantotto" (0.355), C "Villaggio nordico costiero" (0.308) / "Porto peschereccio croato" / "Microfoni sul palco con larsen" flaggati; "Bar con macchina del caffe'" e "Discussione di vicini" (italiani ordinari) NON flaggati.
+
+### INT-2 - Prior di ordinarieta' sul dominant_clap_prompt
+
+- `structure._dominant_clap_excluding_marked` + `clap_mapping.marked_prompt_texts` (set cache-ato dei testi-prompt di categoria marcata dal vocabolario): il `dominant_clap_prompt` di sezione non promuove un prompt marcato; usa il piu' frequente non marcato e segnala `dominant_clap_marked`. Caso B: "Sessantotto" non piu' dominante di tutte e 3 le sezioni.
+
+### INT-3 - Plausibility "high" solo su match specifico
+
+- `clap_mapping.mark_plausibility_deterministic`: i pattern con `panns_specific` concedono "high" solo con un match PANNs specifico; il supporto generico di famiglia (Animal/Bird) concede al massimo "medium". Nuovo pattern `gallo_specie_specifica` in `config.PLAUSIBILITY_PATTERNS`, anteposto a `biofonia_insetti`. Caso C: "Gallo che canta all'alba in villaggio costiero" non piu' "high" dal solo Bird 0.276; un generico "canto di uccelli" resta "high" col supporto Bird.
+
+### INT-4 - Soppressione falso positivo equino nella narrativa
+
+- `narrative._describe_panns` + `config.NARRATIVE_FP_PRONE_PANNS_LABELS` ({Horse, Clip-clop}, soglia `NARRATIVE_FP_PRONE_MIN_CITE = 0.50`): le etichette PANNs ad alto falso positivo su transienti percussivi sono citate solo se nettamente dominanti, per non alimentare l'inferenza "trazione animale". Casi: C (taglia erba, Horse picco 0.287), B (tacchi della signora, Clip-clop 0.40).
+
+### INT-5 - Caveat NDSI su ambienti idrici
+
+- `ecoacoustic.ndsi_water_caveat` + hook `cli.py`: quando NDSI >= `NDSI_CAVEAT_MIN` (0.3) ma la banda 2-8 kHz e' dominata dall'acqua (PANNs Water > biofonia animale), aggiunge una chiave `caveat` al dict NDSI senza alterarne il valore. Caso A: NDSI 0.711 su scroscio doccia letto come biofonia.
+
+### INT-8 - Numerali tentative (gia' coperto)
+
+- Nessuna modifica: le istruzioni v0.12.6 in `templates/agent_prompt.md` gia' impongono di citare i campi `tentative: true` (smalley_growth, schaeffer_detail) solo come ipotesi e gia' vietano la forma "Smalley growth: dilation domina al 66%".
+
+### Rimandati a v0.14.1
+
+- INT-6 (parlato mediato, caso TV A): richiede un corpus di calibrazione di 4-6 file TV/radio/telefono.
+- INT-7 (coerenza fra `schafer_fidelity` globale CLAP-pesato e hi-fi/lo-fi per sezione).
+
+### Test
+
+Nuovi test: INT-1 (4) e INT-2 (4, logica pura) e INT-3 (3) e marked_prompt_texts (1) in `test_clap_academic_mapping.py` / `test_structure.py`; INT-5 (3) in `test_ecoacoustic.py`; INT-4 (4) in `test_narrative.py`. Incluse le guardie anti-overcorrection (bar italiano non flaggato; canto di uccelli generico resta "high"; Bird marginale resta citato; biofonia non marcata).
+
+### Versionamento
+
+Bump `pyproject.toml` 0.13.0 -> 0.14.0.
+
 ## [0.13.0] - 2026-05-22
 
 Secondo round di interventi didattici motivati dal confronto cronologico fra output skill (PDF + summary.json + agent_payload.json) e ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata. I dossier sorgenti sono in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).

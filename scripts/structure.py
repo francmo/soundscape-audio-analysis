@@ -41,6 +41,30 @@ from typing import Any
 import numpy as np
 
 from . import config
+from . import clap_mapping
+
+
+def _dominant_clap_excluding_marked(
+    clap_values: list[str], marked_texts,
+) -> tuple[str, bool]:
+    """Moda dei prompt CLAP per sezione escludendo le categorie marcate
+    (v0.14, INT-2). Se la moda grezza e' un prompt marcato (geografico remoto o
+    storico-sociale) ma esistono prompt non marcati, promuove il piu' frequente
+    non marcato e segnala la soppressione. Caso B: "Sessantotto" non piu'
+    dominante di tutte le sezioni. Ritorna (dominant, marcato).
+    """
+    def _m(vals: list[str]) -> str:
+        counts: dict[str, int] = {}
+        for v in vals:
+            if v:
+                counts[v] = counts.get(v, 0) + 1
+        return max(counts.items(), key=lambda kv: kv[1])[0] if counts else ""
+
+    raw = _m(clap_values)
+    non_marked = [v for v in clap_values if v and v not in marked_texts]
+    if raw in marked_texts and non_marked:
+        return _m(non_marked), True
+    return raw, bool(raw) and raw in marked_texts
 
 
 # Mapping PANNs label -> categoria Krause (semplificato).
@@ -572,7 +596,12 @@ def _build_sections(features: list[dict],
             return max(counts.items(), key=lambda kv: kv[1])[0]
 
         dominant_panns = _mode([f["panns_top1"] for f in chunk])
-        dominant_clap = _mode([f["clap_top1"] for f in chunk])
+        # v0.14 (INT-2): non promuovere un prompt di categoria marcata come
+        # dominante di sezione (caso B "Sessantotto" su tutte le sezioni);
+        # usa il piu' frequente non marcato e segnala la soppressione.
+        dominant_clap, dominant_clap_marked = _dominant_clap_excluding_marked(
+            [f["clap_top1"] for f in chunk], clap_mapping.marked_prompt_texts()
+        )
         krause = _krause_from_panns(dominant_panns) if dominant_panns else "mista"
         if mean_rms < -50.0:
             krause = "silenzio"
@@ -601,6 +630,7 @@ def _build_sections(features: list[dict],
             "dominant_panns": dominant_panns,
             "dominant_panns_confidence": panns_conf,
             "dominant_clap_prompt": dominant_clap,
+            "dominant_clap_marked": dominant_clap_marked,
             "krause": krause,
         }
         section["signature_label"] = _label_section_signature(section)

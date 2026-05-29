@@ -159,6 +159,55 @@ LOCATION_SPECIFIC_KEYWORDS_IT = {
     "campane di chiesa", "piazza italiana", "via",
 }
 
+# CLAP categorie "marcate" (v0.14, INT-1 dossier P&T): categorie geograficamente
+# remote o storico-sociali che il modello CLAP italiano tende ad allucinare su
+# materiale ordinario. Casi documentati: B "Registrazione d'archivio di
+# manifestazione del Sessantotto" (0.355) su voci di bar; C "Villaggio
+# nordico costiero" (0.308) e "Porto peschereccio croato" (0.302) su una finestra
+# di Macerata. Un prompt di queste categorie con score sotto
+# MARKED_HALLUCINATION_SCORE_MAX viene marcato likely_hallucination. Se almeno
+# MARKED_CONCENTRATION_MIN_COUNT dei primi MARKED_CONCENTRATION_TOP_N prompt sono
+# marcati, scatta thematic_overconcentration (auto-rinforzo per accumulo,
+# relazione critica C).
+MARKED_HALLUCINATION_CATEGORIES = frozenset({
+    "paesaggi nordici",
+    "paesaggi artici",
+    "paesaggi anglosassoni",
+    "paesaggi dalmati e adriatici",
+    "paesaggi europei orientali",
+    "paesaggi urbani internazionali",
+    "soundscape politico urbano",
+    "performance multimediale",
+})
+MARKED_HALLUCINATION_SCORE_MAX = 0.40
+MARKED_CONCENTRATION_TOP_N = 5
+MARKED_CONCENTRATION_MIN_COUNT = 2
+
+# NDSI caveat ambienti idrici (v0.14, INT-5 dossier P&T): l'NDSI band-based
+# legge l'energia 2-8 kHz come "biofonia"; quando quella banda e' occupata
+# dall'acqua (doccia, rubinetto, ruscello) e la biofonia animale e' debole,
+# l'NDSI alto e' un artefatto. Caso A: NDSI 0.711 su scroscio doccia.
+NDSI_CAVEAT_MIN = 0.3  # solo su NDSI nettamente biofonico
+NDSI_WATER_MIN = 0.10  # supporto PANNs minimo per "acqua dominante"
+NDSI_WATER_LABELS = (
+    "Water", "Water tap, faucet", "Stream", "Waterfall", "Liquid",
+    "Gurgling", "Sink (filling or washing)", "Bathtub (filling or washing)",
+    "Pour", "Drip",
+)
+NDSI_BIOPHONY_LABELS = (
+    "Bird", "Animal", "Insect", "Cricket",
+    "Bird vocalization, bird call, bird song", "Chirp, tweet",
+    "Wild animals", "Frog", "Owl",
+)
+
+# Narrativa (v0.14, INT-4 dossier P&T): etichette PANNs ad alto tasso di falso
+# positivo su transienti percussivi (zoccoli/tacchi/motore ritmico letti come
+# cavallo). Citate nella narrativa solo se nettamente dominanti, per non
+# alimentare l'inferenza "trazione animale". Casi: C (taglia erba, Horse
+# picco 0.287), B (tacchi della signora, Clip-clop 0.40).
+NARRATIVE_FP_PRONE_PANNS_LABELS = frozenset({"Horse", "Clip-clop"})
+NARRATIVE_FP_PRONE_MIN_CITE = 0.50
+
 # CLAP plausibility check deterministico (v0.6.6): pre-filtro sui tag CLAP
 # sistematicamente allucinati emersi dal confronto blind corpus Nottoli.
 # Per ciascun pattern, se i PANNs "supporto" sono sotto le soglie, il tag
@@ -207,6 +256,23 @@ PLAUSIBILITY_PATTERNS = (
         "threshold_low": 0.03,
         "threshold_medium": 0.07,
         "reason": "prompt costiero marino",
+    },
+    {
+        # v0.14 (INT-3 dossier P&T): specie animale specifica. Il supporto
+        # generico Animal/Bird non basta per plausibility "high": serve un match
+        # PANNs specifico del gallo. Caso C: "Gallo che canta all'alba in
+        # villaggio costiero" prendeva "high" solo da Bird/Animal 0.276.
+        # Deve precedere "biofonia_insetti" (il loop si ferma al primo match).
+        "name": "gallo_specie_specifica",
+        "keywords": ("gallo che canta", "gallo all'alba", "gallo"),
+        "panns_specific": ("Crowing, cock-a-doodle-doo", "Chicken, rooster",
+                           "Fowl", "Cluck"),
+        "panns_any": ("Bird", "Animal",
+                      "Bird vocalization, bird call, bird song",
+                      "Chirp, tweet", "Wild animals", "Domestic animals, pets"),
+        "threshold_low": 0.03,
+        "threshold_medium": 0.08,
+        "reason": "prompt di specie animale specifica (gallo)",
     },
     {
         "name": "biofonia_insetti",

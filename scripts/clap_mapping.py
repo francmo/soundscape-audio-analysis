@@ -160,6 +160,85 @@ def mark_geo_specific_tags(top_global: list[dict]) -> list[dict]:
     return out
 
 
+def mark_marked_category_hallucinations(top_global: list[dict]) -> list[dict]:
+    """Marca come likely_hallucination i prompt CLAP di categoria "marcata"
+    (geografica remota o storico-sociale) con score basso (v0.14, INT-1).
+
+    Il classificatore CLAP italiano tende a proiettare ambienti ordinari verso
+    categorie notevoli (villaggio nordico, porto croato, manifestazione del
+    Sessantotto, performance con larsen). Quando un prompt appartiene a una
+    categoria in `config.MARKED_HALLUCINATION_CATEGORIES` e il suo score resta
+    sotto `config.MARKED_HALLUCINATION_SCORE_MAX`, lo si marca come probabile
+    allucinazione (`likely_hallucination` + `marked_category`). Se almeno
+    `MARKED_CONCENTRATION_MIN_COUNT` dei primi `MARKED_CONCENTRATION_TOP_N` prompt
+    sono di categoria marcata, i tag marcati ricevono anche
+    `thematic_overconcentration=True` (auto-rinforzo per accumulo).
+
+    Non rimuove i tag e non sovrascrive un `likely_hallucination` gia' alzato da
+    altri marker (es. speech). Ritorna nuova lista.
+    """
+    top_n = top_global[: config.MARKED_CONCENTRATION_TOP_N]
+    n_marked = sum(
+        1
+        for t in top_n
+        if (t.get("category") or "") in config.MARKED_HALLUCINATION_CATEGORIES
+    )
+    overconcentration = n_marked >= config.MARKED_CONCENTRATION_MIN_COUNT
+
+    out = []
+    for tag in top_global:
+        new_tag = dict(tag)
+        category = tag.get("category") or ""
+        score = float(tag.get("score", 0) or 0)
+        if (
+            category in config.MARKED_HALLUCINATION_CATEGORIES
+            and score < config.MARKED_HALLUCINATION_SCORE_MAX
+        ):
+            new_tag["marked_category"] = True
+            if not new_tag.get("likely_hallucination"):
+                new_tag["likely_hallucination"] = True
+                new_tag["hallucination_reason"] = (
+                    f"categoria marcata '{category}' (geografica remota o "
+                    f"storico-sociale) con score {score:.3f} < "
+                    f"{config.MARKED_HALLUCINATION_SCORE_MAX}: proiezione verso "
+                    f"un contesto notevole non supportata dal materiale"
+                )
+            if overconcentration:
+                new_tag["thematic_overconcentration"] = True
+        out.append(new_tag)
+    return out
+
+
+_MARKED_PROMPT_TEXTS: frozenset[str] | None = None
+
+
+def marked_prompt_texts(vocabulary: dict | None = None) -> frozenset[str]:
+    """Insieme dei testi-prompt CLAP appartenenti a categorie marcate
+    (`config.MARKED_HALLUCINATION_CATEGORIES`), per il prior di ordinarieta'
+    sul `dominant_clap_prompt` di sezione (v0.14, INT-2).
+
+    Con `vocabulary=None` carica il vocabolario di default una sola volta
+    (cache di modulo). Passare un dict esplicito bypassa la cache (utile nei
+    test).
+    """
+    global _MARKED_PROMPT_TEXTS
+    if vocabulary is None and _MARKED_PROMPT_TEXTS is not None:
+        return _MARKED_PROMPT_TEXTS
+    vocab = vocabulary
+    if vocab is None:
+        from .semantic_clap import load_vocabulary
+        vocab = load_vocabulary()
+    texts = frozenset(
+        (p.get("text") or "")
+        for p in vocab.get("prompts", [])
+        if (p.get("category") or "") in config.MARKED_HALLUCINATION_CATEGORIES
+        and (p.get("text") or "")
+    )
+    if vocabulary is None:
+        _MARKED_PROMPT_TEXTS = texts
+    return texts
+
+
 def mark_plausibility_deterministic(
     top_global: list[dict],
     classifier: dict | None,
@@ -204,25 +283,51 @@ def mark_plausibility_deterministic(
         for pattern in config.PLAUSIBILITY_PATTERNS:
             if not any(kw in prompt_lower for kw in pattern["keywords"]):
                 continue
-            max_support = max(
+            generic_support = max(
                 (panns_by_label.get(lbl, 0.0) for lbl in pattern["panns_any"]),
                 default=0.0,
             )
-            if max_support < pattern["threshold_low"]:
-                level = "low"
-            elif max_support < pattern["threshold_medium"]:
-                level = "medium"
+            specific_labels = pattern.get("panns_specific")
+            if specific_labels:
+                # v0.14 (INT-3): per i prompt di specie/entita' specifica il
+                # supporto generico di famiglia (Animal/Bird) non basta per
+                # "high"; serve un match PANNs specifico. Il generico concede al
+                # massimo "medium". Caso C: "gallo" non piu' "high" da Bird.
+                specific_support = max(
+                    (panns_by_label.get(lbl, 0.0) for lbl in specific_labels),
+                    default=0.0,
+                )
+                if specific_support >= pattern["threshold_medium"]:
+                    level, max_support = "high", specific_support
+                elif generic_support >= pattern["threshold_low"]:
+                    level, max_support = "medium", generic_support
+                else:
+                    level = "low"
+                    max_support = max(specific_support, generic_support)
+                reason = (
+                    f"{pattern['reason']}: match specifico "
+                    f"{list(specific_labels)} = {specific_support:.3f}, "
+                    f"generico {list(pattern['panns_any'])} = "
+                    f"{generic_support:.3f} (il supporto generico non concede 'high')"
+                )
             else:
-                level = "high"
+                max_support = generic_support
+                if max_support < pattern["threshold_low"]:
+                    level = "low"
+                elif max_support < pattern["threshold_medium"]:
+                    level = "medium"
+                else:
+                    level = "high"
+                reason = (
+                    f"{pattern['reason']}: max PANNs fra "
+                    f"{list(pattern['panns_any'])} = {max_support:.3f} "
+                    f"(soglie low={pattern['threshold_low']}, "
+                    f"medium={pattern['threshold_medium']})"
+                )
             new_tag["plausibility"] = level
             new_tag["plausibility_pattern"] = pattern["name"]
             new_tag["plausibility_support_score"] = round(max_support, 4)
-            new_tag["plausibility_reason"] = (
-                f"{pattern['reason']}: max PANNs fra "
-                f"{list(pattern['panns_any'])} = {max_support:.3f} "
-                f"(soglie low={pattern['threshold_low']}, "
-                f"medium={pattern['threshold_medium']})"
-            )
+            new_tag["plausibility_reason"] = reason
             break  # Un tag puo' matchare un solo pattern
         out.append(new_tag)
     return out

@@ -129,6 +129,7 @@ def _analyze_single(
             from .clap_mapping import (
                 mark_speech_hallucinations,
                 mark_geo_specific_tags,
+                mark_marked_category_hallucinations,
                 mark_plausibility_deterministic,
             )
             classifier_res = semantic_res.get("classifier") if do_semantic else None
@@ -136,6 +137,13 @@ def _analyze_single(
                 clap_res["top_global"], classifier_res
             )
             clap_res["top_global"] = mark_geo_specific_tags(clap_res["top_global"])
+            # v0.14 (INT-1 dossier P&T): marca come likely_hallucination i prompt
+            # di categoria geografica remota/storico-sociale con score basso
+            # (Sessantotto, villaggio nordico, porto croato), con flag di
+            # sovraconcentrazione tematica per l'auto-rinforzo per accumulo.
+            clap_res["top_global"] = mark_marked_category_hallucinations(
+                clap_res["top_global"]
+            )
             # v0.6.6: pre-filtro deterministico per 5 pattern di falso positivo
             # ricorrenti emersi dal confronto blind corpus Nottoli (acqua del
             # rubinetto, preghiera collettiva, spiaggia mediterranea, biofonia
@@ -144,6 +152,13 @@ def _analyze_single(
             clap_res["top_global"] = mark_plausibility_deterministic(
                 clap_res["top_global"], classifier_res
             )
+
+    # v0.14 (INT-5 dossier P&T): caveat NDSI se la banda biofonica 2-8 kHz e'
+    # dominata dall'acqua (doccia/rubinetto), non da biofonia animale (A).
+    if eco.get("ndsi") and do_semantic:
+        eco["ndsi"] = ecoacoustic.ndsi_water_caveat(
+            eco["ndsi"], semantic_res.get("classifier")
+        )
 
     # v0.13.0 (Intervento C dossier P&T): risoluzione tri-stato di --speech.
     # do_transcribe_speech in input puo' essere True (forzato ON via --speech),
@@ -221,7 +236,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.13.0",
+        "version": "0.14.0",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -371,7 +386,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.13.0", prog_name="soundscape")
+@click.version_option(version="0.14.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e

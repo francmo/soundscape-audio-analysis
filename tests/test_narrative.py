@@ -162,3 +162,29 @@ def test_narrative_delta_based_collapses_homogeneous_windows_after_fix():
         f"materiale omogeneo (3 chunk identici) produce {len(segments)} "
         f"segmenti, atteso <=2 con delta-based"
     )
+
+
+# --- v0.14 INT-4: soppressione falso positivo equino nella narrativa ---
+
+def test_describe_panns_suppresses_marginal_horse():
+    from scripts.narrative import _describe_panns
+    out = _describe_panns([{"name": "Horse", "score": 0.28}], profile="didactic")
+    assert out == ""  # Horse marginale (FP su transienti percussivi) non citato
+
+
+def test_describe_panns_suppresses_clipclop_below_threshold():
+    from scripts.narrative import _describe_panns
+    out = _describe_panns([{"name": "Clip-clop", "score": 0.40}], profile="didactic")
+    assert out == ""  # sotto la soglia FP (0.50): non citato
+
+
+def test_describe_panns_keeps_dominant_horse():
+    from scripts.narrative import _describe_panns
+    out = _describe_panns([{"name": "Horse", "score": 0.55}], profile="didactic")
+    assert out != ""  # cavallo nettamente dominante (>= 0.50): citato
+
+
+def test_describe_panns_keeps_normal_marginal_label():
+    from scripts.narrative import _describe_panns
+    out = _describe_panns([{"name": "Bird", "score": 0.10}], profile="didactic")
+    assert out != ""  # Bird marginale (non FP-prone) resta citato

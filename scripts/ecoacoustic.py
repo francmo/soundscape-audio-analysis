@@ -85,6 +85,42 @@ def compute_ndsi(
     }
 
 
+def ndsi_water_caveat(ndsi_result: dict, classifier: dict | None) -> dict:
+    """Caveat NDSI per ambienti idrici (v0.14, INT-5).
+
+    L'NDSI band-based interpreta l'energia nella banda 2-8 kHz come biofonia.
+    Ma se quella banda e' occupata dall'acqua (doccia, rubinetto, ruscello) e la
+    biofonia animale e' debole, un NDSI alto e' un artefatto, non biofonia. Caso
+    A: NDSI 0.711 su scroscio doccia. Quando NDSI >= NDSI_CAVEAT_MIN e il
+    supporto PANNs dell'acqua supera quello della biofonia animale, aggiunge una
+    chiave `caveat` al dict NDSI. Non altera il valore. Ritorna nuova copia.
+    """
+    out = dict(ndsi_result or {})
+    ndsi = float(out.get("ndsi", 0) or 0)
+    if ndsi < config.NDSI_CAVEAT_MIN or not classifier:
+        return out
+    by_label: dict[str, float] = {}
+    for t in classifier.get("top_global", []) or []:
+        name = t.get("name")
+        if isinstance(name, str):
+            by_label[name] = float(t.get("score", 0) or 0)
+    water = max((by_label.get(l, 0.0) for l in config.NDSI_WATER_LABELS), default=0.0)
+    bio = max((by_label.get(l, 0.0) for l in config.NDSI_BIOPHONY_LABELS), default=0.0)
+    if water >= config.NDSI_WATER_MIN and water > bio:
+        out["caveat"] = {
+            "type": "water_dominant_biophony_band",
+            "water_score": round(water, 4),
+            "biophony_animal_score": round(bio, 4),
+            "message": (
+                f"NDSI {ndsi:.3f} suggerisce biofonia, ma la banda 2-8 kHz e' "
+                f"dominata dall'acqua (PANNs Water {water:.3f} > biofonia animale "
+                f"{bio:.3f}): il valore riflette energia idrica, non biofonia. "
+                f"Interpretare con cautela."
+            ),
+        }
+    return out
+
+
 def compute_entropy_h(y: np.ndarray, sr: int, n_fft: int = 2048) -> dict:
     """Acoustic Entropy (Sueur et al. 2008).
 

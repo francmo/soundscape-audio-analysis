@@ -296,7 +296,7 @@ def run_corpus_report(
 
     # 12. Metadata di run
     run_meta = {
-        "version": "0.13.0",
+        "version": "0.14.0",
         "corpus_title": corpus_title,
         "n_files": n_files,
         "duration_total_s": total_duration_s,

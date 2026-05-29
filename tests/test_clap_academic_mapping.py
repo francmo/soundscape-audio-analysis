@@ -10,6 +10,9 @@ from scripts.clap_mapping import (
     load_academic_mapping,
     get_prompt_mapping,
     aggregate_academic_hints,
+    mark_marked_category_hallucinations,
+    mark_plausibility_deterministic,
+    marked_prompt_texts,
 )
 from scripts.semantic_clap import load_vocabulary
 
@@ -616,3 +619,102 @@ def test_aggregate_hints_includes_schaeffer_detail_and_smalley_growth_v060():
     # su prompt utterance multiformi, almeno un valore dominante con
     # confidence non insufficient.
     assert h["schaeffer_detail"]["confidence"] in ("high", "medium", "low")
+
+
+# --- v0.14 INT-1: allucinazioni su categorie "marcate" (dossier P&T) ---
+
+def test_marked_category_flags_notable_low_score_caso_b():
+    """Caso B: 'Sessantotto' (categoria marcata, score basso) flaggato;
+    il 'Bar' italiano ordinario NO (guardia anti-overcorrection)."""
+    top = [
+        {"id": "pol_07", "category": "soundscape politico urbano", "score": 0.355,
+         "prompt": "Registrazione d'archivio di manifestazione del Sessantotto"},
+        {"id": "ita_20", "category": "paesaggi italiani specifici", "score": 0.369,
+         "prompt": "Bar con macchina del caffe' e chiacchiere"},
+    ]
+    out = mark_marked_category_hallucinations(top)
+    assert out[0]["likely_hallucination"] is True
+    assert out[0]["marked_category"] is True
+    assert "hallucination_reason" in out[0]
+    assert not out[1].get("likely_hallucination")
+    assert not out[1].get("marked_category")
+
+
+def test_marked_category_not_flagged_when_score_high():
+    """Una categoria marcata con score alto e' considerata supportata."""
+    top = [{"id": "nrd_01", "category": "paesaggi nordici", "score": 0.55,
+            "prompt": "Villaggio nordico costiero con vento e gabbiani"}]
+    out = mark_marked_category_hallucinations(top)
+    assert not out[0].get("likely_hallucination")
+
+
+def test_marked_thematic_overconcentration_caso_c():
+    """Caso C: 3 dei primi 5 prompt sono di categoria marcata ->
+    thematic_overconcentration sui tag marcati; biofonia resta non marcata."""
+    top = [
+        {"id": "nrd_01", "category": "paesaggi nordici", "score": 0.308, "prompt": "Villaggio nordico costiero"},
+        {"id": "dal_04", "category": "paesaggi dalmati e adriatici", "score": 0.302, "prompt": "Porto peschereccio croato"},
+        {"id": "prf_09", "category": "performance multimediale", "score": 0.278, "prompt": "Microfoni sul palco con larsen"},
+        {"id": "bio_16", "category": "biofonia", "score": 0.272, "prompt": "Gallo che canta all'alba"},
+        {"id": "pmd_01", "category": "paesaggi mediterranei generici", "score": 0.268, "prompt": "Porto peschereccio all'alba"},
+    ]
+    out = mark_marked_category_hallucinations(top)
+    assert out[0]["likely_hallucination"] is True
+    assert out[0]["thematic_overconcentration"] is True
+    assert out[1]["thematic_overconcentration"] is True
+    # la biofonia (categoria non marcata) non e' toccata
+    assert not out[3].get("marked_category")
+    assert not out[4].get("marked_category")
+
+
+def test_marked_category_preserves_existing_hallucination_flag():
+    """Non sovrascrive un likely_hallucination gia' alzato (es. da speech)."""
+    top = [{"id": "x", "category": "soundscape politico urbano", "score": 0.30,
+            "prompt": "Comizio", "likely_hallucination": True,
+            "hallucination_reason": "speech-based"}]
+    out = mark_marked_category_hallucinations(top)
+    assert out[0]["likely_hallucination"] is True
+    assert out[0]["hallucination_reason"] == "speech-based"  # preservato
+    assert out[0]["marked_category"] is True
+
+
+# --- v0.14 INT-3: plausibility "high" solo su match specifico ---
+
+def test_plausibility_gallo_not_high_on_generic_bird():
+    """Caso C: 'gallo' non riceve 'high' dal solo supporto generico
+    Bird/Animal (serve un match specifico del gallo)."""
+    top = [{"id": "bio_16", "score": 0.27,
+            "prompt": "Gallo che canta all'alba in villaggio costiero"}]
+    classifier = {"top_global": [{"name": "Bird", "score": 0.34},
+                                 {"name": "Animal", "score": 0.30}]}
+    out = mark_plausibility_deterministic(top, classifier)
+    assert out[0]["plausibility"] == "medium"  # non "high"
+    assert out[0]["plausibility_pattern"] == "gallo_specie_specifica"
+
+
+def test_plausibility_gallo_high_with_specific_label():
+    """Con un match PANNs specifico del gallo, 'high' e' concesso."""
+    top = [{"id": "bio_16", "score": 0.27, "prompt": "Gallo che canta all'alba"}]
+    classifier = {"top_global": [{"name": "Crowing, cock-a-doodle-doo", "score": 0.20},
+                                 {"name": "Bird", "score": 0.34}]}
+    out = mark_plausibility_deterministic(top, classifier)
+    assert out[0]["plausibility"] == "high"
+
+
+def test_plausibility_generic_birdsong_still_high():
+    """Guardia anti-overcorrection: un prompt generico di uccelli resta 'high'
+    col supporto Bird (il file ha davvero uccelli)."""
+    top = [{"id": "bio_x", "score": 0.30, "prompt": "Canto di uccelli nel bosco"}]
+    classifier = {"top_global": [{"name": "Bird", "score": 0.34}]}
+    out = mark_plausibility_deterministic(top, classifier)
+    assert out[0]["plausibility"] == "high"
+    assert out[0]["plausibility_pattern"] == "biofonia_insetti"
+
+
+# --- v0.14 INT-2: set di prompt marcati dal vocabolario ---
+
+def test_marked_prompt_texts_from_vocab():
+    vocab = load_vocabulary()
+    texts = marked_prompt_texts(vocab)
+    assert any("Sessantotto" in t for t in texts)  # politico urbano -> marcato
+    assert not any(t.startswith("Bar con macchina") for t in texts)  # bar -> ordinario

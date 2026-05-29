@@ -1,7 +1,10 @@
 import pytest
 from tests.conftest import FIXTURES_DIR, ensure_fixtures
 from scripts.io_loader import load_audio_mono
-from scripts.spectral import spectral_summary, compute_stft_mean, compute_bands, onset_analysis
+from scripts.spectral import (
+    spectral_summary, compute_stft_mean, compute_bands, onset_analysis,
+    compute_bands_schafer_alert,
+)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -41,3 +44,65 @@ def test_onset_density_label_sparse_vs_dense():
     o2 = onset_analysis(y2, sr2, d2)
     # I transient_dense devono avere density maggiore o uguale al pink
     assert o2["events_per_sec"] >= o1["events_per_sec"]
+
+
+# =====================================================================
+# v0.13.0 (Intervento B dossier P&T): alert sub-bass+bass anomalo.
+# =====================================================================
+
+
+def test_bands_alert_triggers_above_threshold():
+    """Quando Sub-bass + Bass > 60%, alert ritorna dict con warning e
+    messaggio italiano. Caso scuola: B 41.48 + 40.66 = 82.14%."""
+    bands = {
+        "Sub-bass": {"energy_pct": 41.48},
+        "Bass": {"energy_pct": 40.66},
+        "Low-mid": {"energy_pct": 5.0},
+        "Mid": {"energy_pct": 5.0},
+        "High-mid": {"energy_pct": 4.0},
+        "Presence": {"energy_pct": 2.0},
+        "Brilliance": {"energy_pct": 1.86},
+    }
+    alert = compute_bands_schafer_alert(bands)
+    assert alert is not None
+    assert alert["level"] == "warning"
+    assert alert["low_sum_pct"] == pytest.approx(82.14, abs=0.01)
+    assert "sub-bass+bass" in alert["message"].lower()
+    assert "handling" in alert["message"]
+
+
+def test_bands_alert_silent_below_threshold():
+    """Sotto soglia, alert ritorna None. Caso tipico: A bagno
+    domestico, distribuzione bilanciata."""
+    bands = {
+        "Sub-bass": {"energy_pct": 12.0},
+        "Bass": {"energy_pct": 18.0},
+        "Low-mid": {"energy_pct": 15.0},
+        "Mid": {"energy_pct": 20.0},
+        "High-mid": {"energy_pct": 18.0},
+        "Presence": {"energy_pct": 10.0},
+        "Brilliance": {"energy_pct": 7.0},
+    }
+    alert = compute_bands_schafer_alert(bands)
+    assert alert is None
+
+
+def test_bands_alert_custom_threshold():
+    """Soglia configurabile."""
+    bands = {
+        "Sub-bass": {"energy_pct": 25.0},
+        "Bass": {"energy_pct": 20.0},
+    }
+    # 45% sub+bass: sotto default 60%, sopra soglia custom 40%
+    assert compute_bands_schafer_alert(bands) is None
+    assert compute_bands_schafer_alert(bands, threshold_pct=40.0) is not None
+
+
+def test_spectral_summary_includes_bands_alert_field():
+    """spectral_summary deve sempre includere il campo bands_schafer_alert,
+    None se sotto soglia. Su pink_noise (distribuzione roughly piatta),
+    sub-bass+bass non dovrebbe superare 60%."""
+    y, sr = load_audio_mono(FIXTURES_DIR / "pink_noise.wav")
+    duration = len(y) / sr
+    out = spectral_summary(y, sr, duration)
+    assert "bands_schafer_alert" in out

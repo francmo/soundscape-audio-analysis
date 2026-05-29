@@ -45,7 +45,7 @@ def _analyze_single(
     semantic_backend: str | None = None,
     do_clap: bool = True,
     narrative_mode: str = "full",
-    do_transcribe_speech: bool = False,
+    do_transcribe_speech: bool | None = False,
     known_piece: str = "",
     ecoacoustic_backend: str | None = None,
     narrative_profile: str = "auto",
@@ -145,13 +145,37 @@ def _analyze_single(
                 clap_res["top_global"], classifier_res
             )
 
-    # Check suggerimento --speech (v0.5.0): se PANNs rileva Speech dominante
-    # nel top_dominant_frames oltre soglia e il flag non e' attivo, raccogliamo
-    # un hint da stampare a fine analyze_cmd in giallo su stderr.
+    # v0.13.0 (Intervento C dossier P&T): risoluzione tri-stato di --speech.
+    # do_transcribe_speech in input puo' essere True (forzato ON via --speech),
+    # False (forzato OFF via --no-speech), None (auto: decide la skill in base
+    # al % di Speech dominante nei frame PANNs). Se >= 80% lo attiviamo.
     from . import speech as _speech
+    auto_speech_triggered = False
+    auto_speech_pct = None
+    if do_transcribe_speech is None:
+        if _speech.should_auto_enable_speech(semantic_res):
+            do_transcribe_speech = True
+            auto_speech_triggered = True
+            auto_speech_pct = _speech.speech_dominant_pct(semantic_res)
+        else:
+            do_transcribe_speech = False
+    # Coercion a bool stretto per il resto della pipeline.
+    do_transcribe_speech = bool(do_transcribe_speech)
+
+    # Check suggerimento --speech (v0.5.0): se PANNs rileva Speech dominante
+    # nel top_dominant_frames oltre soglia (25%) e il flag non e' attivo (e
+    # non e' scattato l'auto), raccogliamo un hint da stampare in giallo.
     speech_suggestion_pct = _speech.check_speech_suggestion(
         semantic_res, flag_active=do_transcribe_speech
     )
+
+    if auto_speech_triggered:
+        click.echo(click.style(
+            f"[soundscape] Auto-attivazione trascrizione: Speech dominante "
+            f"{auto_speech_pct:.1f}% dei frame PANNs (soglia {config.SPEECH_AUTO_DOMINANT_PCT:.0f}%). "
+            f"Per disabilitare: --no-speech.",
+            fg="cyan"
+        ), err=True)
 
     # v0.12.6 (P1 caso A): distinzione parlato diretto vs mediato.
     # Si applica quando PANNs Speech e' dominante (>= 5% dei frame), in
@@ -197,7 +221,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.12.6",
+        "version": "0.13.0",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -347,7 +371,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.12.5", prog_name="soundscape")
+@click.version_option(version="0.13.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -393,8 +417,11 @@ def cli():
                    "didattici); `auto` (default) sceglie didactic se durata "
                    "<=5min, flatness>=0.1 e top PANNs domestico, altrimenti "
                    "acousmatic.")
-@click.option("--speech", is_flag=True, default=False,
-              help="Trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana via claude -p (opt-in, v0.5.0)")
+@click.option("--speech/--no-speech", "speech", default=None,
+              help="Trascrizione dialoghi via faster-whisper + Silero VAD, con "
+                   "traduzione italiana via claude -p. Tri-stato (v0.13.0): "
+                   "omesso -> auto (attiva se Speech >= 80%% dei frame PANNs); "
+                   "--speech -> forza attivazione; --no-speech -> forza disattivazione.")
 @click.option("--known-piece", "known_piece", type=str, default="",
               help="Attribuzione nota dell'opera nel formato 'Autore, Titolo, anno' "
                    "(es. 'Luc Ferrari, Presque Rien N°1, 1967-70'). Se fornito, l'agente "

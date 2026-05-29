@@ -97,12 +97,24 @@ def _describe_levels(rms_db: float, peak_db: float, seed_key: str) -> str:
 
 def _describe_spectrum(centroid_hz: float, flatness: float,
                        dominant_band: str, seed_key: str) -> str:
+    """v0.13.0 (pattern 6 dossier P&T): le soglie storiche (<0.05 'molto
+    tonale', <0.2 'tendenzialmente tonale') etichettavano come "molto tonale"
+    soundscape urbani con flatness 0.007-0.013, percettivamente noisy. Le
+    nuove soglie discriminano "molto tonale" (<0.005, sinusoide pura) da
+    "moderatamente tonale" (0.005-0.015) da "tonale" (0.015-0.05) da
+    "tendenzialmente tonale" (0.05-0.2). Coerenti con signature_label di
+    structure (locale_it.signature_tonality).
+    """
     opening = _pick(_OPENINGS_SPECTRUM, seed_key + "_sp")
-    if flatness < 0.05:
+    if flatness < config.FLATNESS_MOLTO_TONALE_MAX:
         flat_label = "spettro molto tonale"
-    elif flatness < 0.2:
+    elif flatness < config.FLATNESS_MODERATAMENTE_TONALE_MAX:
+        flat_label = "spettro moderatamente tonale"
+    elif flatness < config.FLATNESS_TONALE_MAX:
+        flat_label = "spettro tonale"
+    elif flatness < config.FLATNESS_TENDENZIALMENTE_TONALE_MAX:
         flat_label = "spettro tendenzialmente tonale"
-    elif flatness < 0.5:
+    elif flatness < config.FLATNESS_MISTO_MAX:
         flat_label = "spettro misto tra tonale e rumoroso"
     else:
         flat_label = "spettro molto rumoroso"

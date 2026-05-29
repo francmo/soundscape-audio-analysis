@@ -337,7 +337,9 @@ Il campo `speech` contiene la trascrizione dialoghi. Se `speech.enabled == false
 Il payload include `structure` con `n_sections` e `sections`: max 8 sezioni
 significative del brano identificate via changepoint detection. Ogni sezione ha `id`
 (S1..Sn), `t_start_s`, `t_end_s`, `duration_s`, `mean_rms_db`, `mean_centroid_hz`,
-`mean_flatness`, `dominant_panns`, `dominant_clap_prompt`, `krause`, `signature_label`.
+`mean_flatness`, `events_per_sec` (v0.13.0), `dominant_panns`, `dominant_clap_prompt`,
+`krause`, `signature_label`, e quando disponibile `hi_fi_lo_fi` (v0.13.0,
+label + score 1-5 calcolati per sezione, non solo globalmente).
 
 **Usalo come ossatura** per "Scene sonore": puoi aggregare sezioni contigue con
 signature affini, oppure spezzare ulteriormente una sezione lunga in 2-3 scene
@@ -348,6 +350,26 @@ empirico, le scene sono **interpretazione drammaturgica**.
 La `signature_label` automatica (es. "antropofonia soffusa tonale") NON è il titolo
 della scena: serve solo come sottotitolo tecnico quando utile. Il **titolo della
 scena è tuo compito**, deve essere evocativo e narrativo.
+
+**Hi-Fi/Lo-Fi per sezione (v0.13.0, Intervento A dossier P&T)**: oltre al
+valore globale in `spectral.hifi_lofi`, ogni sezione di `structure.sections`
+puo' avere il proprio `hi_fi_lo_fi` (label + score 1-5) calcolato dal
+dynamic_range locale e dalla flatness media. Usalo per riconoscere
+soundscape a variabilita' strutturale: la stessa registrazione puo'
+oscillare fra Hi-Fi (dettagli distinguibili) e Lo-Fi (saturazione di
+rumore di fondo) fra sezioni. Quando il valore globale dice Lo-Fi ma una
+sezione e' Hi-Fi, la scena di quella sezione e' percettivamente piu'
+articolata di quanto la media globale suggerirebbe.
+
+**Avviso spettrale sub-bass+bass (v0.13.0, Intervento B dossier P&T)**: il
+campo `spectral.bands_schafer_alert` (presente solo quando attivo) segnala
+una distribuzione anomala dominata da sub-bass+bass (>60%), plausibile
+artefatto di handling, microfono mobile o vibrazioni del piano d'appoggio.
+Quando attivo, **non interpretare il contenuto basso come materiale
+significativo del soundscape**: il "tappeto grave" e' probabilmente
+rumore della registrazione, non oggetto sonoro intenzionale. Cita
+l'avviso come riserva tecnica nella Criticita' tecniche, non come tratto
+drammaturgico.
 
 **Sub-sezioni geofoniche/biofoniche (v0.12.6, P5 caso A)**: una sezione
 con `has_sub_sections: true` contiene il campo `sub_sections` con record `S3a`,

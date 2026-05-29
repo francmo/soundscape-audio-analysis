@@ -294,3 +294,222 @@ def test_compute_structure_propagates_sub_sections_in_output():
     result = structure.compute_structure(waveform, sr, summary={})
     # Senza summary.semantic/clap, le timeline sono vuote, niente sub-sections
     assert result.get("n_sub_sections", 0) == 0
+
+
+# =====================================================================
+# v0.13.0 (Intervento D dossier P&T): signature_label a 4 dimensioni con
+# correlazione onset/sezione e soglie tonale piu' fini.
+# =====================================================================
+
+
+def test_events_per_sec_in_section_counts_onset_within_window():
+    """_events_per_sec_in_section: 5 onset in 10 s -> 0.5 eventi/s. Vincolo
+    di intervallo semi-aperto [t_start, t_end)."""
+    onset_times = [1.0, 3.0, 5.0, 7.0, 9.0, 11.0]
+    rate = structure._events_per_sec_in_section(onset_times, 0.0, 10.0)
+    # 5 onset (1,3,5,7,9) cadono in [0,10); 11.0 e' escluso.
+    assert rate == pytest.approx(0.5, abs=0.01)
+
+
+def test_events_per_sec_in_section_empty_returns_zero():
+    """Se non ci sono onset, ritorna 0 senza errori."""
+    assert structure._events_per_sec_in_section([], 0.0, 30.0) == 0.0
+    assert structure._events_per_sec_in_section(None, 0.0, 30.0) == 0.0
+
+
+def test_signature_label_4d_includes_centroid_band_and_density():
+    """Con tutte e 4 le dimensioni popolate, la signature deve riflettere
+    krause + intensita + banda + densita. Esempio: bar urbano antropofonico
+    con voci, centroide medio (1500 Hz), eventi densi (2.5/s) -> attesa
+    "antropofonia moderata chiara densa" o equivalente."""
+    section = {
+        "duration_s": 30.0,
+        "dominant_panns_confidence": "high",
+        "krause": "antropofonia",
+        "mean_rms_db": -25.0,         # moderata
+        "mean_flatness": 0.02,        # tonale (>0.015, <0.05)
+        "mean_centroid_hz": 1500.0,   # chiara (>1000, <4000)
+        "events_per_sec": 2.5,        # densa (>2.0)
+    }
+    label = structure._label_section_signature(section)
+    assert "antropofonia" in label
+    assert "moderata" in label
+    assert "chiara" in label
+    assert "densa" in label
+    assert len(label) <= 50
+
+
+def test_signature_label_differs_between_two_antropofonia_sections():
+    """Pattern 5 caso B: con il nuovo template a 4 dimensioni, due
+    sezioni antropofoniche con caratteristiche timbriche/onset diverse
+    devono ricevere etichette diverse (prima v0.13.0 davano "antropofonia
+    moderata tonale" entrambe)."""
+    s1 = structure._label_section_signature({
+        "duration_s": 30.0,
+        "dominant_panns_confidence": "high",
+        "krause": "antropofonia",
+        "mean_rms_db": -25.0,
+        "mean_flatness": 0.02,
+        "mean_centroid_hz": 1500.0,
+        "events_per_sec": 0.3,        # sparsa
+    })
+    s2 = structure._label_section_signature({
+        "duration_s": 30.0,
+        "dominant_panns_confidence": "high",
+        "krause": "antropofonia",
+        "mean_rms_db": -25.0,
+        "mean_flatness": 0.02,
+        "mean_centroid_hz": 1500.0,
+        "events_per_sec": 2.5,        # densa
+    })
+    assert s1 != s2
+
+
+def test_signature_label_omits_density_on_short_section():
+    """Sotto 5s di durata, la stima di onset_density e' rumorosa: l'etichetta
+    omette la 4a dimensione per non aggiungere rumore."""
+    section = {
+        "duration_s": 3.0,
+        "dominant_panns_confidence": "medium",
+        "krause": "antropofonia",
+        "mean_rms_db": -25.0,
+        "mean_flatness": 0.02,
+        "mean_centroid_hz": 1500.0,
+        "events_per_sec": 3.0,  # densa, ma non deve apparire
+    }
+    label = structure._label_section_signature(section)
+    assert "densa" not in label and "sparsa" not in label and "media" not in label.split()
+
+
+def test_signature_label_fallback_when_events_per_sec_missing():
+    """Retrocompatibilita': sezioni senza `events_per_sec` (output v0.12.x)
+    producono comunque un'etichetta valida sulle 3 dimensioni base."""
+    section = {
+        "duration_s": 30.0,
+        "dominant_panns_confidence": "high",
+        "krause": "biofonia",
+        "mean_rms_db": -30.0,
+        "mean_flatness": 0.1,
+        "mean_centroid_hz": 4500.0,   # brillante
+        # events_per_sec assente
+    }
+    label = structure._label_section_signature(section)
+    assert "biofonia" in label
+    assert "brillante" in label
+    assert len(label) <= 50
+
+
+def test_signature_label_silence_overrides_other_dimensions():
+    """Su RMS molto basso resta 'quasi-silenzio' anche con krause/centroide
+    diversi (override storico v0.12.x preservato)."""
+    section = {
+        "duration_s": 30.0,
+        "dominant_panns_confidence": "high",
+        "krause": "geofonia",
+        "mean_rms_db": -55.0,
+        "mean_flatness": 0.4,
+        "mean_centroid_hz": 8000.0,
+        "events_per_sec": 0.1,
+    }
+    label = structure._label_section_signature(section)
+    assert label == "quasi-silenzio"
+
+
+def test_compute_structure_populates_events_per_sec_per_section():
+    """compute_structure deve popolare `events_per_sec` in ogni sezione,
+    leggendo gli onset da summary.spectral.onsets.events_times_s. Sul
+    brano sintetico (silenzio + tono + rumore) gli onset sono distribuiti
+    soprattutto nei due segmenti non-silenziosi, quindi la prima sezione
+    deve avere events_per_sec basso o nullo."""
+    sr = 22050
+    waveform = _make_synthetic_waveform_three_sections(sr)
+    # Iniettiamo onset solo nel secondo segmento (30-60s) per controllarne
+    # la distribuzione: 5 onset uniformi in [35, 55].
+    summary = {
+        "spectral": {
+            "onsets": {
+                "events_times_s": [35.0, 40.0, 45.0, 50.0, 55.0],
+            }
+        }
+    }
+    result = structure.compute_structure(waveform, sr, summary=summary)
+    for s in result["sections"]:
+        assert "events_per_sec" in s, f"sezione {s['id']} senza events_per_sec"
+    # La sezione che copre il segmento di silenzio iniziale (0-30) non deve
+    # ricevere alcun onset iniettato.
+    first = result["sections"][0]
+    assert first["events_per_sec"] == 0.0
+
+
+def test_signature_centroid_band_thresholds():
+    """Verifica le 4 fasce di banda centroide per signature_label."""
+    from scripts import locale_it as L
+    assert L.signature_centroid_band(100.0) == "scura"
+    assert L.signature_centroid_band(500.0) == "media"
+    assert L.signature_centroid_band(2000.0) == "chiara"
+    assert L.signature_centroid_band(8000.0) == "brillante"
+
+
+def test_signature_tonality_thresholds_pattern_6():
+    """Pattern 6 caso B: le nuove soglie discriminano fra 'molto
+    tonale' (<0.005) e 'moderatamente tonale' (0.005-0.015) etc. La
+    flatness 0.010 (tipica del bar Mamo') non deve essere 'molto tonale'."""
+    from scripts import locale_it as L
+    assert L.signature_tonality(0.001) == "molto tonale"
+    assert L.signature_tonality(0.010) == "moderatamente tonale"  # caso B
+    assert L.signature_tonality(0.030) == "tonale"
+    assert L.signature_tonality(0.100) == "tendenzialmente tonale"
+    assert L.signature_tonality(0.300) == "misto"
+    assert L.signature_tonality(0.700) == "molto rumoroso"
+
+
+# =====================================================================
+# v0.13.0 (Intervento A dossier P&T): hi-fi/lo-fi per sezione.
+# =====================================================================
+
+
+def test_annotate_sections_with_hifi_lofi_populates_field():
+    """_annotate_sections_with_hifi_lofi popola il campo hi_fi_lo_fi in
+    ciascuna sezione con label + score."""
+    sr = 22050
+    waveform = _make_synthetic_waveform_three_sections(sr)
+    sections = [
+        {"id": "S1", "t_start_s": 0.0, "t_end_s": 30.0,
+         "duration_s": 30.0, "mean_flatness": 0.5},
+        {"id": "S2", "t_start_s": 30.0, "t_end_s": 60.0,
+         "duration_s": 30.0, "mean_flatness": 0.01},
+        {"id": "S3", "t_start_s": 60.0, "t_end_s": 90.0,
+         "duration_s": 30.0, "mean_flatness": 0.5},
+    ]
+    structure._annotate_sections_with_hifi_lofi(sections, waveform, sr)
+    for s in sections:
+        assert "hi_fi_lo_fi" in s
+        assert s["hi_fi_lo_fi"] is not None
+        assert "label" in s["hi_fi_lo_fi"]
+        assert "score_5" in s["hi_fi_lo_fi"]
+
+
+def test_annotate_sections_with_hifi_lofi_fallback_on_short_slice():
+    """Sezione con slice di waveform troppo corto (<0.2s): hi_fi_lo_fi None."""
+    sr = 22050
+    waveform = np.zeros(sr * 90, dtype=np.float32)
+    sections = [
+        {"id": "S1", "t_start_s": 0.0, "t_end_s": 0.1,
+         "duration_s": 0.1, "mean_flatness": 0.1},
+    ]
+    structure._annotate_sections_with_hifi_lofi(sections, waveform, sr)
+    assert sections[0]["hi_fi_lo_fi"] is None
+
+
+def test_compute_structure_populates_hifi_lofi_per_section():
+    """Integrazione end-to-end: compute_structure deve popolare hi_fi_lo_fi
+    in ciascuna sezione del brano sintetico (3 segmenti netti)."""
+    sr = 22050
+    waveform = _make_synthetic_waveform_three_sections(sr)
+    result = structure.compute_structure(waveform, sr, summary={})
+    assert result["n_sections"] >= 2
+    for s in result["sections"]:
+        # Tutte le sezioni del brano sintetico sono >= 30s, niente fallback
+        assert s.get("hi_fi_lo_fi") is not None
+        assert isinstance(s["hi_fi_lo_fi"]["score_5"], int)
+        assert 1 <= s["hi_fi_lo_fi"]["score_5"] <= 5

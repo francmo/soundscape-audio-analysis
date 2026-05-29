@@ -340,6 +340,48 @@ def _fmt_time(seconds: float) -> str:
     return f"{m:02d}:{s:02d}"
 
 
+def _build_bands_alert_callout(alert: dict | None, styles) -> list:
+    """v0.13.0 (Intervento B dossier P&T): callout warning quando la
+    distribuzione spettrale e' dominata da sub-bass+bass (plausibile
+    artefatto). Stile coerente con i callout di confidence low gia' usati
+    nella tabella sezioni (corsivo grigio + asterisco)."""
+    if not alert or not alert.get("message"):
+        return []
+    PAL = config.PALETTE
+    color = PAL.get("terracotta_dk", "#8b4513")
+    msg = alert["message"]
+    body = (
+        f"<font color='{color}'><b>Avviso spettrale:</b></font> {msg}"
+    )
+    return [
+        Spacer(1, 4),
+        Paragraph(body, styles["caption"]),
+    ]
+
+
+def _format_section_hifi(hi_fi_lo_fi: dict | None) -> str:
+    """v0.13.0 (Intervento A dossier P&T): label compatta per la cella
+    Hi-Fi/Lo-Fi della tabella sezioni. Ritorna formato 'Hi-Fi 4/5',
+    'Medio 3/5', 'Lo-Fi 2/5' oppure 'n.d.' per sezioni troppo brevi
+    (slice < 0.2s) o assenza del campo.
+    """
+    if not hi_fi_lo_fi:
+        return "n.d."
+    label = (hi_fi_lo_fi.get("label") or "").lower()
+    score = hi_fi_lo_fi.get("score_5")
+    if "hi-fi" in label:
+        short = "Hi-Fi"
+    elif "lo-fi" in label:
+        short = "Lo-Fi"
+    elif "medio" in label:
+        short = "Medio"
+    else:
+        short = label[:6].title() if label else "n.d."
+    if score is not None:
+        return f"{short} {score}/5"
+    return short
+
+
 def _build_speech_block(speech: dict, base_name: str, styles) -> list:
     """Sezione PDF per trascrizione dialoghi (v0.5.1).
 
@@ -560,11 +602,15 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
         except Exception:
             pass
 
-    # Tabella sezioni
-    rows = [["ID", "Inizio", "Fine", "Durata", "Signature", "Krause", "RMS dB", "Centroide Hz"]]
+    # Tabella sezioni. v0.13.0 (Intervento A dossier P&T): aggiunta colonna
+    # "Hi-Fi/Lo-Fi" per riflettere il calcolo locale per sezione.
+    rows = [[
+        "ID", "Inizio", "Fine", "Durata", "Signature",
+        "Krause", "RMS dB", "Cent. Hz", "Hi-Fi/Lo-Fi",
+    ]]
     any_low_conf = False  # v0.12.6: traccia se servir la nota di confidenza
     for s in sections:
-        sig_label = (s.get("signature_label") or "")[:28]
+        sig_label = (s.get("signature_label") or "")[:48]
         krause = s.get("krause", "")
         conf = s.get("dominant_panns_confidence", "high")
         # v0.12.6 (P3 caso A): sezioni con confidence low (durata < 2s)
@@ -574,6 +620,8 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
             sig_label = f"<i><font color='#6b7280'>{sig_label}*</font></i>"
             krause = f"<i><font color='#6b7280'>{krause}*</font></i>"
             any_low_conf = True
+        # v0.13.0 (Intervento A): label compatta hi-fi/lo-fi per cella stretta.
+        hifi_cell = _format_section_hifi(s.get("hi_fi_lo_fi"))
         rows.append([
             s.get("id", ""),
             _fmt_time(s.get("t_start_s", 0)),
@@ -583,10 +631,12 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
             krause,
             _fmt(s.get("mean_rms_db"), "{:+.1f}"),
             _fmt(s.get("mean_centroid_hz"), "{:.0f}"),
+            hifi_cell,
         ])
     story.append(report_styles.styled_table(
         rows,
-        [12 * mm, 16 * mm, 16 * mm, 16 * mm, 50 * mm, 22 * mm, 18 * mm, 22 * mm],
+        [11 * mm, 14 * mm, 14 * mm, 14 * mm, 42 * mm,
+         18 * mm, 16 * mm, 18 * mm, 22 * mm],
         styles,
     ))
     if any_low_conf:
@@ -1156,6 +1206,8 @@ def build_report(
 
     story.append(Paragraph(INTESTAZIONI["spettro"], styles["h2"]))
     story.append(_build_bande_table(spec.get("bands_schafer", {}), styles))
+    # v0.13.0 (Intervento B dossier P&T): alert sub-bass+bass anomalo.
+    story.extend(_build_bands_alert_callout(spec.get("bands_schafer_alert"), styles))
     story.append(Spacer(1, 6))
     story.append(Paragraph(INTESTAZIONI["caratt_timbrica"], styles["h2"]))
     story.append(_build_timbre_table(spec.get("timbre", {}), spec.get("onsets", {}),

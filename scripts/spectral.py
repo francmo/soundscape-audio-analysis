@@ -96,15 +96,59 @@ def hifi_lofi_score(dynamic_range_db: float, flatness: float) -> dict:
     return {"label": label, "score_5": score}
 
 
+def compute_bands_schafer_alert(bands: dict,
+                                  threshold_pct: float = None) -> dict | None:
+    """v0.13.0 (Intervento B dossier P&T): rileva concentrazione spettrale
+    anomala nelle basse e ritorna un warning interpretativo.
+
+    Quando la somma delle bande Sub-bass + Bass supera la soglia (default
+    60%), e' plausibile artefatto di handling/microfono mobile/vibrazione
+    del piano d'appoggio, oppure DC offset basso non corretto. La skill
+    riporta il warning ma non modifica i numeri sottostanti: l'interpretazione
+    finale resta del lettore (puo' essere artefatto, oppure contenuto basso
+    significativo come tuono lontano o motore).
+
+    Driver caso scuola: B iPhone 8 tenuto in mano e poi appoggiato,
+    Sub-bass 41.48% + Bass 40.66% = 82.14%, su soundscape urbano dominato da
+    voci dove il contenuto basso non e' percettivamente significativo.
+
+    Ritorna None se sotto soglia. Soglia configurabile via
+    config.BANDS_SCHAFER_ALERT_LOW_SUM_PCT.
+    """
+    if threshold_pct is None:
+        threshold_pct = config.BANDS_SCHAFER_ALERT_LOW_SUM_PCT
+    sub_bass = ((bands.get("Sub-bass") or {}).get("energy_pct") or 0.0)
+    bass = ((bands.get("Bass") or {}).get("energy_pct") or 0.0)
+    low_sum = float(sub_bass) + float(bass)
+    if low_sum < threshold_pct:
+        return None
+    return {
+        "level": "warning",
+        "low_sum_pct": round(low_sum, 2),
+        "threshold_pct": threshold_pct,
+        "message": (
+            f"Distribuzione spettrale dominata dal sub-bass+bass ({low_sum:.1f}%): "
+            "plausibile artefatto di handling/microfono mobile/vibrazione del "
+            "piano d'appoggio, oppure DC offset basso non corretto. Verificare "
+            "in cuffia se il contenuto basso e' percettivamente significativo, "
+            "altrimenti applicare high-pass a 80-120 Hz in post."
+        ),
+    }
+
+
 def spectral_summary(y: np.ndarray, sr: int, duration_s: float) -> dict:
-    """Orchestrazione: ritorna bande + timbre + peaks + onset + hifi_lofi."""
+    """Orchestrazione: ritorna bande + timbre + peaks + onset + hifi_lofi
+    + bands_alert (v0.13.0).
+    """
     S, spectrum, freqs = compute_stft_mean(y, sr)
     bands = compute_bands(spectrum, freqs, sr)
     timbre = compute_timbre(y, sr)
     peaks = top_peaks(spectrum, freqs)
     onset = onset_analysis(y, sr, duration_s)
+    alert = compute_bands_schafer_alert(bands)
     return {
         "bands_schafer": bands,
+        "bands_schafer_alert": alert,
         "timbre": timbre,
         "top_peaks_hz": peaks,
         "onsets": onset,

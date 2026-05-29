@@ -157,8 +157,15 @@ def _describe_panns(top_categories: list[dict],
 
     parts = []
     for cat in top_categories[:5 if profile == "didactic" else 3]:
-        name = _translate_label(cat["name"])
+        raw_name = cat["name"]
         score = cat.get("score", 0.0)
+        # v0.14 (INT-4): etichette PANNs ad alto falso positivo su transienti
+        # percussivi (Horse/Clip-clop su tacchi o taglia erba) citate solo se
+        # nettamente dominanti, per non alimentare l'inferenza "trazione animale".
+        if (raw_name in config.NARRATIVE_FP_PRONE_PANNS_LABELS
+                and score < config.NARRATIVE_FP_PRONE_MIN_CITE):
+            continue
+        name = _translate_label(raw_name)
         if score > 0.40:
             parts.append(f"<b>presenza marcata di {name}</b> ({score:.2f})")
         elif score > 0.15:

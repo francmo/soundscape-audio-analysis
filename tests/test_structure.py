@@ -513,3 +513,41 @@ def test_compute_structure_populates_hifi_lofi_per_section():
         assert s.get("hi_fi_lo_fi") is not None
         assert isinstance(s["hi_fi_lo_fi"]["score_5"], int)
         assert 1 <= s["hi_fi_lo_fi"]["score_5"] <= 5
+
+
+# --- v0.14 INT-2: dominant_clap_prompt esclude le categorie marcate ---
+
+def test_dominant_clap_excludes_marked():
+    """Moda grezza marcata + non-marcato presente: promuove il non-marcato e
+    segnala la soppressione (caso B 'Sessantotto')."""
+    marked = frozenset({"Manifestazione del Sessantotto"})
+    vals = ["Manifestazione del Sessantotto", "Manifestazione del Sessantotto",
+            "Bar al mattino", "Manifestazione del Sessantotto"]
+    dom, suppressed = structure._dominant_clap_excluding_marked(vals, marked)
+    assert dom == "Bar al mattino"
+    assert suppressed is True
+
+
+def test_dominant_clap_keeps_normal_mode():
+    """Nessun marcato: moda normale, non soppresso."""
+    marked = frozenset({"Manifestazione del Sessantotto"})
+    vals = ["Bar al mattino", "Bar al mattino", "Caffe"]
+    dom, suppressed = structure._dominant_clap_excluding_marked(vals, marked)
+    assert dom == "Bar al mattino"
+    assert suppressed is False
+
+
+def test_dominant_clap_all_marked_fallback():
+    """Solo prompt marcati: tiene la moda ma la segnala marcata."""
+    marked = frozenset({"X marcato"})
+    vals = ["X marcato", "X marcato"]
+    dom, suppressed = structure._dominant_clap_excluding_marked(vals, marked)
+    assert dom == "X marcato"
+    assert suppressed is True
+
+
+def test_dominant_clap_empty():
+    """Lista vuota: stringa vuota, non marcato."""
+    dom, suppressed = structure._dominant_clap_excluding_marked([], frozenset())
+    assert dom == ""
+    assert suppressed is False

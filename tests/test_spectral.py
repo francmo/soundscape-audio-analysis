@@ -3,7 +3,7 @@ from tests.conftest import FIXTURES_DIR, ensure_fixtures
 from scripts.io_loader import load_audio_mono
 from scripts.spectral import (
     spectral_summary, compute_stft_mean, compute_bands, onset_analysis,
-    compute_bands_schafer_alert,
+    compute_bands_schafer_alert, compute_timbre,
 )
 
 
@@ -106,3 +106,28 @@ def test_spectral_summary_includes_bands_alert_field():
     duration = len(y) / sr
     out = spectral_summary(y, sr, duration)
     assert "bands_schafer_alert" in out
+
+
+# =====================================================================
+# v0.15.0: spectral spread + flux in compute_timbre.
+# =====================================================================
+
+
+def test_timbre_includes_spread_and_flux():
+    """compute_timbre ritorna spread e flux con valori non negativi."""
+    y, sr = load_audio_mono(FIXTURES_DIR / "pink_noise.wav")
+    t = compute_timbre(y, sr)
+    assert "spectral_spread_hz" in t and "spectral_flux" in t
+    assert t["spectral_spread_hz"] >= 0
+    assert t["spectral_flux"] >= 0
+
+
+def test_timbre_spread_flux_discriminate_noise_vs_sine():
+    """Pink noise (banda larga, instabile) deve avere spread e flux
+    maggiori di un seno puro (banda stretta, stabile)."""
+    yp, srp = load_audio_mono(FIXTURES_DIR / "pink_noise.wav")
+    ys, srs = load_audio_mono(FIXTURES_DIR / "sine_50hz.wav")
+    tp = compute_timbre(yp, srp)
+    ts = compute_timbre(ys, srs)
+    assert tp["spectral_spread_hz"] > ts["spectral_spread_hz"]
+    assert tp["spectral_flux"] > ts["spectral_flux"]

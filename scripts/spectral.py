@@ -33,17 +33,45 @@ def compute_bands(spectrum: np.ndarray, freqs: np.ndarray, sr: int) -> dict:
     return bands
 
 
+def _spectral_flux(y: np.ndarray) -> float:
+    """Spectral flux rettificato (half-wave), media sui frame STFT.
+
+    Norma L2 delle differenze positive di magnitudine fra frame STFT
+    consecutivi (default librosa n_fft=2048, hop=512). Misura quanto lo
+    spettro cambia istante per istante: instabilita', attrito, onset.
+    Ritorna 0.0 se il segnale ha meno di due frame.
+    """
+    import librosa
+    S = np.abs(librosa.stft(y))
+    if S.shape[1] < 2:
+        return 0.0
+    diff = np.diff(S, axis=1)
+    diff[diff < 0] = 0.0
+    flux_frames = np.sqrt(np.sum(diff ** 2, axis=0))
+    return float(np.mean(flux_frames))
+
+
 def compute_timbre(y: np.ndarray, sr: int) -> dict:
-    """Centroide, rolloff, flatness, ZCR."""
+    """Centroide, spread, rolloff, flatness, flux, ZCR.
+
+    spread = ampiezza di banda attorno al centroide (secondo momento,
+    librosa.feature.spectral_bandwidth). flux = flusso spettrale
+    rettificato (vedi _spectral_flux). Tutte le feature usano i default
+    librosa (n_fft=2048, hop=512) per coerenza reciproca.
+    """
     import librosa
     cent = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
+    spread = float(np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr)))
     rolloff = float(np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=0.85)))
     flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
     zcr = float(np.mean(librosa.feature.zero_crossing_rate(y)))
+    flux = _spectral_flux(y)
     return {
         "spectral_centroid_hz": round(cent, 1),
+        "spectral_spread_hz": round(spread, 1),
         "spectral_rolloff_hz": round(rolloff, 1),
         "spectral_flatness": round(flatness, 4),
+        "spectral_flux": round(flux, 4),
         "zero_crossing_rate": round(zcr, 4),
     }
 

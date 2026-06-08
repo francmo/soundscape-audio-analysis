@@ -136,8 +136,10 @@ def _build_timbre_table(timbre: dict, onsets: dict, hifi: dict, styles) -> Table
     rows = [
         ["Parametro", "Valore", "Interpretazione"],
         [PARAMETRI["centroide"], _fmt(timbre.get("spectral_centroid_hz"), "{:.0f} Hz"), "baricentro timbrico"],
+        [PARAMETRI["spread"], _fmt(timbre.get("spectral_spread_hz"), "{:.0f} Hz"), "larghezza di banda attorno al centroide"],
         [PARAMETRI["rolloff"], _fmt(timbre.get("spectral_rolloff_hz"), "{:.0f} Hz"), "estensione spettrale"],
         [PARAMETRI["flatness"], _fmt(timbre.get("spectral_flatness"), "{:.4f}"), "0 tonale, 1 rumoroso"],
+        [PARAMETRI["flux"], _fmt(timbre.get("spectral_flux"), "{:.4f}"), "variazione spettrale nel tempo"],
         [PARAMETRI["zcr"], _fmt(timbre.get("zero_crossing_rate"), "{:.4f}"), "proxy transienti"],
         [PARAMETRI["onset_density"], f"{onsets.get('events_count', 0)} ({onsets.get('events_per_sec', 0):.2f}/s)", onsets.get("density_label", "")],
         ["Hi-Fi / Lo-Fi", hifi.get("label", ""), f"score {hifi.get('score_5', 0)}/5"],

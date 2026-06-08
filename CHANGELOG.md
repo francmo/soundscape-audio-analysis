@@ -1,8 +1,21 @@
 # Changelog
 
+## [0.15.0] - 2026-06-08
+
+Aggiunta di due descrittori timbrici a `compute_timbre`: **spectral spread** (ampiezza di banda attorno al centroide, via `librosa.feature.spectral_bandwidth`) e **spectral flux** (variazione spettrale rettificata fra frame STFT consecutivi, Dixon 2006). Motivazione: completare la quaterna di descrittori (centroide, spread, RMS, flux) richiesta da un caso d'uso esterno sulla traduzione visiva del suono, e dare al lettore una misura diretta della larghezza spettrale e dell'instabilita'/turbolenza nel tempo.
+
+### Aggiunte
+
+- `spectral._spectral_flux`: flux rettificato (half-wave), media della norma L2 delle differenze positive di magnitudine fra frame STFT consecutivi (default librosa n_fft=2048, hop=512). Ritorna 0.0 sotto i due frame.
+- `compute_timbre` ritorna anche `spectral_spread_hz` e `spectral_flux`. Cambiamento additivo: i consumatori esistenti leggono chiavi specifiche, nessuna rottura.
+- `locale_it.PARAMETRI`: voci `spread` ("Ampiezza spettrale") e `flux` ("Flusso spettrale").
+- `report_pdf._build_timbre_table`: due righe nuove (spread dopo il centroide, flux dopo la flatness).
+- `agent_payload`: `spread_hz` e `flux` nel blocco spectral del payload.
+- `tests/test_spectral.py`: copertura su presenza e potere discriminante di spread/flux (pink noise contro seno puro).
+
 ## [0.14.0] - 2026-05-29
 
-Terzo round di interventi didattici: calibrazione delle allucinazioni semantiche, motivata dal consolidamento di tre dossier del corso "Processi e Tecniche dello Spettacolo Multimediale" (ABA Macerata): C (finestra domestica), B (bar), A (bagno). Fonte empirica: `~/Documents/aba-macerata-sprint-soundscape/_internal_pattern_allucinazioni_clap.md`. Cinque interventi sui layer interpretativi (i dati duri CLAP/PANNs sono version-stable, cambia la lettura a valle); due rimandati a v0.14.1.
+Terzo round di interventi didattici: calibrazione delle allucinazioni semantiche, motivata dal consolidamento di tre dossier del corso "Processi e Tecniche dello Spettacolo Multimediale" (ABA Macerata): C (finestra domestica), B (bar), A (bagno). Fonte empirica: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/_internal_pattern_allucinazioni_clap.md`. Cinque interventi sui layer interpretativi (i dati duri CLAP/PANNs sono version-stable, cambia la lettura a valle); due rimandati a v0.14.1.
 
 ### INT-1 - Allucinazioni su categorie CLAP "marcate"
 
@@ -44,7 +57,7 @@ Bump `pyproject.toml` 0.13.0 -> 0.14.0.
 
 ## [0.13.0] - 2026-05-22
 
-Secondo round di interventi didattici motivati dal confronto cronologico fra output skill (PDF + summary.json + agent_payload.json) e ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata. I dossier sorgenti sono in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).
+Secondo round di interventi didattici motivati dal confronto cronologico fra output skill (PDF + summary.json + agent_payload.json) e ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata. I dossier sorgenti sono in `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).
 
 Driver: il caso scuola B v2 (bar Mamo' Macerata, iPhone 8 tenuto in mano poi appoggiato, ora di pranzo) ha messo in evidenza quattro pattern di forzatura non coperti dalla release A v0.12.6: (P3) etichetta Hi-Fi/Lo-Fi globale che maschera la variabilita' fra sezioni; (P4) distribuzione spettrale dominata da sub-bass+bass (82.14%) non interpretata come potenziale artefatto di handling; (P5) signature_label ripetute fra sezioni strutturali distinte; (P6) soglia "molto tonale" troppo larga, attivata su soundscape urbani con flatness 0.007-0.013. Piano in `ROADMAP_ADDENDUM_dossiers_p_t_2026-05-22.md`. Quattro interventi sicuri (A, B, C, D) implementati e validati; due interventi (E, F: CLAP hallucinations e PANNs filter per fauna) rimandati in attesa di 5+ casi documentati.
 
@@ -105,7 +118,7 @@ Rilanci analyze (--no-agent --no-speech, ~18-25 s ciascuno) su:
 - `caso_b_file1_audio.mp3` (bar Mamo' 2 min): conferma tutti i pattern attesi A/B/C/D.
 - `caso_a_file1_audio.mp3` (bagno domestico 3 min): conferma alert NON attivo, 5 etichette signature distinte, hi-fi/lo-fi differenziato fra le 5 sezioni.
 
-Output salvati in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/<studente>/_skill_outputs/v0.13.0_fast/`.
+Output salvati in `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/<studente>/_skill_outputs/v0.13.0_fast/`.
 
 ### Lezione per il paper
 
@@ -121,7 +134,7 @@ Driver: il 15 maggio 2026 il primo dei quattro studenti del corso ha consegnato 
 
 ### Template didattici (P7, P8, P9)
 
-- `~/Documents/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md` modificato. **Sezione 1** divisa in `1.a Primo ascolto` (5 minuti senza appunti, impressione globale) e `1.b Secondo ascolto` (10 minuti in cuffia con appunti). Forza il doppio passaggio che il prompt unico non garantiva. **Sezione 3** ora include un mini-glossario operativo inline (esempio canonico keynote/signal/soundmark su soundscape urbano) con invito esplicito a costruirne uno proprio: due studenti su due avevano confuso le tre categorie. **Sezione 6** trasformata da esempio illustrativo a stencil di sintassi vero e proprio, con slot da riempire e due esempi (domestico + urbano). Formati derivati (.docx, .html, .pdf) rigenerati via pandoc + Chrome headless.
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md` modificato. **Sezione 1** divisa in `1.a Primo ascolto` (5 minuti senza appunti, impressione globale) e `1.b Secondo ascolto` (10 minuti in cuffia con appunti). Forza il doppio passaggio che il prompt unico non garantiva. **Sezione 3** ora include un mini-glossario operativo inline (esempio canonico keynote/signal/soundmark su soundscape urbano) con invito esplicito a costruirne uno proprio: due studenti su due avevano confuso le tre categorie. **Sezione 6** trasformata da esempio illustrativo a stencil di sintassi vero e proprio, con slot da riempire e due esempi (domestico + urbano). Formati derivati (.docx, .html, .pdf) rigenerati via pandoc + Chrome headless.
 
 ### Framework di confidenza (P6, P3)
 

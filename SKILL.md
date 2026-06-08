@@ -4,7 +4,7 @@ description: >
   Analisi audio completa per soundscape, field recording e composizione elettroacustica.
   Dalla v0.3 supporta sia singolo file che **report comparativo di corpus**. Calcola
   livelli (peak, RMS, crest, LUFS, true peak), diagnosi tecnica (clipping, DC offset,
-  hum 50/60 Hz con baseline locale), spettro (bande Schafer, centroide, rolloff, flatness,
+  hum 50/60 Hz con baseline locale), spettro (bande Schafer, centroide, spread, rolloff, flatness, flux,
   picchi, onset density), indici ecoacustici (ACI, NDSI, entropia H, BI, ADI/AEI),
   classificazione semantica PANNs CNN14 (default v0.2) o YAMNet legacy con pre-check LUFS,
   auto-tagging CLAP italiano (70 prompt), narrativa italiana segmentata 30 s, confronto

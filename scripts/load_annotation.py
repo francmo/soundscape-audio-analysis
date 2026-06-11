@@ -1,4 +1,4 @@
-"""Loader per il formato JSON v1.0 della PWA Soundscape Annotation Atelier.
+"""Loader per il formato JSON 1.x della PWA Soundscape Annotation Atelier.
 
 La PWA companion (https://soundscape-annotation-atelier.vercel.app/) esporta
 file `*.annotation.json` con vocabolario controllato sulle 8 tassonomie
@@ -6,7 +6,11 @@ canoniche (Schaeffer, Smalley, Schafer, Krause, Chion, Truax, Westerkamp,
 Wishart). Questo modulo li carica e li espone come dataclass Python utilizzabili
 da `benchmark.py`, dal generatore di golden analyses e dal report PDF.
 
-Schema completo: `templates/annotation_schema.json`.
+Schema completo: `templates/annotation_schema.json` (v1.0) e
+`templates/interchange_schema_v1.1.json` (estensione additiva 1.1 con blocchi
+opzionali `recording` e `analysis`). Regola reader del contratto INTEROP:
+accettare ogni `schemaVersion` `1.x` e preservare i blocchi top-level
+sconosciuti in `AnnotationProject.extra_blocks` (round-trip senza perdita).
 
 Esempi:
 
@@ -24,11 +28,20 @@ Esempi:
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, List, Optional
 
 SCHEMA_VERSION = "1.0"
+# Regola reader INTEROP v1.1: accetta 1.0, 1.1 e ogni futuro 1.x.
+SCHEMA_VERSION_ACCEPTED = re.compile(r"^1\.")
+
+# Chiavi top-level gestite da questo loader; tutto il resto (recording,
+# analysis, blocchi futuri 1.x) viene preservato in extra_blocks.
+_KNOWN_TOP_LEVEL = frozenset({
+    "schemaVersion", "id", "audio", "metadata", "annotations", "structure",
+})
 
 VALID_TAXONOMIES = frozenset({
     "schaeffer",
@@ -98,6 +111,9 @@ class AnnotationProject:
     metadata: ProjectMeta
     annotations: List[Annotation] = field(default_factory=list)
     structure: List[StructuralSection] = field(default_factory=list)
+    # Blocchi top-level non gestiti (es. recording, analysis del contratto
+    # interchange 1.1): preservati per il round-trip senza perdita.
+    extra_blocks: dict[str, Any] = field(default_factory=dict)
 
     @property
     def annotations_by_taxonomy(self) -> dict[str, list[Annotation]]:
@@ -133,8 +149,10 @@ def validate_annotation_dict(payload: Any) -> None:
         raise AnnotationSchemaError(f"Root must be object, got {type(payload).__name__}")
 
     version = payload.get("schemaVersion")
-    if version != SCHEMA_VERSION:
-        raise AnnotationSchemaError(f"schemaVersion mismatch: expected {SCHEMA_VERSION}, got {version!r}")
+    if not isinstance(version, str) or not SCHEMA_VERSION_ACCEPTED.match(version):
+        raise AnnotationSchemaError(
+            f"schemaVersion non supportata: attesa 1.x, trovata {version!r}"
+        )
 
     for required in ("id", "audio", "metadata", "annotations"):
         if required not in payload:
@@ -217,6 +235,7 @@ def _from_dict(payload: dict[str, Any]) -> AnnotationProject:
             )
             for s in payload.get("structure", [])
         ],
+        extra_blocks={k: v for k, v in payload.items() if k not in _KNOWN_TOP_LEVEL},
     )
 
 

@@ -1,0 +1,504 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:soundscape-interchange:schema:1.1",
+  "title": "Soundscape Interchange v1.1",
+  "description": "Estensione ADDITIVA dello schema annotation v1.0 (templates/annotation_schema.json). Formato pivot di scambio fra: Soundscape Studio (PWA, scrive il blocco recording), Soundscape Annotation Atelier (PWA, scrive annotations e structure), soundscape-critic-web (PWA, scrive il blocco analysis) e la skill soundscape-audio-analysis (CLI Python, scrive analysis e consuma recording come contesto). REGOLE DI COMPATIBILITA: (1) i reader DEVONO accettare ogni schemaVersion che inizi per '1.' e ignorare i blocchi opzionali che non conoscono; (2) i writer 1.1 NON cambiano la semantica di alcun campo 1.0; (3) i reader che riscrivono il file (es. round-trip Atelier) DEVONO preservare i blocchi che non gestiscono; (4) sha256 dell'audio fortemente raccomandato per la riconciliazione tra strumenti.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "audio",
+    "metadata",
+    "annotations"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "I writer conformi a questa spec scrivono '1.1'. I reader accettano ogni 1.x (pattern ^1\\.) e preservano i blocchi top-level sconosciuti (round-trip senza perdita), come da INTEROP.md.",
+      "pattern": "^1\\."
+    },
+    "id": {
+      "type": "string",
+      "description": "UUID stabile del progetto/sessione."
+    },
+    "audio": {
+      "type": "object",
+      "required": [
+        "filename",
+        "durationSeconds",
+        "sampleRate",
+        "channels"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sampleRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "language",
+        "startedAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer"
+        },
+        "genre": {
+          "type": "string"
+        },
+        "annotator": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string",
+          "enum": [
+            "it",
+            "en"
+          ]
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "description": "Identico a v1.0: vocabolario controllato delle 8 tassonomie.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "startSec",
+          "endSec",
+          "taxonomy",
+          "termId",
+          "termLabel",
+          "color",
+          "note",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "startSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "taxonomy": {
+            "type": "string",
+            "enum": [
+              "schaeffer",
+              "smalley",
+              "schafer",
+              "krause",
+              "chion",
+              "truax",
+              "westerkamp",
+              "wishart"
+            ]
+          },
+          "termId": {
+            "type": "string"
+          },
+          "termLabel": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "note": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "structure": {
+      "type": "array",
+      "description": "Identico a v1.0: macroforma e note interpretative libere.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "startSec",
+          "endSec",
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "startSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "label": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        }
+      }
+    },
+    "recording": {
+      "type": "object",
+      "description": "NUOVO in 1.1, opzionale. Contesto di registrazione sul campo. Writer canonico: Soundscape Studio. Reader: Atelier (mostra come contesto), critic-web e skill (arricchiscono l'analisi).",
+      "required": [
+        "recordingId",
+        "recordedAt"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "recordingId": {
+          "type": "string",
+          "description": "ID della registrazione nello strumento di origine."
+        },
+        "recordedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gps": {
+          "type": "object",
+          "required": [
+            "lat",
+            "lng"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "accuracyM": {
+              "type": "number",
+              "minimum": 0
+            },
+            "label": {
+              "type": "string",
+              "description": "Toponimo o descrizione del luogo."
+            }
+          }
+        },
+        "exercise": {
+          "type": "object",
+          "description": "Esercizio di Soundscape Studio da cui nasce la registrazione, se presente.",
+          "required": [
+            "id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID stabile dell'esercizio (es. fr-registrazione-analisi-03, ba-021)."
+            },
+            "title": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "program": {
+              "type": "string",
+              "description": "Percorso o programma didattico, se applicabile."
+            }
+          }
+        },
+        "equipment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "device": {
+              "type": "string",
+              "description": "Dispositivo o recorder (chiave normalizzata se nota, es. 'zoom-h5', altrimenti testo libero)."
+            },
+            "mic": {
+              "type": "string"
+            },
+            "micPattern": {
+              "type": "string",
+              "enum": [
+                "omni",
+                "cardioid",
+                "supercardioid",
+                "shotgun",
+                "figure8",
+                "binaural",
+                "stereo-ab",
+                "stereo-xy",
+                "ms",
+                "ambisonic",
+                "altro"
+              ]
+            },
+            "windProtection": {
+              "type": "string",
+              "enum": [
+                "nessuna",
+                "foam",
+                "deadcat",
+                "blimp",
+                "diy",
+                "altro"
+              ]
+            },
+            "dspProfile": {
+              "type": "string",
+              "enum": [
+                "field",
+                "voice"
+              ],
+              "description": "Profilo constraint getUserMedia usato da Studio: field = echoCancellation/noiseSuppression/autoGainControl disattivati."
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "weather": {
+              "type": "string"
+            },
+            "wind": {
+              "type": "string",
+              "enum": [
+                "assente",
+                "debole",
+                "moderato",
+                "forte"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "performerNotes": {
+          "type": "string",
+          "description": "Note libere di chi registra (intenzione, scena, eventi)."
+        },
+        "userSelections": {
+          "type": "array",
+          "description": "Selezioni temporali fatte dall'utente in Studio, hint per l'agente della skill (consumate via --context).",
+          "items": {
+            "type": "object",
+            "required": [
+              "startSec",
+              "endSec",
+              "label"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "startSec": {
+                "type": "number",
+                "minimum": 0
+              },
+              "endSec": {
+                "type": "number",
+                "minimum": 0
+              },
+              "label": {
+                "type": "string"
+              },
+              "taxonomy": {
+                "type": "string",
+                "enum": [
+                  "schaeffer",
+                  "smalley",
+                  "schafer",
+                  "krause",
+                  "chion",
+                  "truax",
+                  "westerkamp",
+                  "wishart"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "description": "NUOVO in 1.1, opzionale. Risultati di analisi automatica. Writer canonici: soundscape-critic-web (analisi rapida browser) e skill soundscape-audio-analysis (analisi profonda). Il campo engine identifica la provenienza; un secondo strumento che rianalizza SOSTITUISCE il blocco (la cronologia multi-engine arriva eventualmente in 1.2 come analyses[]).",
+      "required": [
+        "engine",
+        "analyzedAt"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "engine": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "soundscape-critic-web",
+                "soundscape-audio-analysis"
+              ]
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "analyzedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lufsIntegrated": {
+              "type": "number"
+            },
+            "truePeakDb": {
+              "type": "number"
+            },
+            "peakDb": {
+              "type": "number"
+            },
+            "rmsDb": {
+              "type": "number"
+            },
+            "crestDb": {
+              "type": "number"
+            }
+          }
+        },
+        "spectral": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "centroidHz": {
+              "type": "number"
+            },
+            "rolloffHz": {
+              "type": "number"
+            },
+            "flatness": {
+              "type": "number"
+            },
+            "bandsSchafer": {
+              "type": "object",
+              "description": "Energia relativa per banda Schafer, valori 0-1.",
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Classificazione semantica. Senza startSec/endSec il tag e globale; con startSec/endSec e un segmento di timeline.",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "score",
+              "source"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "clap",
+                  "panns"
+                ]
+              },
+              "startSec": {
+                "type": "number",
+                "minimum": 0
+              },
+              "endSec": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "summaryRef": {
+          "type": "string",
+          "description": "Nome file del *_summary.json completo della skill, se esiste (il blocco analysis ne e un estratto)."
+        }
+      }
+    }
+  }
+}

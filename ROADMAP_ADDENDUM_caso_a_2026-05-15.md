@@ -2,7 +2,7 @@
 
 Documento di pianificazione che integra nove interventi emersi dal primo dossier dello Soundscape Annotation con gli studenti del corso PTSM (Macerata). Non sostituisce `ROADMAP.md`, lo affianca. Le proposte sono in fase di valutazione: nessun codice viene scritto in questo step.
 
-Driver: confronto fra dossier studente (JSON 28 marker, scheda first-hand, audio 180.7 s ambiente bagno) e output skill (PDF tecnico + summary.json + agent_payload.json). Analisi cronologica completa in `~/Documents/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md`.
+Driver: confronto fra dossier studente (JSON 28 marker, scheda first-hand, audio 180.7 s ambiente bagno) e output skill (PDF tecnico + summary.json + agent_payload.json). Analisi cronologica completa in `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md`.
 
 Versione di riferimento della skill: la ROADMAP segna v0.11.0, il file `summary.json` del caso riporta `version: 0.6.1` (probabile drift della stringa nel `_analyze_single` di `scripts/cli.py:185`). Verificare prima di iniziare se la stringa di versione è da aggiornare.
 
@@ -38,7 +38,7 @@ Versione di riferimento della skill: la ROADMAP segna v0.11.0, il file `summary.
 | 4. citazione onset puntuali | Parziale a rovescio: filtro `<0.03` taglia silenzio, `<0.15` taglia "tenue". Già esiste qualificatore "tenue presenza di X". Manca la citazione per timestamp. | `scripts/narrative.py::_describe_panns:124-150` |
 | 5. sub-segmentazione famiglie | No. `_extract_features_per_window` salva solo top-1 PANNs per finestra. La sub-class `Water tap` vs `Bathtub` esiste nei top globali ma non viene usata per segmentare. | `scripts/structure.py:171-198` |
 | 6. marcatore incertezza epistemica | No esplicito. Esiste un sistema di confidence (`confidence: low/medium/high`) sui campi `academic_hints` ma non si traduce in marcatori linguistici nella narrative o nel prompt agente. | `scripts/narrative.py`, `templates/agent_prompt.md` |
-| 7. scheda §1 split primo/secondo ascolto | No. Sezione attuale lascia 4-6 righe libere con suggerimento implicito. | `~/Documents/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md:23-25` |
+| 7. scheda §1 split primo/secondo ascolto | No. Sezione attuale lascia 4-6 righe libere con suggerimento implicito. | `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md:23-25` |
 | 8. scheda §3 mini-glossario | No. Distinzione keynote/signal/soundmark è solo testuale, senza esempi. | stesso file, §3 |
 | 9. scheda §6 stencil | No. Esempio attuale è citazione illustrativa, non stencil. | stesso file, §6 |
 
@@ -145,7 +145,7 @@ Versione di riferimento della skill: la ROADMAP segna v0.11.0, il file `summary.
 
 | Aspetto | Dettaglio |
 |---|---|
-| **File / funzioni** | `~/Documents/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md:23-25` (fuori dal repo skill). Modifica markdown + rigenerazione DOCX/PDF/HTML con pipeline esistente (`Pandoc` o equivalente già usato per `09_scheda_first_hand_template.docx`, .html, .pdf). Verificare quale pipeline produce i tre formati. Probabile script in `~/Documents/aba-macerata-sprint-soundscape/` |
+| **File / funzioni** | `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/09_scheda_first_hand_template.md:23-25` (fuori dal repo skill). Modifica markdown + rigenerazione DOCX/PDF/HTML con pipeline esistente (`Pandoc` o equivalente già usato per `09_scheda_first_hand_template.docx`, .html, .pdf). Verificare quale pipeline produce i tre formati. Probabile script in `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/` |
 | **Approccio** | Cambiare §1 in §1.a "Primo ascolto (5 min, senza prendere appunti)" + §1.b "Secondo ascolto (10 min, in cuffia, con appunti)". Tre righe ciascuno, prompt esplicito |
 | **Complessità** | 30 min. Edit template MD + comando di rigenerazione DOCX/PDF/HTML |
 | **Dipendenze** | Nessuna verso gli altri otto |

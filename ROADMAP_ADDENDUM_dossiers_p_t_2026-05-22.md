@@ -1,12 +1,12 @@
 # Roadmap addendum — pattern emersi dai dossier P&T Macerata (22 maggio 2026)
 
 **Workspace skill**: `~/.claude/skills/soundscape-audio-analysis/`
-**Workspace dossier sorgente**: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/`
+**Workspace dossier sorgente**: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/`
 **Documento precedente collegato**: `ROADMAP_ADDENDUM_caso_a_2026-05-15.md` (interventi già pushati come v0.12.6, qui ne traccio nuovi)
 
 ## 0. Contesto
 
-Questo addendum raccoglie i pattern di forzatura, allucinazione e semplificazione della skill emersi dal confronto fra l'output automatico (PDF skill, summary.json, agent_payload.json) e l'ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata, A.A. 2025-2026. I dossier sono in `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).
+Questo addendum raccoglie i pattern di forzatura, allucinazione e semplificazione della skill emersi dal confronto fra l'output automatico (PDF skill, summary.json, agent_payload.json) e l'ascolto first-hand documentato di quattro studenti del corso "Processi e Tecniche dello Spettacolo Multimediale" all'Accademia di Belle Arti di Macerata, A.A. 2025-2026. I dossier sono in `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/` (sottocartelle `caso_a/`, `caso_b/`, `caso_d/`, `caso_c/`).
 
 I dossier sono in stati diversi del workflow iterativo a 6 tappe:
 - **A**: v1 ricevuta 8/05, feedback v1 inviato 15/05, skill v0.12.5 e v0.12.6 generate, in attesa v2 dello studente.
@@ -15,14 +15,14 @@ I dossier sono in stati diversi del workflow iterativo a 6 tappe:
 - **C**: v1 ricevuta 8/05 (scheda first-hand su sollecito 22/05), feedback v1 inviato 22/05, in attesa v2.
 
 I file PDF skill di riferimento (per accedere ai dati grezzi):
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.5/report.pdf` (e v0.12.6/)
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.12.5/caso_b_file1_audio_report.pdf`
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.5/report.pdf` (e v0.12.6/)
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.12.5/caso_b_file1_audio_report.pdf`
 - (D e C: skill non ancora lanciata, in attesa v2)
 
 I documenti diagnostici di docente che hanno guidato l'identificazione dei pattern:
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_feedback_docente/FEEDBACK_v1_15_05_2026.{pdf,docx}`
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_feedback_docente/NOTA_3_rilievi_self_FC_caso_b.{pdf,html,docx}`
-- `~/Documents/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md` (rilettura comparativa interna v0.12.5 vs first-hand A)
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_feedback_docente/FEEDBACK_v1_15_05_2026.{pdf,docx}`
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_feedback_docente/NOTA_3_rilievi_self_FC_caso_b.{pdf,html,docx}`
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md` (rilettura comparativa interna v0.12.5 vs first-hand A)
 
 ## 1. Pattern emersi
 
@@ -188,8 +188,8 @@ if not args.no_speech and should_auto_enable_speech(...):
 Quando avrai implementato gli interventi A-D, rilancia la skill v0.13 su questi 2 file e confronta con l'output attuale:
 
 ### Test 1 — B v2 (bar Mamò, urbano antropico, handling iPhone 8)
-- File: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/v2/caso_b_file1_audio.mp3`
-- Output v0.12.5 di riferimento: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.12.5/`
+- File: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/v2/caso_b_file1_audio.mp3`
+- Output v0.12.5 di riferimento: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.12.5/`
 - Pattern attesi nella v0.13:
   - **A**: 3 sezioni con etichette Hi-Fi/Lo-Fi diverse (atteso S1 hi-fi, S2 lo-fi, S3 mid)
   - **B**: alert spettrale attivo (82% basse, soglia 60%)
@@ -197,9 +197,9 @@ Quando avrai implementato gli interventi A-D, rilancia la skill v0.13 su questi 
   - **D**: 3 etichette strutturali differenziate (non più "antropofonia moderata tonale" ×2)
 
 ### Test 2 — A v1 (bagno domestico, gesti + acqua + cane lontano)
-- File: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/caso_a_file1_audio.mp3`
-- Output v0.12.5 di riferimento: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.5/report.pdf`
-- Output v0.12.6 di riferimento: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.6/report.pdf`
+- File: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/caso_a_file1_audio.mp3`
+- Output v0.12.5 di riferimento: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.5/report.pdf`
+- Output v0.12.6 di riferimento: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.12.6/report.pdf`
 - Pattern attesi nella v0.13:
   - **A**: 3 sezioni con etichette Hi-Fi/Lo-Fi che riflettano la struttura (atteso: Inizio domestico hi-fi, Sviluppo doccia lo-fi/saturato, Fine quasi hi-fi)
   - **B**: alert spettrale NON attivo (file più equilibrato spettralmente di B, da verificare)
@@ -214,7 +214,7 @@ cd ~/.claude/skills/soundscape-audio-analysis/
 claude
 ```
 
-In questo modo le memorie e le regole specifiche del progetto skill (`.claude/CLAUDE.md` e relativi) sono attive, e il git è già pronto per commit/push. Le memorie del corso Macerata (workspace `~/Documents/aba-macerata-sprint-soundscape/`) restano accessibili come riferimento esterno ma non interferiscono.
+In questo modo le memorie e le regole specifiche del progetto skill (`.claude/CLAUDE.md` e relativi) sono attive, e il git è già pronto per commit/push. Le memorie del corso Macerata (workspace `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/`) restano accessibili come riferimento esterno ma non interferiscono.
 
 **Primo passo della prossima sessione**: rileggere questo addendum + `CHANGELOG.md` (per allineare l'ultimo stato della skill, v0.12.6) + `ROADMAP_ADDENDUM_caso_a_2026-05-15.md` (per non duplicare interventi già fatti).
 
@@ -233,11 +233,11 @@ In questo modo le memorie e le regole specifiche del progetto skill (`.claude/CL
 ## 6. Riferimenti rapidi
 
 - Workspace skill: `~/.claude/skills/soundscape-audio-analysis/`
-- Workspace dossier P&T: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/`
+- Workspace dossier P&T: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/`
 - ROADMAP principale skill: `ROADMAP.md` (radice skill)
 - Addendum precedente: `ROADMAP_ADDENDUM_caso_a_2026-05-15.md`
-- Rilettura comparativa interna A: `~/Documents/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md`
-- Nota 3 rilievi B: `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_feedback_docente/NOTA_3_rilievi_self_FC_caso_b.{pdf,html,docx}`
+- Rilettura comparativa interna A: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/_internal_rilettura_comparativa_caso_a.md`
+- Nota 3 rilievi B: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_feedback_docente/NOTA_3_rilievi_self_FC_caso_b.{pdf,html,docx}`
 - Feedback v1 B/D/C: nelle rispettive `_feedback_docente/` di ciascuno studente
 
 ## 7. Stato implementazione (aggiornato 22/05/2026)
@@ -263,8 +263,8 @@ Tutti e quattro gli interventi sicuri (A, B, C, D) sono stati implementati nella
 | Hi-Fi/Lo-Fi per sezione | 3 sezioni Lo-Fi 2/5 (coerente con saturazione bar): atteso vista la distribuzione spettrale, S1/S2/S3 hanno tutte dr basso | 5 sezioni differenziate: S1 Medio 3/5, S2-S4 Lo-Fi 2/5, S5 Hi-Fi 4/5 (target raggiunto) |
 
 **Output salvati** in:
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.13.0_fast/`
-- `~/Documents/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.13.0_fast/`
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_b/_skill_outputs/v0.13.0_fast/`
+- `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/v1_dossiers/caso_a/_skill_outputs/v0.13.0_fast/`
 
 **Interventi rimandati**:
 - E (CLAP allucinazioni): in attesa 5+ casi documentati (oggi 2). Riprendere dopo self-FC B + v2 D/C.
@@ -280,7 +280,7 @@ Tutti e quattro gli interventi sicuri (A, B, C, D) sono stati implementati nella
 
 ## Addendum 29/05/2026 — consolidamento pattern dai tre dossier (verso v0.14)
 
-Documento sorgente: `~/Documents/aba-macerata-sprint-soundscape/_internal_pattern_allucinazioni_clap.md`. Consolida le evidenze esatte (estratte dai `summary.json`) dei tre dossier con output skill: **C** (finestra/Macerata), **B** (bar/Macerata), **A** (bagno domestico).
+Documento sorgente: `~/Documents/_PROGETTI/didattica/aba-macerata-sprint-soundscape/_internal_pattern_allucinazioni_clap.md`. Consolida le evidenze esatte (estratte dai `summary.json`) dei tre dossier con output skill: **C** (finestra/Macerata), **B** (bar/Macerata), **A** (bagno domestico).
 
 **Aggiornamento conteggio casi**: gli interventi E (allucinazioni CLAP) e F (filtro PANNs su fauna in contesto antropico) erano rimandati in attesa di più casi. Oggi i casi documentati con verità first-hand sono **3 dossier**, e due pattern sono **cross-confermati su file indipendenti**, quindi E ed F diventano azionabili. Nota metodologica: i dati duri CLAP/PANNs sono bit-identici fra 0.12.5/0.12.6/0.13.0 (cambiano solo i layer interpretativi).
 

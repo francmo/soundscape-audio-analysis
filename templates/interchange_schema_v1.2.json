@@ -489,6 +489,19 @@
                   "label": { "type": "string" },
                   "score5": { "type": "integer", "minimum": 0, "maximum": 5 }
                 }
+              },
+              "sources": {
+                "type": "array",
+                "description": "NUOVO in 1.2 (Fase 2). Sorgenti simultanee presenti nel campo (top-k PANNs), appoggio per la stratificazione per time-field.",
+                "items": {
+                  "type": "object",
+                  "required": ["label"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": { "type": "string" },
+                    "krause": { "type": "string" }
+                  }
+                }
               }
             }
           }

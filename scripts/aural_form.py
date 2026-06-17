@@ -93,6 +93,13 @@ def _field_from_section(sec: dict, level: int, parent_id: Optional[str]) -> dict
             entry["score5"] = int(score)
         field["hiFiLoFi"] = entry or None
 
+    # Sorgenti simultanee del campo (Fase 2): top-k PANNs mappati a Krause.
+    topk = sec.get("panns_topk")
+    if topk:
+        field["sources"] = [
+            {"label": lbl, "krause": _krause_for(lbl)} for lbl in topk if lbl
+        ]
+
     return field
 
 

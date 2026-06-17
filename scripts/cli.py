@@ -236,7 +236,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.14.0",
+        "version": "0.16.0",  # Aural Sonology Fase 1 (time_fields + dynamic_form)
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -260,6 +260,14 @@ def _analyze_single(
         window_seconds=config.STRUCTURE_WINDOW_S,
     )
     summary["structure"] = structure_res
+
+    # Aural Sonology (Fase 1): time-fields gerarchici dalla segmentazione e
+    # forma dinamica (curva energetica) dall'inviluppo RMS. Additivi: usati dal
+    # blocco interchange analysis, dal PDF e dal payload dell'agente.
+    from . import aural_form
+    summary["time_fields"] = aural_form.build_time_fields(structure_res)
+    summary["dynamic_form"] = aural_form.build_dynamic_form(y, sr)
+
     # Timeline grafica strutturale per il PDF
     if structure_res.get("enabled") and structure_res.get("sections"):
         timeline_path = graphics_dir / f"{base}_structure_timeline.png"
@@ -386,7 +394,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.14.0", prog_name="soundscape")
+@click.version_option(version="0.16.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -627,6 +635,39 @@ def report_merge_command(pdf_path, markdown_path):
     from . import report_cmd as rc
     new_pdf = rc.merge_markdown_into_pdf(pdf_path, markdown_path)
     click.echo(click.style(f"PDF aggiornato: {new_pdf}", fg="green", bold=True))
+
+
+@cli.command("enrich")
+@click.argument("annotation_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("summary_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", "out_path", type=click.Path(path_type=Path), default=None,
+              help="File di output (default: sovrascrive annotation_path)")
+def enrich_cmd(annotation_path: Path, summary_path: Path, out_path: Path | None):
+    """Inietta il blocco interchange 'analysis' (v1.2) in un file di annotazione.
+
+    Bridge skill -> Atelier: prende un file *.annotation.json esportato
+    dall'Atelier e il *_summary.json prodotto da `analyze`, e scrive nel file di
+    annotazione il blocco analysis (levels, spectral, tags, timeFields,
+    dynamicForm) preservando tutti gli altri blocchi (round-trip senza perdita).
+    """
+    from . import interchange, serialization, load_annotation
+
+    summary = serialization.load(summary_path)
+    if not isinstance(summary, dict):
+        click.echo(click.style(f"summary.json malformato: {summary_path}", fg="red"), err=True)
+        sys.exit(1)
+
+    out = interchange.enrich_annotation_file(
+        annotation_path, summary, out_path=out_path,
+        engine_version=summary.get("version"),
+        summary_ref=summary_path.name,
+    )
+    # Rilettura col reader della skill: deve accettare 1.x e preservare i blocchi.
+    try:
+        load_annotation.load_annotation(str(out))
+    except Exception as exc:  # noqa: BLE001 - solo avviso, non blocca la scrittura
+        click.echo(click.style(f"Avviso: rilettura reader fallita: {exc}", fg="yellow"), err=True)
+    click.echo(click.style(f"Annotazione arricchita (analysis v1.2): {out}", fg="green", bold=True))
 
 
 @cli.command("agent")

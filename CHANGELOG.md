@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0] - 2026-06-17
+
+Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automatica, entrambi additivi. Estende il contratto di interscambio a v1.2 e completa il bridge skill -> Atelier (scrittura del blocco `analysis`). Sviluppo su branch `aural-sonology-fase1`. Motivazione: il paper Soundscape Annotation nomina gia come contributo proprio il "gap di stratificazione"; questi assi formali preparano la risposta operativa. Dettaglio del piano in `~/.claude/plans/woolly-wandering-dusk.md`.
+
+### Aggiunte
+
+- `templates/interchange_schema_v1.2.json`: schema additivo. Il blocco `analysis` accetta due sotto-campi opzionali: `timeFields` (segmentazione gerarchica diacronica, lista piatta con `parentId`/`level`) e `dynamicForm` (curva energetica in dBFS con `peakSec`; `phases` riservato a Fase 4). Reader rule invariata (`^1\.`), nessun campo 1.0/1.1 cambia semantica.
+- `scripts/aural_form.py`: `build_time_fields` (mappa sezioni + sub_sections di `structure.py` ai time-fields gerarchici) e `build_dynamic_form` (ricalcola l'inviluppo RMS con i parametri di `compute_levels`, downsample a ~2 Hz con cap a 500 punti). technical.py e spectral.py restano intatti.
+- `scripts/interchange.py`: `build_analysis_block` (assembla il blocco interchange `analysis` dal summary: engine, analyzedAt, levels, spectral, tags best-effort con score normalizzato, timeFields, dynamicForm) e `enrich_annotation_file` (inietta `analysis` in un file dell'Atelier preservando ogni altro blocco e portando `schemaVersion` a 1.2).
+- `cli.py`: il summary include `time_fields` e `dynamic_form`; nuovo comando `enrich <annotation.json> <summary.json>` (bridge verso l'Atelier, con rilettura di controllo via reader della skill).
+- `agent_payload`: sezione `aural_form` (time-fields + forma dinamica ridotta a contorno di 12 punti, per non gonfiare il payload).
+
+### Note
+
+- Solo additivo: output e PDF esistenti invariati; suite a 275 passed, 2 skipped. `bandsSchafer` nel blocco analysis rimandato (scala `energy_pct` non garantita 0-1). L'Atelier non e toccato: consuma il blocco `analysis` in Fase 2 (Layers).
+
 ## [0.15.0] - 2026-06-08
 
 Aggiunta di due descrittori timbrici a `compute_timbre`: **spectral spread** (ampiezza di banda attorno al centroide, via `librosa.feature.spectral_bandwidth`) e **spectral flux** (variazione spettrale rettificata fra frame STFT consecutivi, Dixon 2006). Motivazione: completare la quaterna di descrittori (centroide, spread, RMS, flux) richiesta da un caso d'uso esterno sulla traduzione visiva del suono, e dare al lettore una misura diretta della larghezza spettrale e dell'instabilita'/turbolenza nel tempo.

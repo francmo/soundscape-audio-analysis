@@ -13,6 +13,7 @@ Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automa
 - `agent_payload`: sezione `aural_form` (time-fields + forma dinamica ridotta a contorno di 12 punti, per non gonfiare il payload).
 - `plotting.plot_dynamic_form` + sezione PDF "Aural Sonology": tabella dei campi temporali gerarchici e grafico della curva energetica con picco marcato (nero su bianco, stile dei grafici esistenti). Verifica visiva del PDF effettuata.
 - `templates/agent_prompt.md`: nuova sezione perche' l'agente compositivo usi `dynamic_form` (arco energetico) e `time_fields` (architettura), interpretando e non parafrasando i numeri, senza sconfinare nel DSP.
+- **Fase 2 (lato skill)**: `analysis.suggestedLayers` + `aural_form.build_suggested_layers` (top-k sorgenti PANNs co-presenti da `semantic.classifier.top_global`, mappate a Krause, dedup + soglia). Risponde alla "singolarita' dell'etichetta": la skill non collassa piu' sul solo dominante. Wiring in summary/analysis/payload/PDF (riga "Strati simultanei suggeriti") + prompt agente. La curatela degli strati passa all'Atelier (Fase 2 lato UI). Corretto en passant il path PANNs anche per i `tags` del blocco analysis.
 
 ### Note
 

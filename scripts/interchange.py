@@ -73,6 +73,10 @@ def build_analysis_block(
     if dynamic_form:
         block["dynamicForm"] = dynamic_form
 
+    suggested = summary.get("suggested_layers")
+    if suggested:
+        block["suggestedLayers"] = suggested
+
     if summary_ref:
         block["summaryRef"] = summary_ref
     return block
@@ -117,7 +121,13 @@ def _build_tags(summary: dict, limit: int = 10) -> list[dict]:
         score = _norm_score(item.get("score", item.get("similarity")))
         if label and score is not None:
             tags.append({"label": str(label), "score": score, "source": "clap"})
-    for item in ((summary.get("semantic") or {}).get("top_global") or [])[:limit]:
+    semantic = summary.get("semantic") or {}
+    panns_top = (
+        (semantic.get("classifier") or {}).get("top_global")
+        or semantic.get("top_global")
+        or []
+    )
+    for item in panns_top[:limit]:
         label = item.get("label") or item.get("name")
         score = _norm_score(item.get("score", item.get("pct")))
         if label and score is not None:

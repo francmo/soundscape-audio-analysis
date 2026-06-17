@@ -267,6 +267,7 @@ def _analyze_single(
     from . import aural_form
     summary["time_fields"] = aural_form.build_time_fields(structure_res)
     summary["dynamic_form"] = aural_form.build_dynamic_form(y, sr)
+    summary["suggested_layers"] = aural_form.build_suggested_layers(summary)
     if summary.get("dynamic_form"):
         try:
             df_plot = graphics_dir / f"{base}_dynamic_form.png"

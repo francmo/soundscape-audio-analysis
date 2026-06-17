@@ -655,7 +655,7 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
 
 
 def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
-                            plot_path: Path | None, styles) -> list:
+                            suggested_layers: list, plot_path: Path | None, styles) -> list:
     """Sezione PDF Aural Sonology (Fase 1): time-fields gerarchici + forma dinamica.
 
     - Tabella dei campi temporali (livello 0 = principali, livello 1 = sub-campi,
@@ -664,7 +664,7 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
     Ritorna [] se non c'e' nulla da mostrare.
     """
     story = []
-    if not time_fields and not dynamic_form:
+    if not time_fields and not dynamic_form and not suggested_layers:
         return story
 
     story.append(Paragraph(
@@ -716,6 +716,18 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
                 f"{_fmt(dynamic_form.get('resolutionHz'), '{:.0f}')} Hz, in dBFS.",
                 styles.get("caption") or styles["body"],
             ))
+
+    if suggested_layers:
+        labels = ", ".join(
+            f"{l.get('label')} ({l.get('krause')})" if l.get("krause") else f"{l.get('label')}"
+            for l in suggested_layers[:8]
+        )
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(
+            "<b>Strati simultanei suggeriti</b> (sorgenti co-presenti, non solo la "
+            f"dominante): {labels}.",
+            styles["body"],
+        ))
     return story
 
 
@@ -1201,6 +1213,7 @@ def build_report(
     narrative = summary.get("narrative") or {}
     time_fields = summary.get("time_fields") or []
     dynamic_form = summary.get("dynamic_form")
+    suggested_layers = summary.get("suggested_layers") or []
 
     # v0.12.0 REORGANIZATION:
     # 1) Sintesi (executive summary)
@@ -1313,7 +1326,8 @@ def build_report(
 
     # 5b. AURAL SONOLOGY (Fase 1): campi temporali gerarchici + forma dinamica
     aural_block = _build_aural_form_block(
-        time_fields, dynamic_form, (plot_paths or {}).get("dynamic_form"), styles,
+        time_fields, dynamic_form, suggested_layers,
+        (plot_paths or {}).get("dynamic_form"), styles,
     )
     if aural_block:
         story.append(Paragraph("Aural Sonology: campi temporali e forma dinamica", styles["h1"]))

@@ -413,6 +413,11 @@ Thoresen). Due campi:
   se la forma e' a culmine centrale, a rampa, a ondate o piatta. Integralo nella
   **Lettura drammaturgica** (l'arco complessivo) e nelle transizioni fra **Scene
   sonore**.
+- **`suggested_layers`**: sorgenti simultanee candidate (top-k, non solo la
+  dominante). Usale per riconoscere la compresenza di strati (es. biofonia +
+  antropofonia nello stesso tratto) ed evitare di ridurre una scena a un'unica
+  etichetta. Restano suggerimenti macchina: pesale con gli altri indicatori, non
+  citarle come fatti se isolate.
 
 Regole d'uso:
 

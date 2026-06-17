@@ -180,3 +180,60 @@ def _round(value: Any, ndigits: int) -> Any:
         return round(float(value), ndigits)
     except (TypeError, ValueError):
         return value
+
+
+# --------------------------------------------------------------------------- #
+# Suggested layers (stratificazione sincronica: sorgenti simultanee)
+# --------------------------------------------------------------------------- #
+
+def build_suggested_layers(summary: dict, *, max_layers: int = 6,
+                           score_min: float = 0.05) -> list[dict]:
+    """Sorgenti simultanee candidate, da proporre come strati (Fase 2).
+
+    Risponde alla "singolarita' dell'etichetta": invece del solo dominante,
+    espone i top-k sorgenti PANNs co-presenti nel brano, ciascuno mappato alla
+    famiglia Krause. Sono SUGGERIMENTI macchina; la curatela degli strati resta
+    all'annotatore nell'Atelier.
+    """
+    semantic = summary.get("semantic") or {}
+    sem = (
+        (semantic.get("classifier") or {}).get("top_global")
+        or semantic.get("top_global")
+        or []
+    )
+    layers: list[dict] = []
+    seen: set[str] = set()
+    for item in sem:
+        name = item.get("name") or item.get("label")
+        score = item.get("score")
+        if not name or score is None:
+            continue
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            continue
+        if score < score_min:
+            continue
+        key = name.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        layers.append({
+            "id": f"L{len(layers) + 1}",
+            "label": name,
+            "source": "panns",
+            "score": round(score, 4),
+            "krause": _krause_for(name),
+        })
+        if len(layers) >= max_layers:
+            break
+    return layers
+
+
+def _krause_for(panns_label: str) -> str:
+    """Mappa un label PANNs alla famiglia Krause, riusando structure.py."""
+    try:
+        from .structure import _krause_from_panns
+        return _krause_from_panns(panns_label)
+    except Exception:
+        return "mista"

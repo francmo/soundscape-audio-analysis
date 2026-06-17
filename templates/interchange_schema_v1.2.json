@@ -536,6 +536,22 @@
             }
           }
         },
+        "suggestedLayers": {
+          "type": "array",
+          "description": "NUOVO in 1.2 (Fase 2). Sorgenti simultanee candidate (top-k PANNs co-presenti), proposte come strati. Risponde alla singolarità dell'etichetta: la curatela degli strati resta all'annotatore. Writer: soundscape-audio-analysis.",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "source": { "type": "string", "enum": ["panns", "clap"] },
+              "score": { "type": "number" },
+              "krause": { "type": "string" }
+            }
+          }
+        },
         "tags": {
           "type": "array",
           "description": "Classificazione semantica. Senza startSec/endSec il tag e globale; con startSec/endSec e un segmento di timeline.",

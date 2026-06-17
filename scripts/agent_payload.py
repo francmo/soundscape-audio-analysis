@@ -306,6 +306,7 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
         "aural_form": {
             "time_fields": (summary.get("time_fields") or [])[:24],
             "dynamic_form": _compact_dynamic_form(summary.get("dynamic_form")),
+            "suggested_layers": (summary.get("suggested_layers") or [])[:8],
         },
         "speech_mediation": {
             "enabled": speech_mediation.get("enabled", False),

@@ -618,6 +618,16 @@ def _build_sections(features: list[dict],
 
         events_per_sec = _events_per_sec_in_section(onset_times, t_start, t_end)
 
+        # Sorgenti simultanee della sezione (Fase 2): top-k PANNs per frequenza
+        # nelle finestre interne, dominante inclusa. Additivo, mirror del pattern
+        # sub_class_top delle sub-sezioni.
+        panns_counts: dict[str, int] = {}
+        for f in chunk:
+            for lbl in (f.get("panns_top3") or []):
+                if lbl:
+                    panns_counts[lbl] = panns_counts.get(lbl, 0) + 1
+        panns_topk = [n for n, _ in sorted(panns_counts.items(), key=lambda kv: -kv[1])[:4]]
+
         section = {
             "id": f"S{k + 1}",
             "t_start_s": round(t_start, 2),
@@ -628,6 +638,7 @@ def _build_sections(features: list[dict],
             "mean_flatness": round(mean_flatness, 4),
             "events_per_sec": round(events_per_sec, 3),
             "dominant_panns": dominant_panns,
+            "panns_topk": panns_topk,
             "dominant_panns_confidence": panns_conf,
             "dominant_clap_prompt": dominant_clap,
             "dominant_clap_marked": dominant_clap_marked,

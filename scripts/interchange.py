@@ -35,7 +35,8 @@ def build_analysis_block(
     tech = summary.get("technical") or {}
     levels_src = tech.get("levels") or {}
     lufs_src = tech.get("lufs") or {}
-    timbre = (summary.get("spectral") or {}).get("timbre") or {}
+    spec_root = summary.get("spectral") or {}
+    timbre = spec_root.get("timbre") or {}
 
     levels = _compact({
         "lufsIntegrated": lufs_src.get("integrated_lufs"),
@@ -49,6 +50,15 @@ def build_analysis_block(
         "rolloffHz": timbre.get("spectral_rolloff_hz"),
         "flatness": timbre.get("spectral_flatness"),
     })
+    # bandsSchafer in 0-1 (energy_pct e' in percentuale 0-100).
+    bands_raw = spec_root.get("bands_schafer") or {}
+    bands_schafer = {
+        name: round(float(b["energy_pct"]) / 100.0, 4)
+        for name, b in bands_raw.items()
+        if isinstance(b, dict) and b.get("energy_pct") is not None
+    }
+    if bands_schafer:
+        spectral["bandsSchafer"] = bands_schafer
 
     block: dict[str, Any] = {
         "engine": {

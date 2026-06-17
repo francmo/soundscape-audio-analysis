@@ -303,6 +303,10 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "n_sub_sections": structure.get("n_sub_sections", 0),
             "sections": structure.get("sections", [])[:8],
         },
+        "aural_form": {
+            "time_fields": (summary.get("time_fields") or [])[:24],
+            "dynamic_form": _compact_dynamic_form(summary.get("dynamic_form")),
+        },
         "speech_mediation": {
             "enabled": speech_mediation.get("enabled", False),
             "speech_dominant_pct": speech_mediation.get("speech_dominant_pct"),
@@ -312,6 +316,30 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
         "narrative_markdown": narrative_md,
     }
     return payload
+
+
+def _compact_dynamic_form(df: dict | None, max_points: int = 12) -> dict | None:
+    """Forma dinamica ridotta per l'agente: peak + contorno grossolano.
+
+    L'energia piena (fino a 500 punti) e' eccessiva per il payload: si tiene
+    peakSec, la risoluzione e un contorno sotto-campionato a max_points punti.
+    """
+    if not df:
+        return None
+    energy = df.get("energy") or []
+    if len(energy) > max_points:
+        step = len(energy) / max_points
+        idxs = sorted({int(i * step) for i in range(max_points)})
+        contour = [energy[i] for i in idxs if i < len(energy)]
+    else:
+        contour = energy
+    return {
+        "resolution_hz": df.get("resolutionHz"),
+        "unit": df.get("unit"),
+        "peak_sec": df.get("peakSec"),
+        "n_points_full": len(energy),
+        "contour": contour,
+    }
 
 
 def write_agent_payload(summary: dict, narrative_md: str, out_path: Path) -> Path:

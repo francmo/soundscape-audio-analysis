@@ -267,6 +267,13 @@ def _analyze_single(
     from . import aural_form
     summary["time_fields"] = aural_form.build_time_fields(structure_res)
     summary["dynamic_form"] = aural_form.build_dynamic_form(y, sr)
+    if summary.get("dynamic_form"):
+        try:
+            df_plot = graphics_dir / f"{base}_dynamic_form.png"
+            plotting.plot_dynamic_form(summary["dynamic_form"], duration_s, df_plot)
+            plot_paths["dynamic_form"] = df_plot
+        except Exception as exc:
+            click.echo(f"  avviso: plot dynamic_form saltato ({exc})")
 
     # Timeline grafica strutturale per il PDF
     if structure_res.get("enabled") and structure_res.get("sections"):

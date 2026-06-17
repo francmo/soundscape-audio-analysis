@@ -654,6 +654,71 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
     return story
 
 
+def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
+                            plot_path: Path | None, styles) -> list:
+    """Sezione PDF Aural Sonology (Fase 1): time-fields gerarchici + forma dinamica.
+
+    - Tabella dei campi temporali (livello 0 = principali, livello 1 = sub-campi,
+      indentati e in grigio).
+    - Grafico della curva energetica (da plotting.plot_dynamic_form) con il picco.
+    Ritorna [] se non c'e' nulla da mostrare.
+    """
+    story = []
+    if not time_fields and not dynamic_form:
+        return story
+
+    story.append(Paragraph(
+        "Lettura formale ispirata ad Aural Sonology (Thoresen): i <b>campi "
+        "temporali</b> sono la segmentazione gerarchica del discorso (livello 0 "
+        "= campi principali, livello 1 = sub-campi); la <b>forma dinamica</b> e' "
+        "la curva dell'energia nel tempo. Entrambe derivano dall'analisi "
+        "automatica, non dall'agente, e gli servono da ossatura.",
+        styles["body"],
+    ))
+    story.append(Spacer(1, 6))
+
+    if time_fields:
+        rows = [["ID", "Liv.", "Inizio", "Fine", "Durata", "Campo", "Krause", "Dominante"]]
+        for f in time_fields:
+            label = (f.get("label") or "")[:40]
+            dominant = (f.get("dominantPanns") or f.get("dominantClap") or "")[:22]
+            duration = (f.get("endSec") or 0) - (f.get("startSec") or 0)
+            if (f.get("level") or 0) >= 1:
+                label = f"<font color='#6b7280'>&nbsp;&nbsp;&nbsp; {label}</font>"
+                dominant = f"<font color='#6b7280'>{dominant}</font>"
+            rows.append([
+                f.get("id", ""),
+                str(f.get("level", 0)),
+                _fmt_time(f.get("startSec", 0)),
+                _fmt_time(f.get("endSec", 0)),
+                f"{duration:.0f} s",
+                label,
+                f.get("krause", ""),
+                dominant,
+            ])
+        story.append(report_styles.styled_table(
+            rows,
+            [12 * mm, 10 * mm, 15 * mm, 15 * mm, 14 * mm, 42 * mm, 20 * mm, 30 * mm],
+            styles,
+        ))
+        story.append(Spacer(1, 8))
+
+    if dynamic_form:
+        if plot_path is not None and Path(plot_path).exists():
+            try:
+                story.append(Image(str(plot_path), width=170 * mm, height=37 * mm))
+            except Exception:
+                pass
+        peak = dynamic_form.get("peakSec")
+        if peak is not None:
+            story.append(Paragraph(
+                f"Picco energetico a {_fmt_time(peak)}; curva campionata a "
+                f"{_fmt(dynamic_form.get('resolutionHz'), '{:.0f}')} Hz, in dBFS.",
+                styles.get("caption") or styles["body"],
+            ))
+    return story
+
+
 def _build_multichannel_block(mc: dict, styles) -> list:
     story = []
     if not mc:
@@ -1134,6 +1199,8 @@ def build_report(
     mc = summary.get("multichannel")
     structure = summary.get("structure") or {}
     narrative = summary.get("narrative") or {}
+    time_fields = summary.get("time_fields") or []
+    dynamic_form = summary.get("dynamic_form")
 
     # v0.12.0 REORGANIZATION:
     # 1) Sintesi (executive summary)
@@ -1242,6 +1309,15 @@ def build_report(
         if narrative.get("enabled") and narrative.get("segments"):
             story.extend(_build_narrative_legenda(styles))
             story.extend(_build_narrative_by_section(structure, narrative, styles))
+        story.append(PageBreak())
+
+    # 5b. AURAL SONOLOGY (Fase 1): campi temporali gerarchici + forma dinamica
+    aural_block = _build_aural_form_block(
+        time_fields, dynamic_form, (plot_paths or {}).get("dynamic_form"), styles,
+    )
+    if aural_block:
+        story.append(Paragraph("Aural Sonology: campi temporali e forma dinamica", styles["h1"]))
+        story.extend(aural_block)
         story.append(PageBreak())
 
     # 6. APPENDICE

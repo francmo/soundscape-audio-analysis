@@ -2,7 +2,7 @@
 
 ## [0.16.0] - 2026-06-17
 
-Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automatica, entrambi additivi. Estende il contratto di interscambio a v1.2 e completa il bridge skill -> Atelier (scrittura del blocco `analysis`). Sviluppo su branch `aural-sonology-fase1`. Motivazione: il paper Soundscape Annotation nomina gia come contributo proprio il "gap di stratificazione"; questi assi formali preparano la risposta operativa. Dettaglio del piano in `~/.claude/plans/woolly-wandering-dusk.md`.
+Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automatica, entrambi additivi. Estende il contratto di interscambio a v1.2 e completa il bridge skill -> Atelier (scrittura del blocco `analysis`). Sviluppo su branch `aural-sonology-fase1`. Motivazione: il paper Soundscape Annotation nomina gia' come contributo proprio il "gap di stratificazione"; questi assi formali preparano la risposta operativa. Dettaglio del piano in `~/.claude/plans/woolly-wandering-dusk.md`.
 
 ### Aggiunte
 
@@ -11,10 +11,12 @@ Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automa
 - `scripts/interchange.py`: `build_analysis_block` (assembla il blocco interchange `analysis` dal summary: engine, analyzedAt, levels, spectral, tags best-effort con score normalizzato, timeFields, dynamicForm) e `enrich_annotation_file` (inietta `analysis` in un file dell'Atelier preservando ogni altro blocco e portando `schemaVersion` a 1.2).
 - `cli.py`: il summary include `time_fields` e `dynamic_form`; nuovo comando `enrich <annotation.json> <summary.json>` (bridge verso l'Atelier, con rilettura di controllo via reader della skill).
 - `agent_payload`: sezione `aural_form` (time-fields + forma dinamica ridotta a contorno di 12 punti, per non gonfiare il payload).
+- `plotting.plot_dynamic_form` + sezione PDF "Aural Sonology": tabella dei campi temporali gerarchici e grafico della curva energetica con picco marcato (nero su bianco, stile dei grafici esistenti). Verifica visiva del PDF effettuata.
+- `templates/agent_prompt.md`: nuova sezione perche' l'agente compositivo usi `dynamic_form` (arco energetico) e `time_fields` (architettura), interpretando e non parafrasando i numeri, senza sconfinare nel DSP.
 
 ### Note
 
-- Solo additivo: output e PDF esistenti invariati; suite a 275 passed, 2 skipped. `bandsSchafer` nel blocco analysis rimandato (scala `energy_pct` non garantita 0-1). L'Atelier non e toccato: consuma il blocco `analysis` in Fase 2 (Layers).
+- Solo additivo: output e PDF esistenti invariati; suite a 275 passed, 2 skipped. `bandsSchafer` nel blocco analysis rimandato (scala `energy_pct` non garantita 0-1). L'Atelier non e' toccato: consuma il blocco `analysis` in Fase 2 (Layers).
 
 ## [0.15.0] - 2026-06-08
 

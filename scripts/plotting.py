@@ -138,6 +138,37 @@ def plot_radar_profiles(summary_vec: dict, profile_vecs: dict[str, dict],
     return out_path
 
 
+def plot_dynamic_form(dynamic_form: dict, total_duration_s: float, out_path: Path,
+                      title: str = "Forma dinamica (curva energetica)") -> Path:
+    """Curva energetica (Aural Sonology) in dBFS nel tempo, con picco marcato.
+
+    Sfondo bianco, traccia scura, area energetica tenue, linea verticale sul
+    picco. Coerente con lo stile degli altri grafici del report.
+    """
+    energy = (dynamic_form or {}).get("energy") or []
+    xs = [p["tSec"] for p in energy]
+    ys = [p["db"] for p in energy]
+
+    fig, ax = plt.subplots(figsize=(12, 2.6))
+    if xs:
+        ax.plot(xs, ys, color=config.PALETTE["dark"], linewidth=1.2)
+        ax.fill_between(xs, ys, min(ys), color=config.PALETTE["teal"], alpha=0.12)
+        peak = (dynamic_form or {}).get("peakSec")
+        if peak is not None:
+            ax.axvline(peak, color=config.PALETTE["terracotta"], linestyle="--", linewidth=0.9)
+            ax.text(peak, max(ys), " picco", fontsize=7,
+                    color=config.PALETTE["terracotta"], va="top", ha="left")
+    ax.set_xlim(0, max(total_duration_s or 0.0, xs[-1] if xs else 1.0))
+    ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
+    ax.set_xlabel("tempo (s)", fontsize=8, color=config.PALETTE["dark"])
+    ax.set_ylabel("energia (dBFS)", fontsize=8, color=config.PALETTE["dark"])
+    ax.tick_params(labelsize=7, colors=config.PALETTE["dark"])
+    _style(ax)
+    plt.savefig(out_path, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def plot_structure_timeline(sections: list[dict], total_duration_s: float,
                              out_path: Path,
                              title: str = "Sezioni strutturali") -> Path:

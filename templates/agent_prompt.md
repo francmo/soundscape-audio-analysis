@@ -1,4 +1,4 @@
-# Prompt per soundscape-composer-analyst (v0.12.6)
+# Prompt per soundscape-composer-analyst (v0.16.0)
 
 Hai ricevuto due input:
 
@@ -8,7 +8,8 @@ Hai ricevuto due input:
    top-10 del classificatore semantico (PANNs o YAMNet), top-20 tag CLAP globali (prompt
    italiani con score cosine), `clap.academic_hints` (hint accademici aggregati, v0.4.0),
    `speech` (trascrizione dialoghi se `--speech` attivo, v0.5.0), `signature` (v0.5.3),
-   `structure` (v0.6.0), `schaeffer_detail` + `smalley_growth` (v0.6.0 nei
+   `structure` (v0.6.0), `aural_form` (v0.16.0: time_fields gerarchici + dynamic_form),
+   `schaeffer_detail` + `smalley_growth` (v0.6.0 nei
    `clap.academic_hints`), e il campo `narrative_markdown` (descrizione segmentata
    già in italiano).
 
@@ -393,6 +394,37 @@ classificazione PANNs e' costruita su 0-1 frame e statisticamente inaffidabile.
   come fatto**. Tratta la sezione come impulso, coda, transitorio breve. Se la
   `signature_label` e' "impulso e coda", attieniti a quella descrizione neutra
   e non costruire scene su un singolo classificatore frame.
+
+## Come usare `aural_form` (v0.16.0)
+
+Il payload include `aural_form`, lettura formale ispirata ad Aural Sonology (Lasse
+Thoresen). Due campi:
+
+- **`time_fields`**: la stessa segmentazione di `structure`, riespressa come campi
+  temporali gerarchici (livello 0 = campi principali, livello 1 = sub-campi, con
+  `parentId`). Puoi adottare il lessico dei campi temporali nella lettura
+  drammaturgica e nelle scene quando aiuta a rendere l'architettura del discorso;
+  vale tutto quanto detto per `structure` (le scene sono interpretazione, non
+  corrispondenza 1:1).
+- **`dynamic_form`**: la **forma dinamica**, cioe' la curva dell'energia nel tempo
+  (dBFS), con `peak_sec` (istante del culmine), `resolution_hz` e un `contour`
+  sotto-campionato. E' l'unico dato che descrive l'**arco energetico** del brano:
+  usalo per leggere dove l'opera accumula e dove si scarica, dove cade il climax,
+  se la forma e' a culmine centrale, a rampa, a ondate o piatta. Integralo nella
+  **Lettura drammaturgica** (l'arco complessivo) e nelle transizioni fra **Scene
+  sonore**.
+
+Regole d'uso:
+
+- **Interpreta, non parafrasare i numeri**. Vietato "picco a 84 s a -6 dBFS";
+  ammesso "l'energia culmina verso il centro, poi recede in una lunga coda". Vale
+  il limite di un numerale per paragrafo.
+- Il `contour` serve a te per cogliere il profilo (rampa, ondate, plateau); non
+  trascriverlo punto per punto.
+- Se `dynamic_form` e' assente o quasi piatto, non forzare un arco drammatico:
+  dichiara che la forma e' statica, un piano-sequenza energetico.
+- La forma dinamica descrive il brano, non e' un gesto DSP: non entra nei
+  "Suggerimenti compositivi" come parametro tecnico.
 
 ## Tassonomie compositive estese (v0.6.0)
 

@@ -545,7 +545,18 @@
             "peakSec": { "type": "number", "minimum": 0 },
             "phases": {
               "type": ["array", "null"],
-              "description": "Riservato (Fase 4): tipizzazione della gestalt energetica (anacrusi/crescita/climax/risoluzione). Null finché non determinato."
+              "description": "Fase 4: tipizzazione della gestalt energetica (anacrusi/crescita/climax/risoluzione). Null se non determinata.",
+              "items": {
+                "type": "object",
+                "required": ["name", "startSec", "endSec"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "startSec": { "type": "number", "minimum": 0 },
+                  "endSec": { "type": "number", "minimum": 0 },
+                  "label": { "type": "string" }
+                }
+              }
             }
           }
         },
@@ -562,6 +573,23 @@
               "source": { "type": "string", "enum": ["panns", "clap"] },
               "score": { "type": "number" },
               "krause": { "type": "string" }
+            }
+          }
+        },
+        "suggestedRelations": {
+          "type": "array",
+          "description": "NUOVO in 1.2 (Fase 4). Relazioni formali candidate (form-building) fra time-field, proposte da euristica e/o agente; riferimenti per id di time-field. La curatela resta all'annotatore. Writer: soundscape-audio-analysis.",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "fromRef", "toRef"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string" },
+              "fromRef": { "type": "string" },
+              "toRef": { "type": "string" },
+              "score": { "type": "number" },
+              "rationale": { "type": "string" }
             }
           }
         },

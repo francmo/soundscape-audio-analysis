@@ -237,6 +237,127 @@ def build_suggested_layers(summary: dict, *, max_layers: int = 6,
     return layers
 
 
+# --------------------------------------------------------------------------- #
+# Form-building (Fase 4): fasi della gestalt energetica e relazioni candidate
+# --------------------------------------------------------------------------- #
+
+def infer_phases(dynamic_form: Optional[dict]) -> Optional[list[dict]]:
+    """Tipizzazione euristica (baseline) della gestalt energetica in 4 fasi.
+
+    Deterministica, dal solo profilo energetico: anacrusi (breve preludio),
+    crescita (fino al picco), climax (finestra attorno al picco), risoluzione
+    (coda). E' un baseline citabile che l'agente form-building puo' raffinare;
+    ritorna None se la curva e' troppo corta.
+    """
+    if not dynamic_form:
+        return None
+    energy = dynamic_form.get("energy") or []
+    if len(energy) < 4:
+        return None
+    try:
+        dur = float(energy[-1]["tSec"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if dur <= 0:
+        return None
+    peak = max(0.0, min(float(dynamic_form.get("peakSec") or 0.0), dur))
+    pre = round(min(0.08 * dur, peak), 3)
+    post = round(min(peak + 0.10 * dur, dur), 3)
+    phases: list[dict] = []
+    if pre > 0:
+        phases.append({"name": "anacrusi", "startSec": 0.0, "endSec": pre})
+    if peak > pre:
+        phases.append({"name": "crescita", "startSec": pre, "endSec": round(peak, 3)})
+    if post > peak:
+        phases.append({"name": "climax", "startSec": round(peak, 3), "endSec": post})
+    if dur > post:
+        phases.append({"name": "risoluzione", "startSec": post, "endSec": round(dur, 3)})
+    return phases or None
+
+
+def build_suggested_relations(
+    time_fields: Optional[list[dict]],
+    dynamic_form: Optional[dict] = None,
+    *,
+    max_relations: int = 8,
+) -> list[dict]:
+    """Relazioni form-building candidate (baseline euristica) fra time-field.
+
+    Confronta i campi di livello 0: stessa sorgente dominante -> ripetizione o
+    variazione (per somiglianza di timbro); famiglia o sorgente diverse ->
+    contrasto; ricorrenza di una label non adiacente -> ritorno; energia
+    crescente verso il climax -> progressione. Riferimenti per id di time-field.
+    Sono SUGGERIMENTI: la curatela resta all'annotatore; l'agente li raffina.
+    """
+    if not time_fields:
+        return []
+    fields = [f for f in time_fields if f.get("level") == 0]
+    if len(fields) < 2:
+        return []
+    rels: list[dict] = []
+
+    def add(rtype: str, a: dict, b: dict, score: float, rationale: str) -> None:
+        rels.append({
+            "id": f"R{len(rels) + 1}",
+            "type": rtype,
+            "fromRef": a["id"],
+            "toRef": b["id"],
+            "score": round(float(score), 3),
+            "rationale": rationale,
+        })
+
+    for a, b in zip(fields, fields[1:]):
+        pa, pb = a.get("dominantPanns"), b.get("dominantPanns")
+        ka, kb = a.get("krause"), b.get("krause")
+        ca, cb = a.get("meanCentroidHz"), b.get("meanCentroidHz")
+        if pa and pb and pa == pb:
+            if _close(ca, cb, 0.25):
+                add("repetition", a, b, 0.6, f"stessa sorgente dominante ({pa}), timbro simile")
+            else:
+                add("variation", a, b, 0.55, f"stessa sorgente dominante ({pa}), timbro diverso")
+        elif (ka and kb and ka != kb) or (pa and pb and pa != pb and not _close(ca, cb, 0.5)):
+            add("contrast", a, b, 0.5, "famiglia o sorgente dominante diverse")
+
+    first_seen: dict[str, int] = {}
+    for i, f in enumerate(fields):
+        lab = f.get("label") or f.get("dominantPanns")
+        if not lab:
+            continue
+        if lab in first_seen and i - first_seen[lab] >= 2:
+            add("return", fields[first_seen[lab]], f, 0.5, f"ricorrenza di '{lab}'")
+        first_seen.setdefault(lab, i)
+
+    if dynamic_form and dynamic_form.get("peakSec") is not None:
+        peak = float(dynamic_form["peakSec"])
+        climax = next(
+            (
+                f for f in fields
+                if f.get("startSec") is not None and f.get("endSec") is not None
+                and f["startSec"] <= peak <= f["endSec"]
+            ),
+            None,
+        )
+        if climax is not None and climax is not fields[0]:
+            r0, rp = fields[0].get("meanRmsDb"), climax.get("meanRmsDb")
+            if r0 is not None and rp is not None and rp > r0:
+                add("progression", fields[0], climax, 0.5, "energia crescente verso il climax")
+
+    return rels[:max_relations]
+
+
+def _close(a: Any, b: Any, rel: float) -> bool:
+    """True se a e b sono entro una tolleranza relativa rel (None -> False)."""
+    if a is None or b is None:
+        return False
+    try:
+        a, b = float(a), float(b)
+    except (TypeError, ValueError):
+        return False
+    if a == 0 and b == 0:
+        return True
+    return abs(a - b) <= rel * max(abs(a), abs(b), 1.0)
+
+
 def _krause_for(panns_label: str) -> str:
     """Mappa un label PANNs alla famiglia Krause, riusando structure.py."""
     try:

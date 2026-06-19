@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.0] - 2026-06-19
+
+Aural Sonology (Thoresen), Fase 4 (form-building), baseline deterministica. Estende il contratto v1.2 con le relazioni formali fra time-field e la tipizzazione delle fasi energetiche, entrambe additive. Le proposte sono una baseline euristica citabile; l'agente form-building (non deterministico) le raffinerà in un passo successivo. Sviluppo su branch `aural-sonology-fase4`. Piano in `~/.claude/plans/declarative-soaring-parnas.md`.
+
+### Aggiunte
+
+- `templates/interchange_schema_v1.2.json`: `analysis.dynamicForm.phases` ora è una lista tipizzata `[{name, startSec, endSec, label?}]` (anacrusi/crescita/climax/risoluzione), oltre a null; nuovo `analysis.suggestedRelations` (relazioni candidate fra time-field: `[{id, type, fromRef, toRef, score?, rationale?}]`), parallelo a `suggestedLayers`. Reader rule invariata (`^1\.`).
+- `scripts/aural_form.py`: `infer_phases` (tipizza la gestalt energetica in 4 fasi dal solo profilo, baseline deterministica) e `build_suggested_relations` (ripetizione/variazione/contrasto fra campi consecutivi, ritorno per ricorrenza di label, progressione verso il climax).
+- `scripts/interchange.py`: `build_analysis_block` serializza `suggestedRelations` (le `phases` viaggiano dentro `dynamicForm`).
+- `cli.py`: il summary include `suggested_relations` e `dynamic_form.phases`.
+- `tests/test_aural_form_fase4.py`: 5 test della baseline (fasi e relazioni), deterministici.
+
+### Note
+
+- L'agente `soundscape-relation-builder` e il rendering PDF delle relazioni/fasi sono un passo successivo (Fase 4 parte 2). Suite invariata, nuovi test verdi.
+
 ## [0.16.0] - 2026-06-17
 
 Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automatica, entrambi additivi. Estende il contratto di interscambio a v1.2 e completa il bridge skill -> Atelier (scrittura del blocco `analysis`). Sviluppo su branch `aural-sonology-fase1`. Motivazione: il paper Soundscape Annotation nomina gia' come contributo proprio il "gap di stratificazione"; questi assi formali preparano la risposta operativa. Dettaglio del piano in `~/.claude/plans/woolly-wandering-dusk.md`.

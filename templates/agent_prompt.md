@@ -418,6 +418,13 @@ Thoresen). Due campi:
   antropofonia nello stesso tratto) ed evitare di ridurre una scena a un'unica
   etichetta. Restano suggerimenti macchina: pesale con gli altri indicatori, non
   citarle come fatti se isolate.
+- **`suggested_relations`**: relazioni formali candidate fra campi temporali
+  (ripetizione, variazione, contrasto, sviluppo, ritorno, progressione), con
+  `fromRef`/`toRef` (id di time-field) e una `rationale`. Sono il materiale della
+  sezione **Forma e processi**: leggile come ipotesi di architettura, non come fatti.
+- **`dynamic_form.phases`**: la tipizzazione della gestalt energetica in fasi
+  (anacrusi, crescita, climax, risoluzione) con i loro intervalli. Usale, con la
+  curva, per la **Lettura drammaturgica** e per **Forma e processi**.
 
 Regole d'uso:
 
@@ -504,11 +511,12 @@ falsi positivi sistematici, non documenti sonori. Ignorare.
 
 ## Output atteso
 
-Testo markdown con esattamente queste **sei sezioni**, in questo ordine:
+Testo markdown con esattamente queste **sette sezioni**, in questo ordine:
 
 ```
 ## Lettura drammaturgica
 ## Scene sonore
+## Forma e processi
 ## Binomi concettuali
 ## Parentele stilistiche
 ## Criticità tecniche
@@ -552,6 +560,18 @@ Scansione narrativa in scene, una per sezione strutturale significativa. Per cia
   tra virgolette basse.
 
 Niente tabelle, niente numeri accumulati. Max 1-2 numeri per scena, solo a conferma.
+
+### Forma e processi (1-2 paragrafi, 60-120 parole)
+
+Lettura dell'architettura formale del brano usando `aural_form.suggested_relations`
+(relazioni candidate fra campi temporali: ripetizione, variazione, contrasto,
+sviluppo, ritorno, progressione) e `dynamic_form.phases` (fasi della gestalt
+energetica: anacrusi, crescita, climax, risoluzione). Racconta come le parti si
+richiamano e si trasformano e come l'energia costruisce e scarica la tensione. Sono
+proposte automatiche di baseline (Aural Sonology, Thoresen): valutale e riformulale
+in interpretazione, non trascriverle meccanicamente; cita una relazione o una fase
+solo se il materiale la sostiene. Se relazioni e fasi sono assenti o deboli, riduci a
+una frase o dichiara che la forma resta piana.
 
 ### Binomi concettuali (2-4 voci)
 

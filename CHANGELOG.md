@@ -10,11 +10,12 @@ Aural Sonology (Thoresen), Fase 4 (form-building), baseline deterministica. Este
 - `scripts/aural_form.py`: `infer_phases` (tipizza la gestalt energetica in 4 fasi dal solo profilo, baseline deterministica) e `build_suggested_relations` (ripetizione/variazione/contrasto fra campi consecutivi, ritorno per ricorrenza di label, progressione verso il climax).
 - `scripts/interchange.py`: `build_analysis_block` serializza `suggestedRelations` (le `phases` viaggiano dentro `dynamicForm`).
 - `cli.py`: il summary include `suggested_relations` e `dynamic_form.phases`.
-- `tests/test_aural_form_fase4.py`: 5 test della baseline (fasi e relazioni), deterministici.
+- `tests/test_aural_form_fase4.py`: 7 test (baseline deterministica + payload agente), deterministici.
+- **Fase 4 parte 2 (lettura testuale)**: `scripts/agent_payload.py` espone nel payload `aural_form.suggested_relations` e `dynamic_form.phases`; `templates/agent_prompt.md` e l'agente `soundscape-composer-analyst` hanno una settima sezione di output **Forma e processi** che interpreta relazioni e fasi (guida `aural_form` estesa); `scripts/report_pdf.py` mostra nel blocco Aural Sonology le fasi della forma e le relazioni formali suggerite.
 
 ### Note
 
-- L'agente `soundscape-relation-builder` e il rendering PDF delle relazioni/fasi sono un passo successivo (Fase 4 parte 2). Suite invariata, nuovi test verdi.
+- La parte 2 realizza il "raffinamento" dell'agente come lettura testuale (sezione Forma e processi); i dati strutturati per l'Atelier restano quelli della baseline. Un agente che produce relazioni/fasi in JSON resta un'evoluzione futura. Suite invariata, nuovi test verdi.
 
 ## [0.16.0] - 2026-06-17
 

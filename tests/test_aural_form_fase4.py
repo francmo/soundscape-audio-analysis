@@ -1,6 +1,6 @@
 """Fase 4 (form-building): baseline deterministica di infer_phases e
 build_suggested_relations. L'agente, non deterministico, e' testato a parte."""
-from scripts import aural_form
+from scripts import aural_form, agent_payload
 
 
 def _dyn(peak: float, dur: float) -> dict:
@@ -54,3 +54,34 @@ def test_suggested_relations_input_vuoto():
     assert aural_form.build_suggested_relations(None, None) == []
     # un solo campo: nessuna relazione possibile
     assert aural_form.build_suggested_relations([{"id": "S1", "level": 0}], None) == []
+
+
+# --- Parte 2: payload dell'agente (relazioni + fasi visibili all'agente) ---
+
+def test_compact_dynamic_form_includes_phases():
+    df = {
+        "resolutionHz": 2.0, "unit": "dbfs", "peakSec": 5.0,
+        "energy": [{"tSec": i, "db": -30.0} for i in range(6)],
+        "phases": [{"name": "climax", "startSec": 4, "endSec": 6}],
+    }
+    out = agent_payload._compact_dynamic_form(df)
+    assert out is not None
+    assert out["phases"] == df["phases"]
+
+
+def test_agent_payload_aural_form_includes_relations_and_phases():
+    summary = {
+        "metadata": {"filename": "x.wav", "duration_s": 10, "sr": 44100, "channels": 2},
+        "time_fields": [{"id": "S1", "level": 0, "startSec": 0, "endSec": 10}],
+        "dynamic_form": {
+            "resolutionHz": 2.0, "unit": "dbfs", "peakSec": 5.0,
+            "energy": [{"tSec": i, "db": -30.0} for i in range(6)],
+            "phases": [{"name": "climax", "startSec": 4, "endSec": 6}],
+        },
+        "suggested_layers": [{"id": "L1", "label": "Speech"}],
+        "suggested_relations": [{"id": "R1", "type": "contrast", "fromRef": "S1", "toRef": "S2"}],
+    }
+    payload = agent_payload.build_agent_payload(summary, "narrativa")
+    af = payload["aural_form"]
+    assert af["suggested_relations"] == summary["suggested_relations"]
+    assert af["dynamic_form"]["phases"] == summary["dynamic_form"]["phases"]

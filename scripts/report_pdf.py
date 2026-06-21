@@ -655,7 +655,8 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
 
 
 def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
-                            suggested_layers: list, plot_path: Path | None, styles) -> list:
+                            suggested_layers: list, suggested_relations: list,
+                            plot_path: Path | None, styles) -> list:
     """Sezione PDF Aural Sonology (Fase 1): time-fields gerarchici + forma dinamica.
 
     - Tabella dei campi temporali (livello 0 = principali, livello 1 = sub-campi,
@@ -664,7 +665,7 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
     Ritorna [] se non c'e' nulla da mostrare.
     """
     story = []
-    if not time_fields and not dynamic_form and not suggested_layers:
+    if not time_fields and not dynamic_form and not suggested_layers and not suggested_relations:
         return story
 
     story.append(Paragraph(
@@ -716,6 +717,17 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
                 f"{_fmt(dynamic_form.get('resolutionHz'), '{:.0f}')} Hz, in dBFS.",
                 styles.get("caption") or styles["body"],
             ))
+        phases = dynamic_form.get("phases")
+        if phases:
+            ph = "; ".join(
+                f"{p.get('name')} ({_fmt_time(p.get('startSec', 0))}-{_fmt_time(p.get('endSec', 0))})"
+                for p in phases
+            )
+            story.append(Paragraph(
+                f"<b>Fasi della forma</b> (baseline form-building, da raffinare "
+                f"nella lettura): {ph}.",
+                styles.get("caption") or styles["body"],
+            ))
 
     if suggested_layers:
         labels = ", ".join(
@@ -726,6 +738,18 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
         story.append(Paragraph(
             "<b>Strati simultanei suggeriti</b> (sorgenti co-presenti, non solo la "
             f"dominante): {labels}.",
+            styles["body"],
+        ))
+
+    if suggested_relations:
+        rel = "; ".join(
+            f"{r.get('fromRef')} -> {r.get('toRef')} ({r.get('type')})"
+            for r in suggested_relations[:8]
+        )
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(
+            "<b>Relazioni formali suggerite</b> (form-building fra campi temporali, "
+            f"baseline da interpretare): {rel}.",
             styles["body"],
         ))
     return story
@@ -1214,6 +1238,7 @@ def build_report(
     time_fields = summary.get("time_fields") or []
     dynamic_form = summary.get("dynamic_form")
     suggested_layers = summary.get("suggested_layers") or []
+    suggested_relations = summary.get("suggested_relations") or []
 
     # v0.12.0 REORGANIZATION:
     # 1) Sintesi (executive summary)
@@ -1326,7 +1351,7 @@ def build_report(
 
     # 5b. AURAL SONOLOGY (Fase 1): campi temporali gerarchici + forma dinamica
     aural_block = _build_aural_form_block(
-        time_fields, dynamic_form, suggested_layers,
+        time_fields, dynamic_form, suggested_layers, suggested_relations,
         (plot_paths or {}).get("dynamic_form"), styles,
     )
     if aural_block:

@@ -87,6 +87,12 @@ chi fa cosa. Aggiornato a ogni release.
 
 ## Pianificato (priorita' decrescente)
 
+### Addendum 19/06/2026 - timeline PANNs citabile nel report PDF
+
+Problema emerso nell'uso didattico. Quando un rilievo si riferisce a un singolo segmento temporale (per esempio un transito Vehicle/Train forte solo nei primi dieci secondi, che sulla media dell'intero file scende molto), il valore per-segmento non è citabile dal solo report PDF. Oggi la pagina di classificazione semantica stampa come testo solo gli aggregati globali: `top_global` (etichettato "punteggio medio") e `top_dominant_frames` (percentuali di dominanza). L'andamento per-segmento esiste in `summary.json` (`semantic.classifier.timeline`) ma nel PDF è reso solo dal grafico dei tag nel tempo, quindi chi fonda le osservazioni su citazioni testuali del PDF non trova il numero e lo legge come una discrepanza fra i tre valori (per-segmento, media globale, dominanza per-frame), che invece sono coerenti.
+
+Proposta additiva, basso rischio: aggiungere al report PDF una tabella compatta della timeline PANNs per-segmento (t_start, t_end, primi 2-3 tag con score), accanto al grafico esistente. Rende ogni rilievo "nel tempo" verificabile e citabile dal solo PDF e allinea report e `summary.json`. Nessuna modifica ai dati, solo alla resa; verificare non regressione su corpus iteration.
+
 ### Addendum 15/05/2026 - caso A (Soundscape Annotation ABA Macerata)
 
 Nove interventi (6 sulla skill, 3 sui template) emersi dal primo dossier

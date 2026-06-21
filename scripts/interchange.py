@@ -87,6 +87,10 @@ def build_analysis_block(
     if suggested:
         block["suggestedLayers"] = suggested
 
+    relations = summary.get("suggested_relations")
+    if relations:
+        block["suggestedRelations"] = relations
+
     if summary_ref:
         block["summaryRef"] = summary_ref
     return block

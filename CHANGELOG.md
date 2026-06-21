@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.17.0] - 2026-06-19
+
+Aural Sonology (Thoresen), Fase 4 (form-building), baseline deterministica. Estende il contratto v1.2 con le relazioni formali fra time-field e la tipizzazione delle fasi energetiche, entrambe additive. Le proposte sono una baseline euristica citabile; l'agente form-building (non deterministico) le raffinerà in un passo successivo. Sviluppo su branch `aural-sonology-fase4`. Piano in `~/.claude/plans/declarative-soaring-parnas.md`.
+
+### Aggiunte
+
+- `templates/interchange_schema_v1.2.json`: `analysis.dynamicForm.phases` ora è una lista tipizzata `[{name, startSec, endSec, label?}]` (anacrusi/crescita/climax/risoluzione), oltre a null; nuovo `analysis.suggestedRelations` (relazioni candidate fra time-field: `[{id, type, fromRef, toRef, score?, rationale?}]`), parallelo a `suggestedLayers`. Reader rule invariata (`^1\.`).
+- `scripts/aural_form.py`: `infer_phases` (tipizza la gestalt energetica in 4 fasi dal solo profilo, baseline deterministica) e `build_suggested_relations` (ripetizione/variazione/contrasto fra campi consecutivi, ritorno per ricorrenza di label, progressione verso il climax).
+- `scripts/interchange.py`: `build_analysis_block` serializza `suggestedRelations` (le `phases` viaggiano dentro `dynamicForm`).
+- `cli.py`: il summary include `suggested_relations` e `dynamic_form.phases`.
+- `tests/test_aural_form_fase4.py`: 7 test (baseline deterministica + payload agente), deterministici.
+- **Fase 4 parte 2 (lettura testuale)**: `scripts/agent_payload.py` espone nel payload `aural_form.suggested_relations` e `dynamic_form.phases`; `templates/agent_prompt.md` e l'agente `soundscape-composer-analyst` hanno una settima sezione di output **Forma e processi** che interpreta relazioni e fasi (guida `aural_form` estesa); `scripts/report_pdf.py` mostra nel blocco Aural Sonology le fasi della forma e le relazioni formali suggerite.
+
+### Note
+
+- La parte 2 realizza il "raffinamento" dell'agente come lettura testuale (sezione Forma e processi); i dati strutturati per l'Atelier restano quelli della baseline. Un agente che produce relazioni/fasi in JSON resta un'evoluzione futura. Suite invariata, nuovi test verdi.
+
 ## [0.16.0] - 2026-06-17
 
 Aural Sonology (Thoresen), Fase 1: due assi formali derivati dall'analisi automatica, entrambi additivi. Estende il contratto di interscambio a v1.2 e completa il bridge skill -> Atelier (scrittura del blocco `analysis`). Sviluppo su branch `aural-sonology-fase1`. Motivazione: il paper Soundscape Annotation nomina gia' come contributo proprio il "gap di stratificazione"; questi assi formali preparano la risposta operativa. Dettaglio del piano in `~/.claude/plans/woolly-wandering-dusk.md`.

@@ -268,7 +268,13 @@ def _analyze_single(
     summary["time_fields"] = aural_form.build_time_fields(structure_res)
     summary["dynamic_form"] = aural_form.build_dynamic_form(y, sr)
     summary["suggested_layers"] = aural_form.build_suggested_layers(summary)
+    # Form-building (Fase 4): relazioni candidate fra time-field e tipizzazione
+    # delle fasi energetiche. Baseline deterministica; l'agente le raffina.
+    summary["suggested_relations"] = aural_form.build_suggested_relations(
+        summary.get("time_fields"), summary.get("dynamic_form")
+    )
     if summary.get("dynamic_form"):
+        summary["dynamic_form"]["phases"] = aural_form.infer_phases(summary["dynamic_form"])
         try:
             df_plot = graphics_dir / f"{base}_dynamic_form.png"
             plotting.plot_dynamic_form(summary["dynamic_form"], duration_s, df_plot)

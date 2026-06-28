@@ -408,7 +408,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.16.0", prog_name="soundscape")
+@click.version_option(version="0.18.0", prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -818,17 +818,39 @@ def agent_cmd(summary_path: Path, pdf: bool, output_dir: Path | None,
     default=None,
     help="Path opzionale del JSON con il BenchmarkResult serializzato.",
 )
-def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, output: Path | None, json_out: Path | None):
+@click.option(
+    "--method",
+    type=click.Choice(["lexical", "embedding", "hybrid"]),
+    default="lexical",
+    help="Metodo di copertura: lexical (default), embedding (sinonimia), hybrid (OR).",
+)
+@click.option(
+    "--threshold",
+    type=float,
+    default=0.45,
+    help="Soglia cosine per il match embedding (default 0.45, calibrata per mpnet).",
+)
+@click.option(
+    "--emb-model",
+    default=None,
+    help="Modello sentence-transformers (default: paraphrase-multilingual-mpnet-base-v2).",
+)
+def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, output: Path | None,
+                  json_out: Path | None, method: str, threshold: float, emb_model: str | None):
     """Benchmarka la lettura dell'agente contro un'analisi accademica di riferimento.
 
     Calcola precision/recall terminologici, Jaccard, precision/recall parentele
-    stilistiche e score aggregato 0-100. Se l'output dell'agente non esiste,
-    istruisce a lanciare `soundscape analyze` prima.
+    stilistiche e score aggregato 0-100. Con --method embedding o hybrid usa la
+    similarita semantica per cogliere la sinonimia. Se l'output dell'agente non
+    esiste, istruisce a lanciare `soundscape analyze` prima.
     """
     from . import benchmark as bench
 
     try:
-        report_md, result = bench.run_benchmark(audio, gold_path, agent_source)
+        report_md, result = bench.run_benchmark(
+            audio, gold_path, agent_source,
+            method=method, emb_threshold=threshold, emb_model=emb_model,
+        )
     except FileNotFoundError as e:
         click.echo(click.style(str(e), fg="red"), err=True)
         raise SystemExit(2)

@@ -1,0 +1,13 @@
+# Dipendenza OPZIONALE per il benchmark v0.18 (`--method embedding` / `hybrid`).
+# Senza questo pacchetto il benchmark funziona comunque in modalita lessicale
+# (default) e ricade su di essa con un avviso se l'embedding e richiesto.
+#
+# Installazione nel venv della skill, vincolando numpy<2 per non perturbare la
+# catena laion-clap / tensorflow / panns (pin stretto in requirements.txt):
+#
+#   ./venv/bin/pip install 'sentence-transformers' 'numpy<2.0'
+#
+# Il modello multilingue (paraphrase-multilingual-mpnet-base-v2, ~1 GB) viene
+# scaricato al primo uso e poi messo in cache da Hugging Face. Gira su MPS
+# (Apple Silicon) con fallback CPU.
+sentence-transformers>=5,<6

@@ -228,6 +228,16 @@ class BenchmarkResult:
     parents_missing: list[str]
     gold_verified: bool
     warnings: list[str]
+    # v0.13: copertura semantica via embedding. Campi con default per
+    # retrocompatibilita (il percorso lessicale di default li lascia a zero).
+    method: str = "lexical"
+    recall_term_emb: float = 0.0
+    recall_parent_emb: float = 0.0
+    score_lexical: float = 0.0
+    score_embedding: float = 0.0
+    emb_threshold: float = 0.0
+    emb_model: str = ""
+    emb_available: bool = True
 
 
 CANON_TERMS = [
@@ -261,9 +271,27 @@ def _scan_canon_terms(text: str) -> set[str]:
     return found
 
 
-def compare(agent_text: str, golden: Golden) -> BenchmarkResult:
+def compare(
+    agent_text: str,
+    golden: Golden,
+    method: str = "lexical",
+    emb_threshold: float = 0.45,
+    emb_model: str | None = None,
+) -> BenchmarkResult:
+    """Confronta l'output dell'agente col gold.
+
+    method:
+    - 'lexical' (default): copertura per match di lemmi, comportamento storico.
+    - 'embedding': copertura per similarita di embedding (coglie la sinonimia).
+    - 'hybrid': coperto se lessicale OPPURE embedding.
+
+    Se l'embedding e richiesto ma sentence-transformers non e disponibile, ricade
+    sul lessicale aggiungendo un avviso (emb_available=False).
+    """
     agent_lem = _lemmas(agent_text)
     warnings: list[str] = []
+    if method not in ("lexical", "embedding", "hybrid"):
+        raise ValueError(f"method sconosciuto: {method!r}")
 
     if not golden.tracklist_verified:
         warnings.append(
@@ -314,27 +342,90 @@ def compare(agent_text: str, golden: Golden) -> BenchmarkResult:
     union = len(gold_parents) + max(0, len(_lemmas(agent_text)) // 200)
     jaccard_par = len(parents_covered_raw) / max(1, union) if union else 0.0
 
-    score = (
-        0.30 * precision_term
-        + 0.30 * recall_term
-        + 0.20 * precision_par
-        + 0.20 * recall_par
-    ) * 100.0
+    def _score(rt: float, rp: float) -> float:
+        return (0.30 * precision_term + 0.30 * rt + 0.20 * precision_par + 0.20 * rp) * 100.0
+
+    score_lexical = _score(recall_term, recall_par)
+
+    # --- percorso embedding (v0.13) -------------------------------------- #
+    emb_available = True
+    emb_model_name = ""
+    recall_term_emb = 0.0
+    recall_par_emb = 0.0
+    term_cov_emb = [False] * len(gold_terms)
+    par_cov_emb = [False] * len(gold_parents)
+
+    if method in ("embedding", "hybrid"):
+        try:
+            from . import embedding_match as em
+        except ImportError:  # esecuzione come script, non come package
+            import embedding_match as em  # type: ignore
+        try:
+            model_name = emb_model or em.DEFAULT_MODEL
+            emb_model_name = model_name
+            if gold_terms:
+                cov = em.coverage(golden.terminologia, agent_text, emb_threshold, model_name)
+                term_cov_emb = [c.covered for c in cov]
+                recall_term_emb = sum(term_cov_emb) / len(gold_terms)
+            if gold_parents:
+                covp = em.coverage(golden.parentele, agent_text, emb_threshold, model_name)
+                par_cov_emb = [c.covered for c in covp]
+                recall_par_emb = sum(par_cov_emb) / len(gold_parents)
+        except em.EmbeddingUnavailable as e:
+            emb_available = False
+            warnings.append(f"Embedding non disponibile ({e}); ricaduta sul lessicale.")
+            method = "lexical"
+
+    score_embedding = _score(recall_term_emb, recall_par_emb) if emb_available else 0.0
+
+    # --- selezione del metodo attivo ------------------------------------- #
+    lex_term_cov = [match_phrase(agent_lem, gt, al) for gt, al in gold_terms]
+    lex_par_cov = [match_phrase(agent_lem, gp, al) for gp, al in gold_parents]
+
+    if method == "embedding":
+        term_active = term_cov_emb
+        par_active = par_cov_emb
+        recall_term_active, recall_par_active = recall_term_emb, recall_par_emb
+        score_active = score_embedding
+    elif method == "hybrid":
+        term_active = [a or b for a, b in zip(lex_term_cov, term_cov_emb)]
+        par_active = [a or b for a, b in zip(lex_par_cov, par_cov_emb)]
+        recall_term_active = (sum(term_active) / len(gold_terms)) if gold_terms else 0.0
+        recall_par_active = (sum(par_active) / len(gold_parents)) if gold_parents else 0.0
+        score_active = _score(recall_term_active, recall_par_active)
+    else:  # lexical
+        term_active = lex_term_cov
+        par_active = lex_par_cov
+        recall_term_active, recall_par_active = recall_term, recall_par
+        score_active = score_lexical
+
+    terms_covered = [golden.terminologia[i] for i, c in enumerate(term_active) if c]
+    terms_missing = [golden.terminologia[i] for i, c in enumerate(term_active) if not c]
+    parents_covered = [golden.parentele[i] for i, c in enumerate(par_active) if c]
+    parents_missing = [golden.parentele[i] for i, c in enumerate(par_active) if not c]
 
     return BenchmarkResult(
         precision_term=round(precision_term, 4),
-        recall_term=round(recall_term, 4),
+        recall_term=round(recall_term_active, 4),
         jaccard_term=round(jaccard_term, 4),
         precision_parent=round(precision_par, 4),
-        recall_parent=round(recall_par, 4),
+        recall_parent=round(recall_par_active, 4),
         jaccard_parent=round(jaccard_par, 4),
-        score_aggregate=round(score, 1),
-        terms_covered=terms_covered_raw,
-        terms_missing=terms_missing_raw,
-        parents_covered=parents_covered_raw,
-        parents_missing=parents_missing_raw,
+        score_aggregate=round(score_active, 1),
+        terms_covered=terms_covered,
+        terms_missing=terms_missing,
+        parents_covered=parents_covered,
+        parents_missing=parents_missing,
         gold_verified=golden.tracklist_verified,
         warnings=warnings,
+        method=method,
+        recall_term_emb=round(recall_term_emb, 4),
+        recall_parent_emb=round(recall_par_emb, 4),
+        score_lexical=round(score_lexical, 1),
+        score_embedding=round(score_embedding, 1),
+        emb_threshold=emb_threshold if method in ("embedding", "hybrid") else 0.0,
+        emb_model=emb_model_name,
+        emb_available=emb_available,
     )
 
 
@@ -357,7 +448,15 @@ def format_report(
         lines.append(f"- Fonte verifica: {golden.verification_source}")
     lines.append("")
     lines.append("## Score")
+    lines.append(f"- Metodo: {result.method}")
     lines.append(f"- **Aggregato: {result.score_aggregate:.1f}/100**")
+    if result.method != "lexical":
+        lines.append(f"- Score lessicale (riferimento): {result.score_lexical:.1f}/100")
+        lines.append(f"- Score embedding: {result.score_embedding:.1f}/100")
+        if result.emb_model:
+            lines.append(f"- Modello embedding: {result.emb_model} (soglia {result.emb_threshold})")
+        if not result.emb_available:
+            lines.append("- Embedding non disponibile, ricaduta sul lessicale")
     lines.append(f"- Precision terminologica: {result.precision_term:.3f}")
     lines.append(f"- Recall terminologico: {result.recall_term:.3f}")
     lines.append(f"- Jaccard terminologia: {result.jaccard_term:.3f}")
@@ -432,11 +531,15 @@ def run_benchmark(
     audio_path: Path,
     gold_path: Path,
     agent_source: Path | None = None,
+    method: str = "lexical",
+    emb_threshold: float = 0.45,
+    emb_model: str | None = None,
 ) -> tuple[str, BenchmarkResult]:
     """Esegue il confronto e restituisce (markdown_report, BenchmarkResult).
 
     `agent_source`: percorso a PDF report esistente, agent_reading.md, o summary
     JSON. Se None, cerca file accanto all'audio con pattern <stem>_report.pdf.
+    `method`: 'lexical' (default), 'embedding' o 'hybrid' (vedi compare()).
     """
     golden = parse_golden(gold_path)
     if agent_source is None:
@@ -451,7 +554,7 @@ def run_benchmark(
                 f"Lancia prima `soundscape analyze` oppure passa --agent-source."
             )
     agent_text = extract_agent_reading(agent_source)
-    result = compare(agent_text, golden)
+    result = compare(agent_text, golden, method=method, emb_threshold=emb_threshold, emb_model=emb_model)
     report_md = format_report(audio_path, gold_path, agent_text, golden, result)
     return report_md, result
 

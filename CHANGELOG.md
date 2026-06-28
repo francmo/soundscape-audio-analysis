@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.18.0] - 2026-06-28
+
+Implementa il piano ROADMAP v0.13 (rigore statistico + similarita semantica), prerequisito metodologico per il results paper v2.0. Sviluppo su branch `feat/benchmark-v0.13`. Additivo - il benchmark lessicale resta il default e i test esistenti sono invariati.
+
+### Aggiunte
+
+- `scripts/embedding_match.py`: copertura semantica gold-vs-agente via embedding (sentence-transformers, modello `paraphrase-multilingual-mpnet-base-v2`) su device MPS con fallback CPU. Segmenta il testo agente in proposizioni e marca coperta una gold phrase se la cosine massima supera la soglia. Import pigro e opzionale - se la libreria manca, solleva `EmbeddingUnavailable` e il chiamante ricade sul lessicale.
+- `scripts/benchmark.py`: `compare(..., method='lexical'|'embedding'|'hybrid')` (default `lexical`, retrocompatibile). `hybrid` = coperto se lessicale OPPURE embedding. Nuovi campi in `BenchmarkResult` con default (`method`, `recall_term_emb`, `recall_parent_emb`, `score_lexical`, `score_embedding`, `emb_threshold`, `emb_model`, `emb_available`).
+- `bin/soundscape benchmark`: flag `--method`, `--threshold`, `--emb-model`.
+- `scripts/benchmark_stats.py`: `mean_ci` (intervallo di confidenza t-Student) e `paired_ttest` (accoppiato per traccia, con Cohen d_z e significativita al 95%). Usa `scipy.stats`, gia dipendenza.
+- `tools/blind_benchmark_cycle.py` (corpus): flag `--runs N` (>1 attiva il rigore statistico), `--method`, `--threshold`. Esegue N run dell'agente per traccia, salva un ledger `benchmark_runs_<version>.json`, e produce un `gap_analysis_<version>_runs.md` con media, CI 95% per traccia e per corpus, e paired t-test vs la versione precedente. Da lanciare col python del venv della skill (richiede scipy).
+- `requirements-embedding.txt`: dipendenza opzionale `sentence-transformers` con istruzioni di pin `numpy<2`.
+- Test: `tests/test_benchmark_stats.py` (5) e `tests/test_embedding_match.py` (6, skippati se la libreria manca).
+
+### Note di calibrazione (verificate su M4, MPS)
+
+- La ROADMAP ipotizzava soglia cosine 0.7 e sinonimi ~0.85; misurato su `mpnet-base-v2` i sinonimi descrittivi stanno a ~0.50-0.55 e i non correlati a ~0.20, quindi la soglia di default e **0.45**, non 0.7 (con 0.7 non matcherebbe nulla). Il modello `MiniLM-L12` dava separazione troppo debole (sinonimi ~0.31), scartato.
+- L'embedding coglie la sinonimia descrittiva ("sviluppo timbrico" vs "evoluzione spettrale") e le varianti morfologiche, ma non i neologismi tecnici (biofonia, antropofonia), che restano al percorso lessicale. Per questo il default consigliato in uso reale e `hybrid`.
+- Smoke su dati reali (Truax Basilica, output agente esistente) - recall terminologico da 0.667 (lessicale) a 0.917 (hybrid), score da 48.9 a 68.4. Indica che il benchmark puramente lessicale sotto-contava il recall reale dell'agente.
+
 ## [0.17.0] - 2026-06-19
 
 Aural Sonology (Thoresen), Fase 4 (form-building), baseline deterministica. Estende il contratto v1.2 con le relazioni formali fra time-field e la tipizzazione delle fasi energetiche, entrambe additive. Le proposte sono una baseline euristica citabile; l'agente form-building (non deterministico) le raffinerà in un passo successivo. Sviluppo su branch `aural-sonology-fase4`. Piano in `~/.claude/plans/declarative-soaring-parnas.md`.

@@ -121,6 +121,14 @@ ad ogni step le nuove metriche statistiche.
 
 #### v0.13 - Rigore statistico + similarita' semantica (~8 ore)
 
+> **STATO: IMPLEMENTATO nella release 0.18.0 (28/06/2026)**, branch `feat/benchmark-v0.13`.
+> Embedding similarity (`scripts/embedding_match.py`, modello `paraphrase-multilingual-mpnet-base-v2`,
+> metodo `hybrid` = lessicale OR embedding) e rigore statistico (`scripts/benchmark_stats.py`:
+> intervallo di confidenza 95% + paired t-test con Cohen d_z; harness `--runs N`). Correzione
+> empirica alla stima qui sotto - la soglia cosine reale e **0.45**, non 0.7 (su mpnet i sinonimi
+> stanno a ~0.50, non ~0.85); con 0.7 non matcherebbe nulla. Il ricalcolo retroattivo
+> v0.9 -> v0.12.3 resta da eseguire come run completo (N=5 x 14 tracce, follow-on costoso).
+
 Blocker per ogni claim futuro di miglioramento.
 
 - **Paired t-test, N=5-7 run per versione**. `blind_benchmark_cycle.py`

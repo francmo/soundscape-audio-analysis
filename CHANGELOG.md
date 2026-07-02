@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0] - 2026-07-02
+
+Chiude il verso mancante del loop con la PWA Annotation Atelier (la "v0.5" della roadmap della PWA, rimasta aperta dal 22/06) e l'addendum ROADMAP del 19/06 sulla timeline PANNs citabile. Additivo, output esistenti invariati.
+
+### Aggiunte
+
+- `scripts/annotation_compare.py` + sub-comando `soundscape compare <annotation.json> <summary.json>` (opzioni `--pdf`, `--output`, `--json-out`, `--bin-size`, `--tolerance`, `--min-overlap`): confronto fra annotazioni first-hand dell'Atelier e analisi della skill su tre assi. (1) Confini strutturali umani vs changepoint detection, matching greedy con tolleranza (default 3 s), precision/recall/F1. (2) Famiglia Krause per bin (default 1 s): annotazioni `krause.biophony/anthrophony/geophony` contro la timeline PANNs proiettata via `config.PANNS_LABEL_TO_KRAUSE` (top-3 per segmento, score >= 0.05), percent agreement + Cohen's kappa multiclasse. (3) Copertura temporale per annotazione con verdetto sopra soglia (default 0.5). Le tassonomie non-sorgente (Schaeffer, Smalley, Chion, Truax, Westerkamp, Wishart, Schafer) restano descrittive per scelta dichiarata: nessuna proiezione fabbricata sulle etichette AudioSet. Output markdown, JSON e PDF compatto.
+- **Timeline PANNs citabile nel PDF** (addendum ROADMAP 19/06): tabella "Timeline per segmento" nella sezione di classificazione semantica, compattata sui segmenti consecutivi con lo stesso tag dominante (`_merge_panns_timeline`), score medio per intervallo, altri tag ricorrenti, cap a 40 righe con nota di omissione. Chiude la non-citabilità dei valori per-segmento dal solo PDF (i tre valori, per-segmento, media globale e dominanza per-frame, sono viste coerenti e ora tutte verificabili).
+- Test: `tests/test_annotation_compare.py` (6, deterministici su dati sintetici: kappa con valore noto, confini con tolleranza, soglia di proiezione famiglia, end-to-end, rese markdown/PDF, degradazione senza timeline) + 2 test timeline in `tests/test_report_pdf.py`.
+
+### Note di design (v1 del confronto)
+
+- Parametri esposti da CLI con default documentati nel modulo: bin 1 s, tolleranza confini 3 s, soglia copertura 0.5, score minimo di proiezione famiglia 0.05.
+- Il kappa umano-macchina NON sostituisce il kappa inter-annotatore umano previsto dal piano statistico (ora tappa v0.22 in ROADMAP): misura l'accordo col classificatore, non il tetto di affidabilità del gold.
+
 ## [0.18.1] - 2026-07-02
 
 Release di igiene, chiude gli arretrati dell'audit dell'11/06/2026 su versionamento, robustezza del PDF, chiavi della sintesi iniziale, tipografia e documentazione. Nessun cambiamento di comportamento analitico.

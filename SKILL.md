@@ -7,12 +7,16 @@ description: >
   hum 50/60 Hz con baseline locale), spettro (bande Schafer, centroide, spread, rolloff, flatness, flux,
   picchi, onset density), indici ecoacustici (ACI, NDSI, entropia H, BI, ADI/AEI),
   classificazione semantica PANNs CNN14 (default v0.2) o YAMNet legacy con pre-check LUFS,
-  auto-tagging CLAP italiano (70 prompt), narrativa italiana segmentata 30 s, confronto
+  auto-tagging CLAP italiano (251 prompt), assi formali Aural Sonology (time-field
+  gerarchici, forma dinamica, strati e relazioni suggerite, contratto interchange v1.2
+  verso la PWA Annotation Atelier), narrativa italiana segmentata 30 s, confronto
   con profili GRM (Parmegiani, Westerkamp, Ferrari, Krause) e genera report PDF ReportLab
   in stile ABTEC40. Il sotto-comando `report` analizza una cartella di file audio e
   produce un PDF comparativo con grafici comparativi (LUFS, dynamic range, heatmap bande,
   radar ecoacustico, similarità CLAP) e sintesi testuale generata da sessione Claude non
   interattiva che usa il REPORT_ANALISI di Villa Ficana come riferimento di stile.
+  Il sotto-comando `benchmark` confronta la lettura dell'agente con analisi gold
+  accademiche (metodo lessicale, embedding o ibrido, con rigore statistico).
   Gestisce file multicanale fino a 7.1.4. Attiva quando l'utente parla di field
   recording, soundscape, analisi spettrale, spettrogramma, LUFS, clipping, hum, YAMNet,
   PANNs, CLAP, bande Schafer, biofonia, antropofonia, geofonia, composizione
@@ -44,6 +48,18 @@ bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape report <cartella>
 
 # Integra manualmente una sintesi markdown in un PDF di corpus parziale
 bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape report-merge <pdf> <md>
+
+# Solo lettura compositiva su un summary esistente (iterazione rapida sul prompt)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape agent <summary.json> [--pdf]
+
+# Bridge verso la PWA Annotation Atelier: inietta il blocco analysis (interchange v1.2)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape enrich <annotation.json> <summary.json>
+
+# Benchmark della lettura agente contro un'analisi gold (lexical | embedding | hybrid)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape benchmark <audio> --against <gold.md>
+
+# Versione corrente (fonte unica: pyproject.toml)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape version
 ```
 
 Dove `<path>` può essere:
@@ -52,7 +68,7 @@ Dove `<path>` può essere:
 
 Flag principali:
 
-- `--semantic/--no-semantic`  classificazione YAMNet (default attivo)
+- `--semantic/--no-semantic`  classificazione semantica PANNs CNN14 (default attivo; backend YAMNet legacy via `--semantic-backend yamnet`)
 - `--birdnet`                 riconoscimento avifauna con BirdNET (opzionale, richiede birdnetlib)
 - `--ecoacoustic=basic|extended`  indici ecoacustici (default basic: ACI, NDSI, H, BI)
 - `--compare=all|<profile_id>|none`  confronto con profili GRM (default all)
@@ -120,12 +136,15 @@ markdown esterna nel PDF esistente.
 
 - Python 3.12 (venv dedicata in `venv/`)
 - ffmpeg, ffprobe (installati con brew)
-- TensorFlow 2.x + tensorflow-hub (per YAMNet)
+- PyTorch + panns-inference (PANNs CNN14, classificatore di default)
+- laion-clap per l'auto-tagging italiano
+- TensorFlow 2.x + tensorflow-hub solo per il backend YAMNet legacy opzionale
 - ReportLab per PDF
 - librosa, soundfile, numpy, scipy, matplotlib
 
-Tutte gestite dentro il virtualenv della skill. Il primo uso di YAMNet scarica il modello
-(~40 MB) nella cache locale `~/.cache/tfhub_modules/`.
+Tutte gestite dentro il virtualenv della skill. Il primo uso dei classificatori
+scarica i checkpoint nelle cache locali (PANNs ~330 MB, CLAP ~2.2 GB, YAMNet
+legacy ~40 MB in `~/.cache/tfhub_modules/`).
 
 ## Lezioni critiche applicate
 
@@ -141,6 +160,7 @@ Tutte gestite dentro il virtualenv della skill. Il primo uso di YAMNet scarica i
 - `references/taxonomies/`          bande Schafer, indici ecoacustici, vocabolario Schaefferiano
 - `references/grm_profiles/`        profili di riferimento Parmegiani, Westerkamp, Ferrari, Krause
 - `templates/annotation_schema.json`  JSON Schema v1.0 condiviso con la PWA Annotation Atelier
+- `templates/interchange_schema_v1.2.json`  contratto Soundscape Interchange 1.x (blocco `analysis`)
 - `scripts/load_annotation.py`       loader Python del JSON di annotazione
 - `CHANGELOG.md`                    storico versioni
 
@@ -151,7 +171,7 @@ La PWA companion `Soundscape Annotation Atelier`
 github.com/francmo/soundscape-annotation-atelier) permette di costruire
 annotazioni first-hand sopra un audio caricato localmente, usando lo stesso
 vocabolario controllato canonico (Schaeffer, Smalley, Schafer, Krause,
-Chion, Truax, Westerkamp, Wishart). L'output e' un JSON v1.0 deterministico,
+Chion, Truax, Westerkamp, Wishart). L'output è un JSON v1.0 deterministico,
 schema definito in `templates/annotation_schema.json`.
 
 La skill consuma il JSON via `scripts/load_annotation.py`:

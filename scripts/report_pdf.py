@@ -220,7 +220,80 @@ def _build_semantic_block(semantic: dict, styles) -> list:
         for cat in top_dom:
             rows.append([_esc(cat["name"]), f"{cat['pct']:.1f}%"])
         story.append(report_styles.styled_table(rows, [110 * mm, 40 * mm], styles))
+
+    # v0.19.0 (addendum ROADMAP 19/06): timeline per segmento in forma
+    # tabellare citabile. Lo score per segmento, il punteggio medio globale
+    # e la dominanza per frame sono tre viste coerenti dello stesso
+    # classificatore; senza questa tabella i rilievi riferiti a un
+    # intervallo specifico non erano verificabili dal solo PDF.
+    timeline = classifier.get("timeline") or []
+    if timeline:
+        from collections import Counter
+        merged = _merge_panns_timeline(timeline)
+        max_rows = 40
+        seg_len = (float(timeline[0].get("t_end_s", 0))
+                   - float(timeline[0].get("t_start_s", 0)))
+        story.append(Spacer(1, 8))
+        story.append(Paragraph(
+            "<b>Timeline per segmento (citabile)</b>", styles["body"]))
+        rows = [["Intervallo", "Tag dominante (score medio)", "Altri tag ricorrenti"]]
+        for m in merged[:max_rows]:
+            mean = sum(m["scores"]) / len(m["scores"])
+            label = f"{_esc(m['top1'])} ({mean:.3f})"
+            if len(m["scores"]) > 1:
+                label += f", {len(m['scores'])} segmenti"
+            counts = Counter(n for n in m["others"] if n)
+            others = ", ".join(_esc(n) for n, _ in counts.most_common(2))
+            rows.append([
+                f"{_fmt_time(m['t_start_s'])}-{_fmt_time(m['t_end_s'])}",
+                label,
+                others,
+            ])
+        story.append(report_styles.styled_table(
+            rows, [28 * mm, 62 * mm, 55 * mm], styles))
+        omission = ""
+        if len(merged) > max_rows:
+            omission = (f" Mostrati i primi {max_rows} intervalli; timeline "
+                        f"completa in summary.json.")
+        story.append(Paragraph(
+            f"<i>Timeline PANNs per segmenti di {seg_len:.0f} s, compattata "
+            f"sul tag dominante ({len(merged)} intervalli da {len(timeline)} "
+            f"segmenti). Lo score per segmento, il punteggio medio globale e "
+            f"la dominanza per frame sono tre viste coerenti dello stesso "
+            f"classificatore.{omission}</i>",
+            styles["caption"],
+        ))
     return story
+
+
+def _merge_panns_timeline(timeline: list[dict]) -> list[dict]:
+    """Compatta la timeline PANNs unendo i segmenti consecutivi con lo
+    stesso top-1. Ogni riga compatta conserva l'intervallo complessivo, gli
+    score del top-1 (per la media) e i tag secondari incontrati (per i
+    ricorrenti). Rende la tabella citabile senza esplodere su file lunghi.
+    """
+    merged: list[dict] = []
+    for seg in timeline or []:
+        top = seg.get("top") or []
+        if not top:
+            continue
+        name = top[0].get("name") or ""
+        score = float(top[0].get("score") or 0.0)
+        others = [t.get("name") for t in top[1:] if t.get("name")]
+        if merged and merged[-1]["top1"] == name:
+            m = merged[-1]
+            m["t_end_s"] = float(seg.get("t_end_s", m["t_end_s"]))
+            m["scores"].append(score)
+            m["others"].extend(others)
+        else:
+            merged.append({
+                "t_start_s": float(seg.get("t_start_s", 0.0)),
+                "t_end_s": float(seg.get("t_end_s", 0.0)),
+                "top1": name,
+                "scores": [score],
+                "others": list(others),
+            })
+    return merged
 
 
 def _build_confronto_grm_block(rank: list[dict], styles) -> list:

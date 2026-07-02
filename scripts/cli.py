@@ -875,6 +875,77 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
         click.echo(click.style(f"  AVVISO: {w}", fg="yellow"), err=True)
 
 
+@cli.command("compare")
+@click.argument("annotation_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("summary_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--pdf", "pdf_out", type=click.Path(path_type=Path), default=None,
+              help="Scrive anche il PDF compatto del confronto.")
+@click.option("--output", "md_out", type=click.Path(path_type=Path), default=None,
+              help="Path del report markdown (default: <annotation>_confronto.md).")
+@click.option("--json-out", "json_out", type=click.Path(path_type=Path), default=None,
+              help="Path opzionale del JSON con le metriche complete.")
+@click.option("--bin-size", type=float, default=1.0,
+              help="Bin temporale in secondi per l'accordo Krause (default 1.0).")
+@click.option("--tolerance", type=float, default=3.0,
+              help="Tolleranza in secondi sui confini strutturali (default 3.0).")
+@click.option("--min-overlap", type=float, default=0.5,
+              help="Soglia di copertura per annotazione (default 0.5).")
+def compare_cmd(annotation_path: Path, summary_path: Path, pdf_out: Path | None,
+                md_out: Path | None, json_out: Path | None,
+                bin_size: float, tolerance: float, min_overlap: float):
+    """Confronta un'annotazione umana dell'Atelier con il summary della skill (v0.19.0).
+
+    Tre assi: confini strutturali (precision/recall/F1 con tolleranza),
+    famiglia Krause per bin (percent agreement + Cohen's kappa), copertura
+    temporale per annotazione. Le tassonomie non-sorgente (Schaeffer,
+    Smalley, Chion, ...) restano descrittive: non hanno proiezione onesta
+    sulle etichette AudioSet.
+    """
+    from . import annotation_compare as ac
+    from . import load_annotation as la
+    from . import serialization
+
+    project = la.load_annotation(str(annotation_path))
+    summary = serialization.load(summary_path)
+    if not isinstance(summary, dict):
+        click.echo(click.style(f"summary.json malformato: {summary_path}", fg="red"), err=True)
+        sys.exit(1)
+
+    result = ac.compare(project, summary, bin_size=bin_size,
+                        tolerance_s=tolerance, min_overlap=min_overlap)
+    report_md = ac.render_markdown(result)
+
+    out_md = md_out or annotation_path.with_name(annotation_path.stem + "_confronto.md")
+    Path(out_md).write_text(report_md, encoding="utf-8")
+    click.echo(click.style(f"Report confronto: {out_md}", fg="green", bold=True))
+
+    if json_out:
+        Path(json_out).write_text(
+            json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        click.echo(f"JSON: {json_out}")
+    if pdf_out:
+        ac.build_compare_pdf(result, Path(pdf_out))
+        click.echo(click.style(f"PDF confronto: {pdf_out}", fg="green"))
+
+    def _r(v):
+        return "n.d." if v is None else f"{v:.3f}"
+
+    boundary = result.get("boundary")
+    kb = result.get("krause_bins")
+    cov = result.get("coverage") or {}
+    if boundary:
+        click.echo(f"  Confini strutturali: precision {_r(boundary['precision'])}"
+                   f"  recall {_r(boundary['recall'])}  F1 {_r(boundary['f1'])}")
+    if kb:
+        click.echo(f"  Krause per bin: agreement {_r(kb['percent_agreement'])}"
+                   f"  kappa {_r(kb.get('kappa'))}  ({kb['n_bins_confrontabili']} bin)")
+    if cov.get("n_family"):
+        click.echo(f"  Copertura Krause: {cov['n_family_covered']}/{cov['n_family']}"
+                   f" (recall {_r(cov.get('family_recall'))})")
+    for n in result.get("notes") or []:
+        click.echo(click.style(f"  NOTA: {n}", fg="yellow"), err=True)
+
+
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""

@@ -6,4 +6,6 @@ import os
 # fanno import lazy, quindi questo setdefault è la prima occasione utile).
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
-__version__ = "0.14.0"
+from .version import skill_version
+
+__version__ = skill_version()

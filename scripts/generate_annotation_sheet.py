@@ -1,6 +1,6 @@
 """Genera una scheda di annotazione PDF editabile (AcroForm) per l'utente.
 
-La scheda e' il gold standard first-hand: il compositore ascolta una propria
+La scheda è il gold standard first-hand: il compositore ascolta una propria
 registrazione soundscape e compila i campi, producendo un'annotazione che
 diventa poi `references/user_feedback/<brano>.md` per validare la skill.
 
@@ -12,7 +12,7 @@ glossario referenziale). I campi editabili si compilano su Preview.app
 oppure su iPad con Apple Pencil/Scribble.
 
 Tipografia: sfondo bianco puro, testo nero, font Unicode (Libre Baskerville
-+ Source Sans Pro gia' registrati nella skill). Nessun em dash, accenti
++ Source Sans Pro già registrati nella skill). Nessun em dash, accenti
 italiani corretti.
 """
 from __future__ import annotations
@@ -467,7 +467,7 @@ class SheetBuilder:
 
         self.h2("16. Note libere")
         self.big_textarea(
-            "Tutto cio' che non rientra nelle sezioni precedenti (contesto, "
+            "Tutto ciò che non rientra nelle sezioni precedenti (contesto, "
             "impressioni, casi limite, suggerimenti per la skill):",
             "note_libere", height_mm=25,
         )
@@ -485,8 +485,8 @@ class SheetBuilder:
              "Signal: figura che attira l'attenzione (campana, sirena, richiamo animale).\n"
              "Soundmark: suono identitario unico del luogo (campane di una specifica chiesa).\n"
              "Hi-Fi: soundscape con buona separazione (campagna isolata, alba).\n"
-             "Lo-Fi: soundscape saturo con sovrapposizione e mascheramento (citta trafficata)."),
-            ("Schaeffer type ('Traite des objets musicaux', 1966)",
+             "Lo-Fi: soundscape saturo con sovrapposizione e mascheramento (città trafficata)."),
+            ("Schaeffer type ('Traité des objets musicaux', 1966)",
              "Impulsivo: breve con attacco netto (colpo, esplosione, pizzicato).\n"
              "Iterativo: impulsi a ritmo riconoscibile (passi, goccia, motore).\n"
              "Tenuto: sostenuto stabile (drone, sinusoide, bordone).\n"

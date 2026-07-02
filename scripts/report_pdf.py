@@ -6,6 +6,7 @@ Prende in input il summary dict completo + percorso output + profile match
 from pathlib import Path
 from datetime import date
 from typing import Any
+from xml.sax.saxutils import escape as _xml_escape
 
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
@@ -20,6 +21,7 @@ from .locale_it import (
     INTESTAZIONI, PARAMETRI, MESSAGGI_SISTEMA, sanitize_italiano
 )
 from . import report_styles
+from .version import skill_version
 
 
 def _on_cover_page(canvas, doc):
@@ -63,11 +65,23 @@ def _fmt(v, fmt: str = "{}", default: str = "n.d.") -> str:
         return str(v)
 
 
+def _esc(value) -> str:
+    """Escapa i caratteri XML nei testi dinamici destinati ai Paragraph.
+
+    I Paragraph ReportLab interpretano un mini-markup XML, quindi un nome
+    file, un trascritto o una label contenente '&' o '<' manda in errore il
+    ParaParser e fa fallire l'intero doc.build (finding audit 11/06/2026).
+    Da applicare alle stringhe di origine esterna PRIMA dell'interpolazione
+    nel markup intenzionale.
+    """
+    return _xml_escape(str(value))
+
+
 def _build_metadati_table(meta: dict, styles) -> Table:
     rows = [
         ["Campo", "Valore"],
-        ["Nome file", meta.get("filename", "n.d.")],
-        ["Codec", meta.get("codec", "n.d.")],
+        ["Nome file", _esc(meta.get("filename", "n.d."))],
+        ["Codec", _esc(meta.get("codec", "n.d."))],
         ["Sample rate", _fmt(meta.get("sr"), "{} Hz")],
         ["Bit depth", _fmt(meta.get("bit_depth"), "{} bit")],
         ["Canali", _fmt(meta.get("channels"))],
@@ -184,7 +198,7 @@ def _build_semantic_block(semantic: dict, styles) -> list:
 
     if model_label:
         version = classifier.get("model_version", "")
-        header = f"Modello: <b>{model_label}</b>"
+        header = f"Modello: <b>{_esc(model_label)}</b>"
         if version:
             header += f" ({version})"
         if device_label:
@@ -194,9 +208,9 @@ def _build_semantic_block(semantic: dict, styles) -> list:
 
     top_global = classifier.get("top_global", [])[:10]
     if top_global:
-        rows = [["Posizione", f"Categoria {model_label}", "Punteggio medio"]]
+        rows = [["Posizione", f"Categoria {_esc(model_label)}", "Punteggio medio"]]
         for i, cat in enumerate(top_global, 1):
-            rows.append([str(i), cat["name"], f"{cat['score']:.4f}"])
+            rows.append([str(i), _esc(cat["name"]), f"{cat['score']:.4f}"])
         story.append(report_styles.styled_table(rows, [15 * mm, 95 * mm, 35 * mm], styles))
     top_dom = classifier.get("top_dominant_frames", [])[:8]
     if top_dom:
@@ -204,7 +218,7 @@ def _build_semantic_block(semantic: dict, styles) -> list:
         story.append(Paragraph("<b>Categorie più frequentemente dominanti</b>", styles["body"]))
         rows = [["Categoria", "Frame dominanti"]]
         for cat in top_dom:
-            rows.append([cat["name"], f"{cat['pct']:.1f}%"])
+            rows.append([_esc(cat["name"]), f"{cat['pct']:.1f}%"])
         story.append(report_styles.styled_table(rows, [110 * mm, 40 * mm], styles))
     return story
 
@@ -223,6 +237,16 @@ def _build_confronto_grm_block(rank: list[dict], styles) -> list:
             r.get("source_type", ""),
         ])
     story.append(report_styles.styled_table(rows, [70 * mm, 50 * mm, 25 * mm, 30 * mm], styles))
+    if any(r.get("source_type") == "literature_based" for r in rank[:6]):
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            "<i>I profili con fonte literature_based riportano valori indicativi "
+            "stimati dall'autore, non derivati da audio né citabili come dati di "
+            "letteratura. Il confronto va letto come orientamento qualitativo; "
+            "gli indici scala-dipendenti (ACI) non sono comparabili in valore "
+            "assoluto.</i>",
+            styles["caption"],
+        ))
     story.append(Spacer(1, 6))
     if rank:
         best = rank[0]
@@ -258,15 +282,15 @@ def _build_clap_block(clap: dict, styles) -> list:
         for i, t in enumerate(top_global, 1):
             # v0.5.1-0.5.2: tag con flag interpretativi vanno in corsivo.
             # v0.6.7: plausibility low aggiunge un marcatore testuale.
-            prompt_text = t["prompt"]
+            prompt_text = _esc(t["prompt"])
             plausibility = t.get("plausibility")
             if t.get("likely_hallucination") or t.get("geo_specific") or plausibility == "low":
                 prompt_text = f"<i>{prompt_text}</i>"
             if plausibility == "low":
-                prompt_text += " [plausibilita bassa]"
+                prompt_text += " [plausibilità bassa]"
             elif plausibility == "medium":
-                prompt_text += " [plausibilita media]"
-            rows.append([str(i), prompt_text, t.get("category", ""), f"{t['score']:.3f}"])
+                prompt_text += " [plausibilità media]"
+            rows.append([str(i), prompt_text, _esc(t.get("category", "")), f"{t['score']:.3f}"])
         story.append(report_styles.styled_table(
             rows, [14 * mm, 90 * mm, 38 * mm, 24 * mm], styles
         ))
@@ -286,9 +310,9 @@ def _build_clap_block(clap: dict, styles) -> list:
             story.append(Paragraph(
                 f"<i>{n_geo} tag in corsivo sono italo-specifici "
                 f"(prompt che menzionano luoghi italiani): valutare se il "
-                f"contesto del materiale e' effettivamente italiano. Per "
+                f"contesto del materiale è effettivamente italiano. Per "
                 f"materiale mediterraneo non italiano la categoria "
-                f"'paesaggi mediterranei generici' offre alternative piu' "
+                f"'paesaggi mediterranei generici' offre alternative più "
                 f"appropriate.</i>",
                 styles["caption"],
             ))
@@ -299,15 +323,15 @@ def _build_clap_block(clap: dict, styles) -> list:
         if n_low > 0 or n_med > 0:
             parts = []
             if n_low > 0:
-                parts.append(f"{n_low} tag marcato 'plausibilita bassa'")
+                parts.append(f"{n_low} tag marcato 'plausibilità bassa'")
             if n_med > 0:
-                parts.append(f"{n_med} tag marcato 'plausibilita media'")
+                parts.append(f"{n_med} tag marcato 'plausibilità media'")
             story.append(Paragraph(
                 f"<i>{', '.join(parts)}: il pre-filtro v0.6.6 ha rilevato "
                 f"che il referente concreto evocato dal prompt (acqua, "
-                f"preghiera, spiaggia, biofonia, treno) non e' corroborato "
+                f"preghiera, spiaggia, biofonia, treno) non è corroborato "
                 f"da PANNs sulle label AudioSet correlate. I tag con "
-                f"plausibilita bassa vanno ignorati; quelli con plausibilita "
+                f"plausibilità bassa vanno ignorati; quelli con plausibilità "
                 f"media possono essere usati come ipotesi di lavoro.</i>",
                 styles["caption"],
             ))
@@ -330,7 +354,7 @@ def _build_clap_block(clap: dict, styles) -> list:
         story.append(Paragraph(
             f"<i>Timeline tag per segmento di {clap.get('segment_seconds', 10.0):.0f} s "
             f"disponibile in `summary.json` ({len(timeline)} finestre). "
-            f"La sintesi grafica a colori e' nella Partitura grafica.</i>",
+            f"La sintesi grafica a colori è nella Partitura grafica.</i>",
             styles["caption"],
         ))
     return story
@@ -425,7 +449,7 @@ def _build_speech_block(speech: dict, base_name: str, styles) -> list:
 
     if prob < config.WHISPER_LANG_CONF_WARN and prob > 0:
         story.append(Paragraph(
-            f"<i>Lingua rilevata con probabilita' bassa ({prob:.2f}): "
+            f"<i>Lingua rilevata con probabilità bassa ({prob:.2f}): "
             f"possibile audio multilingua, trascrizione e traduzione da "
             f"verificare manualmente.</i>",
             styles["caption"]
@@ -444,7 +468,7 @@ def _build_speech_block(speech: dict, base_name: str, styles) -> list:
             text = (seg.get("text") or "").strip()
             if len(text) > 120:
                 text = text[:117] + "..."
-            rows.append([f"{t0}-{t1}", text])
+            rows.append([f"{t0}-{t1}", _esc(text)])
         if len(segments) > 10:
             rows.append([
                 "...",
@@ -461,26 +485,26 @@ def _build_speech_block(speech: dict, base_name: str, styles) -> list:
 
     if len(transcript) < config.TRANSCRIPT_PDF_MAX_CHARS:
         story.append(Paragraph("<b>Trascritto completo</b>", styles["body"]))
-        story.append(Paragraph(transcript.replace("\n", "<br/>"), styles["body"]))
+        story.append(Paragraph(_esc(transcript).replace("\n", "<br/>"), styles["body"]))
         story.append(Spacer(1, 6))
         if lang != "it" and transcript_it and transcript_it != transcript:
             story.append(Paragraph(
                 "<b>Traduzione italiana</b>", styles["body"]
             ))
             story.append(Paragraph(
-                transcript_it.replace("\n", "<br/>"), styles["body"]
+                _esc(transcript_it).replace("\n", "<br/>"), styles["body"]
             ))
             story.append(Spacer(1, 6))
     else:
         note = (
             f"Trascritto completo esportato in "
-            f"<font face=\"Courier\">{base_name}_transcript.txt</font> "
+            f"<font face=\"Courier\">{_esc(base_name)}_transcript.txt</font> "
             f"accanto al PDF."
         )
         if lang != "it" and transcript_it and transcript_it != transcript:
             note += (
                 f" Traduzione italiana in "
-                f"<font face=\"Courier\">{base_name}_transcript_it.txt</font>."
+                f"<font face=\"Courier\">{_esc(base_name)}_transcript_it.txt</font>."
             )
         story.append(Paragraph(note, styles["body"]))
 
@@ -587,7 +611,7 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
         f"Identificate <b>{n}</b> sezioni significative via changepoint "
         f"detection deterministico su gradiente RMS, centroide, flatness "
         f"e categorie dominanti, finestra di analisi {win:.0f} s. La "
-        f"signature di ciascuna sezione e' derivata da Krause dominante + "
+        f"signature di ciascuna sezione è derivata da Krause dominante + "
         f"caratteristiche dinamiche e timbriche, non dall'agente. "
         f"L'agente compositivo riceve queste sezioni come ossatura per "
         f"organizzare la propria lettura."
@@ -612,7 +636,7 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
     ]]
     any_low_conf = False  # v0.12.6: traccia se servir la nota di confidenza
     for s in sections:
-        sig_label = (s.get("signature_label") or "")[:48]
+        sig_label = _esc((s.get("signature_label") or "")[:48])
         krause = s.get("krause", "")
         conf = s.get("dominant_panns_confidence", "high")
         # v0.12.6 (P3 caso A): sezioni con confidence low (durata < 2s)
@@ -645,7 +669,7 @@ def _build_structure_block(structure: dict, timeline_path: Path | None, styles) 
         story.append(Spacer(1, 4))
         story.append(Paragraph(
             "<i><font color='#6b7280'>* Sezione di durata inferiore a 2 secondi:"
-            " la classificazione PANNs e' costruita su pochi frame ed e' "
+            " la classificazione PANNs è costruita su pochi frame ed è "
             "statisticamente inaffidabile. La etichetta di famiglia Krause "
             "viene neutralizzata a 'mista' e la signature riporta "
             "'impulso e coda' quando appropriato.</font></i>",
@@ -671,7 +695,7 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
     story.append(Paragraph(
         "Lettura formale ispirata ad Aural Sonology (Thoresen): i <b>campi "
         "temporali</b> sono la segmentazione gerarchica del discorso (livello 0 "
-        "= campi principali, livello 1 = sub-campi); la <b>forma dinamica</b> e' "
+        "= campi principali, livello 1 = sub-campi); la <b>forma dinamica</b> è "
         "la curva dell'energia nel tempo. Entrambe derivano dall'analisi "
         "automatica, non dall'agente, e gli servono da ossatura.",
         styles["body"],
@@ -731,7 +755,7 @@ def _build_aural_form_block(time_fields: list, dynamic_form: dict | None,
 
     if suggested_layers:
         labels = ", ".join(
-            f"{l.get('label')} ({l.get('krause')})" if l.get("krause") else f"{l.get('label')}"
+            f"{_esc(l.get('label'))} ({l.get('krause')})" if l.get("krause") else f"{_esc(l.get('label'))}"
             for l in suggested_layers[:8]
         )
         story.append(Spacer(1, 6))
@@ -845,16 +869,19 @@ def _eco_radar_commentary(eco: dict) -> str:
     if bi_v > 20000:
         parts.append(f"BI elevato ({bi_v:.0f}) supporta la lettura biofonica")
     if aci_v > 100000:
-        parts.append(f"ACI alto ({aci_v:.0f}) segnala attivita' spettrale densa")
+        parts.append(f"ACI alto ({aci_v:.0f}) segnala attività spettrale densa")
     return ". ".join(parts) + "."
 
 
 def _build_executive_summary(summary: dict, styles) -> list:
     """v0.12.0: sintesi iniziale (una pagina) pensata per il compositore.
 
-    Riunisce in uno sguardo: identita' del brano, qualita' di registrazione,
+    Riunisce in uno sguardo identità del brano, qualità di registrazione,
     carattere ecoacustico, top famiglie semantiche. Non sostituisce le
-    sezioni tecniche dettagliate, le anticipa.
+    sezioni tecniche dettagliate, le anticipa. v0.18.1: le chiavi lette
+    sono quelle reali del summary (score_5, lufs.true_peak_db,
+    hum.overall_verdict, clap.academic_hints.krause, classifier.top_global),
+    al posto delle 5 chiavi inesistenti segnalate dall'audit.
     """
     meta = summary.get("metadata", {}) or {}
     tech = summary.get("technical", {}) or {}
@@ -867,7 +894,6 @@ def _build_executive_summary(summary: dict, styles) -> list:
 
     levels = tech.get("levels", {}) or {}
     lufs = tech.get("lufs", {}) or {}
-    tp = tech.get("true_peak", {}) or {}
     hifi = spec.get("hifi_lofi", {}) or {}
 
     rows = [["", ""]]
@@ -879,36 +905,38 @@ def _build_executive_summary(summary: dict, styles) -> list:
     rows.append([
         "Qualità di registrazione",
         f"LUFS integrato {_fmt(lufs.get('integrated_lufs'), '{:+.1f}')}, "
-        f"true peak {_fmt(tp.get('true_peak_dbtp'), '{:+.2f}')} dBTP, "
+        f"true peak {_fmt(lufs.get('true_peak_db'), '{:+.2f}')} dBTP, "
         f"dinamica {_fmt(levels.get('dynamic_range_db'), '{:.1f}')} dB",
     ])
-    hifi_score = hifi.get("score")
+    hifi_score = hifi.get("score_5")
     hifi_label = hifi.get("label", "")
     rows.append([
         "Profilo Schafer",
-        f"Hi-Fi/Lo-Fi score {hifi_score}/5 ({hifi_label}). "
-        f"Hum 50/60 Hz {'rilevato' if hum.get('detected') else 'entro baseline'}.",
+        f"Hi-Fi/Lo-Fi score {_fmt(hifi_score)}/5 ({hifi_label}). "
+        f"Hum 50/60 Hz {hum.get('overall_verdict') or 'n.d.'}.",
     ])
 
-    krause = (eco.get("krause") or {})
+    # La triade Krause vive negli academic hints CLAP (clap_mapping), non
+    # in ecoacoustic (la chiave eco["krause"] non è mai esistita).
+    krause = ((clap.get("academic_hints") or {}).get("krause") or {}).get("distribution") or {}
     if krause:
         k_sorted = sorted(
             ((k, v) for k, v in krause.items() if isinstance(v, (int, float))),
             key=lambda kv: -kv[1],
         )[:3]
         parts = [f"{k} {v*100:.0f}%" if v <= 1 else f"{k} {v:.0f}%" for k, v in k_sorted]
-        rows.append(["Triade ecoacustica (Krause)", ", ".join(parts)])
+        rows.append(["Triade Krause (stima CLAP)", ", ".join(parts)])
 
-    top_panns = (classifier.get("top_categories") or [])[:3]
+    top_panns = (classifier.get("top_global") or [])[:3]
     if top_panns:
-        parts = [f"{_translate_label_for_summary(c.get('name',''))} ({c.get('score',0):.2f})"
+        parts = [f"{_esc(_translate_label_for_summary(c.get('name','')))} ({c.get('score',0):.2f})"
                  for c in top_panns if c.get("score", 0) > 0.03]
         if parts:
             rows.append(["Classificatore semantico (PANNs)", ", ".join(parts)])
 
     top_clap = (clap.get("top_global") or [])[:3]
     if top_clap:
-        parts = [f"«{t.get('prompt','')}» ({t.get('score',0):.2f})"
+        parts = [f"«{_esc(t.get('prompt',''))}» ({t.get('score',0):.2f})"
                  for t in top_clap if t.get("score", 0) > 0.20]
         if parts:
             rows.append(["Auto-tag CLAP", "; ".join(parts)])
@@ -925,8 +953,8 @@ def _build_executive_summary(summary: dict, styles) -> list:
     )
 
     intro = Paragraph(
-        "Questa sintesi e' pensata come prima lettura: identita' del brano, "
-        "qualita' di registrazione, carattere ecoacustico, famiglie semantiche "
+        "Questa sintesi è pensata come prima lettura - identità del brano, "
+        "qualità di registrazione, carattere ecoacustico, famiglie semantiche "
         "dominanti. Le pagine successive articolano la lettura compositiva "
         "e i dettagli analitici.",
         styles["body"],
@@ -1020,7 +1048,7 @@ def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> lis
     for sec in sections:
         t_s = float(sec.get("t_start_s", 0.0))
         t_e = float(sec.get("t_end_s", 0.0))
-        sig_label = (sec.get("signature_label") or "").strip()
+        sig_label = _esc((sec.get("signature_label") or "").strip())
         header = (
             f"<b>{sec.get('id','')}</b> "
             f"({_fmt_time(t_s)} - {_fmt_time(t_e)}, "
@@ -1069,7 +1097,7 @@ def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> lis
         parts: list[str] = []
         if cen_mean is not None and flat_mean is not None:
             parts.append(
-                f"La firma timbrica media e' su registro {_fmt_centroid(cen_mean)} "
+                f"La firma timbrica media è su registro {_fmt_centroid(cen_mean)} "
                 f"({cen_mean:.0f} Hz) con spettro {_fmt_flatness(flat_mean)} "
                 f"(flatness {flat_mean:.3f})."
             )
@@ -1084,11 +1112,11 @@ def _build_narrative_by_section(structure: dict, narrative: dict, styles) -> lis
                     )
         if dens_mean:
             parts.append(
-                f"Densita' di onset {_fmt_density(dens_mean)} ({dens_mean:.1f}/s)."
+                f"Densità di onset {_fmt_density(dens_mean)} ({dens_mean:.1f}/s)."
             )
         dom_panns = (sec.get("dominant_panns") or "").strip()
         if dom_panns:
-            parts.append(f"PANNs dominante: {dom_panns}.")
+            parts.append(f"PANNs dominante: {_esc(dom_panns)}.")
         if fam_label:
             parts.append(f"Famiglia CLAP prevalente: {fam_label}.")
         krause = (sec.get("krause") or "").strip()
@@ -1156,12 +1184,14 @@ def _build_composer_section(agent_text: str, styles) -> list:
         if not block:
             continue
         if block.startswith("## "):
-            story.append(Paragraph(block[3:].strip(), styles["h3"]))
+            story.append(Paragraph(_esc(block[3:].strip()), styles["h3"]))
         elif block.startswith("# "):
-            story.append(Paragraph(block[2:].strip(), styles["h2"]))
+            story.append(Paragraph(_esc(block[2:].strip()), styles["h2"]))
         else:
-            # Conversione light di **bold** e *italic* in tag ReportLab
-            para = block.replace("**", "<b>", 1).replace("**", "</b>", 1)
+            # Conversione light di **bold** e *italic* in tag ReportLab.
+            # L'escape XML precede la conversione, così i marker diventano
+            # markup intenzionale mentre '&' e '<' del testo restano sicuri.
+            para = _esc(block).replace("**", "<b>", 1).replace("**", "</b>", 1)
             para = para.replace("*", "<i>", 1).replace("*", "</i>", 1)
             story.append(Paragraph(para, styles["body"]))
     return story
@@ -1211,13 +1241,13 @@ def build_report(
     story.append(Paragraph("Report tecnico e compositivo", styles["h2_cover"]))
     story.append(Spacer(1, 20 * mm))
     meta = summary.get("metadata", {})
-    story.append(Paragraph(f"<b>File</b>: {meta.get('filename', 'n.d.')}", styles["meta_cover"]))
+    story.append(Paragraph(f"<b>File</b>: {_esc(meta.get('filename', 'n.d.'))}", styles["meta_cover"]))
     story.append(Paragraph(f"<b>Durata</b>: {_fmt(meta.get('duration_s'), '{:.1f} s')}", styles["meta_cover"]))
     story.append(Paragraph(f"<b>Sample rate</b>: {_fmt(meta.get('sr'), '{} Hz')}", styles["meta_cover"]))
-    story.append(Paragraph(f"<b>Canali</b>: {_fmt(meta.get('channels'))} ({meta.get('format_name') or meta.get('codec', '')})", styles["meta_cover"]))
+    story.append(Paragraph(f"<b>Canali</b>: {_fmt(meta.get('channels'))} ({_esc(meta.get('format_name') or meta.get('codec', ''))})", styles["meta_cover"]))
     if corpus_title:
         story.append(Spacer(1, 8 * mm))
-        story.append(Paragraph(f"<b>Corpus</b>: {corpus_title}", styles["meta_cover"]))
+        story.append(Paragraph(f"<b>Corpus</b>: {_esc(corpus_title)}", styles["meta_cover"]))
     story.append(Spacer(1, 20 * mm))
     story.append(Paragraph(f"Data analisi: {date.today().isoformat()}", styles["meta_cover"]))
     story.append(Paragraph("Francesco Mariano, Accademia di Belle Arti di Macerata", styles["meta_cover"]))
@@ -1514,7 +1544,7 @@ def _corpus_metadata_table(
         spec = s.get("spectral", {})
         eco = s.get("ecoacoustic", {})
         rows.append([
-            _short(meta.get("filename", "?"), 40),
+            _esc(_short(meta.get("filename", "?"), 40)),
             _fmt(meta.get("duration_s"), "{:.0f} s"),
             _fmt((tech.get("lufs") or {}).get("integrated_lufs"), "{:+.1f}"),
             _fmt((tech.get("levels") or {}).get("dynamic_range_db"), "{:.1f}"),
@@ -1607,7 +1637,7 @@ def build_corpus_report(
 
     # COPERTINA
     story.append(Paragraph("Report comparativo<br/>di corpus", styles["h1_cover"]))
-    story.append(Paragraph(corpus_title, styles["h2_cover"]))
+    story.append(Paragraph(_esc(corpus_title), styles["h2_cover"]))
     story.append(Spacer(1, 18 * mm))
     n_files = corpus_metadata.get("n_files", len(summaries))
     dur = corpus_metadata.get("duration_total_s", 0.0)
@@ -1626,7 +1656,7 @@ def build_corpus_report(
         styles["meta_cover"]
     ))
     story.append(Paragraph(
-        "Skill soundscape-audio-analysis v0.6.8",
+        f"Skill soundscape-audio-analysis v{skill_version()}",
         styles["meta_cover"]
     ))
     # Fix v0.3.1: dopo la copertina passa al template body (sfondo bianco)
@@ -1636,9 +1666,9 @@ def build_corpus_report(
     # SOMMARIO ESECUTIVO
     story.append(Paragraph("Sommario esecutivo", styles["h1"]))
     story.append(Paragraph(
-        f"Il corpus <b>{corpus_title}</b> riunisce {n_files} file audio "
+        f"Il corpus <b>{_esc(corpus_title)}</b> riunisce {n_files} file audio "
         f"per una durata totale di {_fmt_total_duration(dur)}. Ogni file è stato "
-        f"analizzato con la pipeline soundscape-audio-analysis v0.6.8: livelli "
+        f"analizzato con la pipeline soundscape-audio-analysis v{skill_version()} - livelli "
         f"EBU R128, diagnosi tecnica (clipping, DC offset, hum con baseline "
         f"locale), analisi spettrale (bande Schafer, feature timbriche, onset), "
         f"indici ecoacustici (ACI, NDSI, H, BI), classificazione semantica via "
@@ -1719,7 +1749,7 @@ def build_corpus_report(
     story.append(PageBreak())
     story.append(Paragraph("Colofone", styles["h2"]))
     story.append(Paragraph(
-        "Documento prodotto dalla skill soundscape-audio-analysis v0.6.8 di "
+        f"Documento prodotto dalla skill soundscape-audio-analysis v{skill_version()} di "
         "Francesco Mariano. Font Libre Baskerville e Source Sans Pro "
         "(licenza SIL OFL). Pipeline analitica: librosa + soundfile per il "
         "carico audio, ffmpeg ebur128 per i LUFS, PANNs CNN14 per la "
@@ -1730,7 +1760,7 @@ def build_corpus_report(
     ))
     story.append(Spacer(1, 6))
     story.append(Paragraph(
-        f"Corpus: {corpus_title}. File: {n_files}. "
+        f"Corpus: {_esc(corpus_title)}. File: {n_files}. "
         f"Durata totale: {_fmt_total_duration(dur)}. "
         f"Data generazione: {date.today().isoformat()}. "
         f"Francesco Mariano, Accademia di Belle Arti di Macerata.",

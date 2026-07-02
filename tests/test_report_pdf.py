@@ -189,6 +189,58 @@ def test_executive_summary_reads_real_summary_keys():
     assert "canto di uccelli" in joined  # riga CLAP presente, escapata senza crash
 
 
+def test_merge_panns_timeline_compacts_consecutive_top1():
+    """La timeline compattata unisce i segmenti consecutivi con lo stesso
+    top-1 e conserva gli score per la media (v0.19.0)."""
+    from scripts.report_pdf import _merge_panns_timeline
+    tl = [
+        {"t_start_s": 0, "t_end_s": 10,
+         "top": [{"name": "Bird", "score": 0.4}, {"name": "Wind", "score": 0.1}]},
+        {"t_start_s": 10, "t_end_s": 20,
+         "top": [{"name": "Bird", "score": 0.2}, {"name": "Water", "score": 0.1}]},
+        {"t_start_s": 20, "t_end_s": 30,
+         "top": [{"name": "Vehicle", "score": 0.5}]},
+    ]
+    merged = _merge_panns_timeline(tl)
+    assert len(merged) == 2
+    assert merged[0]["top1"] == "Bird"
+    assert merged[0]["t_end_s"] == 20
+    assert merged[0]["scores"] == [0.4, 0.2]
+    assert sorted(merged[0]["others"]) == ["Water", "Wind"]
+    assert merged[1]["top1"] == "Vehicle"
+
+
+def test_semantic_block_renders_citable_timeline_table(tmp_path):
+    """La sezione semantica include la tabella timeline citabile e regge
+    label con caratteri XML speciali (v0.19.0)."""
+    from reportlab.platypus import SimpleDocTemplate
+    from scripts.report_pdf import _build_semantic_block
+    styles = report_styles.build_styles(report_styles.register_fonts())
+    semantic = {
+        "enabled": True,
+        "classifier": {
+            "model_name": "PANNs CNN14",
+            "top_global": [{"name": "Bird", "score": 0.4}],
+            "top_dominant_frames": [],
+            "timeline": [
+                {"t_start_s": 0, "t_end_s": 10,
+                 "top": [{"name": "Bird", "score": 0.4}]},
+                {"t_start_s": 10, "t_end_s": 20,
+                 "top": [{"name": "Vehicle & co", "score": 0.3}]},
+            ],
+        },
+    }
+    flow = _build_semantic_block(semantic, styles)
+    rendered = ""
+    for f in flow:
+        if hasattr(f, "text"):
+            rendered += f.text + "\n"
+    assert "Timeline per segmento" in rendered
+    out = tmp_path / "semantic_timeline.pdf"
+    SimpleDocTemplate(str(out)).build(flow)
+    assert out.exists()
+
+
 def test_build_pdf_with_xml_specials_in_filename(tmp_path):
     """Un nome file con '&' e '<' deve produrre il PDF senza errori del
     ParaParser (copertina + tabella metadati, v0.18.1)."""

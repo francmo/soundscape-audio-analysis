@@ -28,6 +28,7 @@ from .agent_payload import build_agent_payload, write_agent_payload
 from .io_loader import load_metadata
 from .serialization import dump as dump_json, load as load_json
 from .utils import ensure_dir, safe_filename
+from .version import skill_version
 
 
 AUDIO_EXT = (".wav", ".mp3", ".flac", ".aiff", ".aif", ".ogg", ".m4a")
@@ -296,7 +297,7 @@ def run_corpus_report(
 
     # 12. Metadata di run
     run_meta = {
-        "version": "0.14.0",
+        "version": skill_version(),
         "corpus_title": corpus_title,
         "n_files": n_files,
         "duration_total_s": total_duration_s,

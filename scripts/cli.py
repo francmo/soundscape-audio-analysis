@@ -15,6 +15,7 @@ import click
 from . import config
 from . import profiles as profiles_mod
 from .utils import ensure_dir, check_binary, format_duration, safe_filename
+from .version import skill_version
 
 
 # Estensioni accettate per scansione di cartelle
@@ -236,7 +237,7 @@ def _analyze_single(
         meta["user_known_piece"] = known_piece.strip()
 
     summary = {
-        "version": "0.16.0",  # Aural Sonology Fase 1 (time_fields + dynamic_form)
+        "version": skill_version(),
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "metadata": meta,
         "technical": tech,
@@ -408,7 +409,7 @@ def _analyze_single(
 
 
 @click.group()
-@click.version_option(version="0.18.0", prog_name="soundscape")
+@click.version_option(version=skill_version(), prog_name="soundscape")
 def cli():
     """Soundscape Audio Analysis. Analisi tecnica, spettrale, ecoacustica,
     semantica e compositiva per file audio soundscape, field recording e
@@ -877,7 +878,7 @@ def benchmark_cmd(audio: Path, gold_path: Path, agent_source: Path | None, outpu
 @cli.command("version")
 def version_cmd():
     """Versione del toolkit."""
-    click.echo("soundscape-audio-analysis 0.12.5")
+    click.echo(f"soundscape-audio-analysis {skill_version()}")
 
 
 def main():

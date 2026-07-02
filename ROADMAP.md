@@ -3,16 +3,25 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.12.5 (24 aprile 2026)
-**Test suite**: 192 passed + 2 skipped (benchmark e whisper reale gated)
+**Versione corrente**: 0.19.0 (2 luglio 2026)
+**Test suite**: suite leggera 275 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
 **Branch**: `main`
-**Ultimo commit**: `c02ef3f` (taxonomies.json per PWA Annotation Atelier)
-**Ultima release tagged**: v0.12.5 (Patch 1 anti-filename/path leakage)
-**Aggiornamento ROADMAP**: 15 maggio 2026 (caso A, vedi addendum)
+**Aggiornamento ROADMAP**: 2 luglio 2026 (riallineamento post-audit, testata
+aggiornata, piano statistico rinumerato v0.20-v0.23, esiti nell'addendum 02/07;
+per commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ---
 
-## Stato corrente (v0.11.0)
+## Stato corrente
+
+> Nota 02/07/2026. L'elenco capabilities qui sotto fotografa la v0.11 ed è
+> storicamente valido ma incompleto. Dopo di allora sono arrivate, in sintesi,
+> le calibrazioni didattiche anti-forzatura (v0.12.6-v0.14), spread e flux
+> timbrici (v0.15), gli assi Aural Sonology con contratto interchange v1.2 e
+> comando `enrich` (v0.16-v0.17), il benchmark con similarità semantica e
+> rigore statistico (v0.18), la release di igiene post-audit (v0.18.1), il
+> confronto annotazioni umane vs skill (`compare`) e la timeline PANNs
+> citabile nel PDF (v0.19). Dettagli release per release in CHANGELOG.md.
 
 ### Capabilities attive
 
@@ -29,7 +38,8 @@ chi fa cosa. Aggiornato a ogni release.
   modalita' extended.
 - **Classificazione semantica PANNs CNN14** (default): 527 classi AudioSet,
   pre-check LUFS per evitare bug "97% Silence" su file molto bassi.
-- **Auto-tagging CLAP italiano**: 193 prompt v1.3 in 18 categorie
+- **Auto-tagging CLAP italiano**: 251 prompt v1.9 (conteggio verificato il
+  02/07/2026) in categorie tematiche
   (geofonia, biofonia, antropofonia *, musica, sacralita sonora, paesaggi
   italiani specifici, **paesaggi mediterranei generici** nuova in v0.5.2,
   ecc.). **v0.5.1**: filtro allucinazioni speech-related che marca con
@@ -87,7 +97,36 @@ chi fa cosa. Aggiornato a ogni release.
 
 ## Pianificato (priorita' decrescente)
 
+### Addendum 02/07/2026 - esiti audit, v0.18.1/v0.19.0 e rinumerazione
+
+- **v0.18.1 SHIPPATA** (igiene post-audit): versione unica da pyproject.toml
+  con guard-rail nei test, escaping XML nei Paragraph del PDF, chiavi reali
+  nella sintesi iniziale, accenti nelle stringhe renderizzate, caveat sui
+  profili GRM literature_based, SKILL.md/README allineati (251 prompt, PANNs
+  default).
+- **v0.19.0 SHIPPATA**: `soundscape compare` (annotazioni umane dell'Atelier
+  vs analisi della skill, tre assi: confini strutturali, famiglia Krause per
+  bin con Cohen's kappa, copertura per annotazione) + tabella timeline PANNs
+  citabile nel PDF (addendum 19/06 chiuso). Era la "v0.5" residua della
+  roadmap della PWA Annotation Atelier.
+- **Aperti dall'audit, da verificare con casi reali prima di toccare le
+  soglie**: filtro anti-allucinazione che marca biofonia legittima; misure
+  placeholder nella narrativa su file sotto i 20 s; ricostruzione
+  `audio_derived` dei profili GRM (`build_profile_from_audio` esiste, servono
+  gli audio sorgente).
+- **Follow-on v0.18 dichiarato in CHANGELOG**: ricalcolo retroattivo del
+  benchmark v0.9 -> v0.12.3 con metodo hybrid e CI 95% (N=5 x 14 tracce, run
+  costoso da pianificare in una finestra dedicata).
+- **Rinumerazione**: le tappe pianificate sotto ("v0.14-v0.17" del piano
+  originale) diventano v0.20-v0.23; i vecchi numeri collidono con release
+  reali già uscite con altri contenuti (il piano "v0.13" è shippato come
+  0.18.0).
+
 ### Addendum 19/06/2026 - timeline PANNs citabile nel report PDF
+
+> **STATO: IMPLEMENTATO nella release 0.19.0 (02/07/2026)**: tabella "Timeline
+> per segmento" in `_build_semantic_block`, compattata sul tag dominante
+> (`_merge_panns_timeline`), cap a 40 righe con nota di omissione.
 
 Problema emerso nell'uso didattico. Quando un rilievo si riferisce a un singolo segmento temporale (per esempio un transito Vehicle/Train forte solo nei primi dieci secondi, che sulla media dell'intero file scende molto), il valore per-segmento non è citabile dal solo report PDF. Oggi la pagina di classificazione semantica stampa come testo solo gli aggregati globali: `top_global` (etichettato "punteggio medio") e `top_dominant_frames` (percentuali di dominanza). L'andamento per-segmento esiste in `summary.json` (`semantic.classifier.timeline`) ma nel PDF è reso solo dal grafico dei tag nel tempo, quindi chi fonda le osservazioni su citazioni testuali del PDF non trova il numero e lo legge come una discrepanza fra i tre valori (per-segmento, media globale, dominanza per-frame), che invece sono coerenti.
 
@@ -106,7 +145,7 @@ iteration v0.10. Aggregazione proposta: **v0.12.5 - integrazione caso
 A** (una sola release con i 3 interventi quantitativi). Decisioni
 di design aperte in §4 dell'addendum, da risolvere prima di iniziare.
 
-### Piano v0.13 - v0.17 (20/04/2026): rigore metodologico pre-paper
+### Piano statistico pre-paper (20/04/2026; tappe rinumerate v0.20-v0.23 il 02/07/2026)
 
 Driver: review critica esterna dopo v0.12.3 ha identificato che il noise
 floor stocastico ±15-20 punti sub-agent rende non-falsificabili i delta
@@ -149,7 +188,7 @@ Criterio di accettazione: tabella versioni con media, deviazione
 standard, CI 95% pre/post embedding, colonna "significativo vs versione
 precedente" (paired t-test p<0.05).
 
-#### v0.14 - Governance corpus (~12 ore)
+#### v0.20 - Governance corpus (~12 ore; era "v0.14" nel piano originale)
 
 - **Normalizzazione gold fatti vs cornice**: ogni gold suddiviso in
   `fatti_analitici` (tassonomia, tecniche, parentele dichiarate) e
@@ -162,7 +201,7 @@ precedente" (paired t-test p<0.05).
   version + pipeline version usati. Evita leak implicito da iterazione
   sotto osservazione.
 
-#### v0.15 - Payload agent + routing epistemologico (~10 ore)
+#### v0.21 - Payload agent + routing epistemologico (~10 ore; era "v0.15")
 
 - **Payload agent rinforzato (non sostituito)**: aggiungere blocco
   `top_panns_scored` e `top_clap_families_scored` al payload in formato
@@ -184,7 +223,7 @@ precedente" (paired t-test p<0.05).
   scuole canoniche, output come `list[ComposerEnum]` anziche' testo
   libero. Abbatte varianza per la sezione piu' critica del benchmark.
 
-#### v0.16 - Inter-rater reliability (~20 ore, umane)
+#### v0.22 - Inter-rater reliability (~20 ore, umane; era "v0.16")
 
 - **Cohen's kappa su 3-4 brani** con un secondo annotatore (candidato:
   musicologo/compositore di Bologna o Macerata) indipendentemente sullo
@@ -192,9 +231,9 @@ precedente" (paired t-test p<0.05).
   se due umani concordano al 80%, nessun LLM puo' superare quella
   soglia eticamente. Step fondamentale per paper.
 
-#### v0.17+ - Architettura speculativa (solo dopo v0.16)
+#### v0.23+ - Architettura speculativa (solo dopo v0.22; era "v0.17+")
 
-Solo se dopo v0.16 il sistema e' statisticamente stabile e i gap
+Solo se dopo v0.22 il sistema e' statisticamente stabile e i gap
 residui lo giustificano. Nessun impegno di timeline.
 
 - Conflict resolver CLAP/PANNs con tabella priorita' + flag `conflict=true`
@@ -205,7 +244,7 @@ residui lo giustificano. Nessun impegno di timeline.
   audio. Inject i 2-3 gold piu' simili come stylistic template nel
   prompt drammaturgo.
 
-#### Regola operativa per tutte le v0.13+
+#### Regola operativa per tutte le tappe del piano statistico
 
 Ogni release: N=5+ run per misurare, CI al 95%, tabella paired delta
 nel CHANGELOG. Nessun commit dichiara "miglioramento" se gli intervalli

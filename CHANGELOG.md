@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.18.1] - 2026-07-02
+
+Release di igiene, chiude gli arretrati dell'audit dell'11/06/2026 su versionamento, robustezza del PDF, chiavi della sintesi iniziale, tipografia e documentazione. Nessun cambiamento di comportamento analitico.
+
+### Corretto
+
+- **Versione unica da pyproject.toml** (`scripts/version.py::skill_version`, cached): eliminati gli hardcode divergenti (`scripts/__init__.py` 0.14.0, summary JSON 0.16.0, `click.version_option` 0.18.0, comando `soundscape version` 0.12.5, metadata del report corpus 0.14.0, "v0.6.8" in copertina/sommario/colofone del PDF di corpus). Guard-rail in `tests/test_version.py`: pyproject, voce in testa al CHANGELOG e BibTeX del README devono coincidere; vietati nuovi hardcode nei sorgenti.
+- **Escaping XML dei testi dinamici nei Paragraph** (`report_pdf._esc`, xml.sax.saxutils): un nome file, un trascritto Whisper o una label con `&`/`<` mandava in errore il ParaParser e faceva fallire l'intero `doc.build`. Applicato a copertina, tabella metadati, label PANNs, prompt CLAP, trascritti e segmenti speech, signature label delle sezioni, strati suggeriti, testo dell'agente, copertina e tabella panoramica del corpus.
+- **La sintesi iniziale legge le chiavi reali del summary**: `score_5` (prima `score`, stampava "None/5"), `lufs.true_peak_db` (prima `true_peak.true_peak_dbtp`, sempre "n.d."), `hum.overall_verdict` (prima `detected`, dichiarava "entro baseline" anche a hum rilevato), triade Krause da `clap.academic_hints.krause.distribution` (prima `eco.krause`, riga mai apparsa), `classifier.top_global` (prima `top_categories`, riga PANNs mai apparsa). Etichetta riga aggiornata in "Triade Krause (stima CLAP)".
+- **Accenti corretti nelle stringhe renderizzate** di `report_pdf.py` (plausibilità, è, più, densità, attività, identità, qualità, probabilità) e di `generate_annotation_sheet.py` (è, già, ciò, città, Traité).
+- **Caveat sui profili GRM literature_based** nel blocco di confronto del PDF: valori indicativi non citabili, non derivati da audio; gli indici scala-dipendenti (ACI) non comparabili in valore assoluto. La ricostruzione `audio_derived` resta in ROADMAP.
+
+### Documentazione
+
+- `SKILL.md` allineato alla realtà: 251 prompt CLAP (non 70), PANNs CNN14 default (non YAMNet), dipendenze e checkpoint reali, sub-comandi `agent`/`enrich`/`benchmark`/`version`, riferimento al contratto interchange v1.2, menzione degli assi Aural Sonology e del benchmark nella description.
+- README: versione BibTeX del record @software allineata alla release corrente (ora coperta da test).
+
+### Test
+
+- Nuovi: `tests/test_version.py` (3, guard-rail versionamento); escaping XML su speech block e su report completo con nome file avverso; sintesi iniziale con chiavi reali (`tests/test_report_pdf.py`).
+
 ## [0.18.0] - 2026-06-28
 
 Implementa il piano ROADMAP v0.13 (rigore statistico + similarita semantica), prerequisito metodologico per il results paper v2.0. Sviluppo su branch `feat/benchmark-v0.13`. Additivo - il benchmark lessicale resta il default e i test esistenti sono invariati.

@@ -16,8 +16,10 @@ description: >
   radar ecoacustico, similarità CLAP) e sintesi testuale generata da sessione Claude non
   interattiva che usa il REPORT_ANALISI di Villa Ficana come riferimento di stile.
   Il sotto-comando `benchmark` confronta la lettura dell'agente con analisi gold
-  accademiche (metodo lessicale, embedding o ibrido, con rigore statistico).
-  Gestisce file multicanale fino a 7.1.4. Attiva quando l'utente parla di field
+  accademiche (metodo lessicale, embedding o ibrido, con rigore statistico); il
+  sotto-comando `compare` misura l'accordo fra le annotazioni umane dell'Atelier
+  e l'analisi della skill (confini strutturali, famiglia Krause per bin con
+  Cohen's kappa, copertura per annotazione). Gestisce file multicanale fino a 7.1.4. Attiva quando l'utente parla di field
   recording, soundscape, analisi spettrale, spettrogramma, LUFS, clipping, hum, YAMNet,
   PANNs, CLAP, bande Schafer, biofonia, antropofonia, geofonia, composizione
   elettroacustica, musique concrète, GRM, Parmegiani, Westerkamp, Ferrari, Krause, report
@@ -57,6 +59,9 @@ bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape enrich <annotatio
 
 # Benchmark della lettura agente contro un'analisi gold (lexical | embedding | hybrid)
 bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape benchmark <audio> --against <gold.md>
+
+# Confronto annotazione umana dell'Atelier vs analisi della skill (v0.19.0)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape compare <annotation.json> <summary.json> [--pdf out.pdf]
 
 # Versione corrente (fonte unica: pyproject.toml)
 bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape version

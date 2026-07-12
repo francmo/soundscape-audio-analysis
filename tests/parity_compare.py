@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-IGNORE_KEYS = {"version", "generated_at", "path"}
+IGNORE_KEYS = {"version", "generated_at", "path", "timings"}
 # campi testuali che contengono path assoluti o timestamp
 IGNORE_SUBSTR_KEYS = {"_path", "_paths"}
 

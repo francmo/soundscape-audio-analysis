@@ -52,6 +52,7 @@ def _analyze_single(
     narrative_profile: str = "auto",
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
+    import time
     from . import io_loader, technical, hum, spectral, ecoacoustic, semantic
     from . import multichannel, comparison, plotting, report_pdf, agent_bridge
     from . import serialization
@@ -61,6 +62,18 @@ def _analyze_single(
         raise RuntimeError(
             f"Binari mancanti: {', '.join(missing)}. Installa con: brew install ffmpeg"
         )
+
+    # v0.19.3 (C4 addendum performance): telemetria dei tempi per stadio.
+    # Finisce nel summary (`timings`, secondi) e in una riga di log compatta;
+    # è la base empirica per ottimizzare e per citare i costi computazionali.
+    timings: dict[str, float] = {}
+    _t_stage = time.perf_counter()
+
+    def _lap(stage: str) -> None:
+        nonlocal _t_stage
+        now = time.perf_counter()
+        timings[stage] = round(now - _t_stage, 2)
+        _t_stage = now
 
     click.echo(f"\n[1/10] Metadati e caricamento audio: {audio_path.name}")
     meta = io_loader.load_metadata(audio_path)
@@ -91,9 +104,11 @@ def _analyze_single(
             mc = None
 
     duration_s = len(y) / sr
+    _lap("load")
 
     click.echo(f"[2/10] Livelli, dinamica, LUFS")
     tech = technical.technical_summary(audio_path, y)
+    _lap("levels_lufs")
 
     click.echo(f"[3/10] Hum check (baseline locale)")
     hum_res = hum.hum_check(
@@ -101,6 +116,7 @@ def _analyze_single(
     )
     if bundle is not None:
         bundle.pop("y_hum", None)
+    _lap("hum")
 
     click.echo(f"[4/10] Spettrale (bande Schafer, feature, onset)")
     # v0.19.2 (A4c): la STFT 4096 si calcola una volta; spectrum/freqs
@@ -115,12 +131,14 @@ def _analyze_single(
         tech["levels"]["dynamic_range_db"],
         spec["timbre"]["spectral_flatness"],
     )
+    _lap("spectral")
 
     eco_backend_used = ecoacoustic_backend or config.ECO_BACKEND
     click.echo(f"[5/10] Indici ecoacustici ({ecoacoustic_mode}, backend={eco_backend_used})")
     extended = ecoacoustic_mode == "extended"
     eco = ecoacoustic.ecoacoustic_summary(y, sr, extended=extended, backend=eco_backend_used)
     eco["backend_used"] = eco_backend_used
+    _lap("ecoacoustic")
 
     semantic_res = {"enabled": False}
     if do_semantic:
@@ -136,6 +154,7 @@ def _analyze_single(
         )
         if bundle is not None:
             bundle.pop("y_panns", None)
+        _lap("semantic")
 
     # Contestualizza hum sulla base di flatness + top PANNs (v0.5.1):
     # evita falsi positivi su materiale musicale tonale (es. 150 Hz su flauto)
@@ -191,6 +210,7 @@ def _analyze_single(
             clap_res["top_global"] = mark_plausibility_deterministic(
                 clap_res["top_global"], classifier_res
             )
+        _lap("clap")
 
     # v0.14 (INT-5 dossier P&T): caveat NDSI se la banda biofonica 2-8 kHz e'
     # dominata dall'acqua (doccia/rubinetto), non da biofonia animale (A).
@@ -254,6 +274,7 @@ def _analyze_single(
         )
         if speech_res.get("enabled") and not speech_res.get("skipped_reason"):
             speech_res = speech.translate_transcript(speech_res)
+        _lap("speech")
 
     mc_res = None
     if is_multi:
@@ -263,6 +284,7 @@ def _analyze_single(
         # più; liberarli prima dei grafici abbassa il picco RAM (su un file
         # stereo da 60 min sono ~1,4 GB, il doppio sui quad).
         mc = None
+        _lap("multichannel")
 
     click.echo(f"[10/10] Grafici e profili")
     base = safe_filename(audio_path.stem)
@@ -275,6 +297,7 @@ def _analyze_single(
         y, sr, spectrum_mean, freqs_mean, spec["bands_schafer"], hum_res,
         graphics_dir, base
     )
+    _lap("plots")
 
     if known_piece:
         meta = dict(meta)
@@ -305,6 +328,7 @@ def _analyze_single(
         window_seconds=config.STRUCTURE_WINDOW_S,
     )
     summary["structure"] = structure_res
+    _lap("structure")
 
     # Aural Sonology (Fase 1): time-fields gerarchici dalla segmentazione e
     # forma dinamica (curva energetica) dall'inviluppo RMS. Additivi: usati dal
@@ -376,6 +400,7 @@ def _analyze_single(
             profile=narrative_profile,
         )
     summary["narrative"] = narrative_res
+    _lap("narrative")
 
     rank_grm: list = []
     if compare_mode not in ("none", None):
@@ -389,10 +414,12 @@ def _analyze_single(
                 rank_grm = [comparison.compare_to_profile(summary, all_profiles[compare_mode])]
     summary["comparison_grm"] = rank_grm
 
-    # Scrittura summary JSON
+    # Scrittura summary JSON (v0.19.3: con telemetria tempi per stadio)
+    summary["timings"] = timings
     json_path = output_dir / f"{base}_summary.json"
     serialization.dump(summary, json_path)
     click.echo(f"Summary JSON: {json_path}")
+    click.echo("  Tempi (s): " + ", ".join(f"{k} {v}" for k, v in timings.items()))
 
     # Agente compositivo (v0.2.2: payload ridotto + narrativa markdown)
     agent_text = ""
@@ -672,8 +699,12 @@ def init_profiles(overwrite):
 @click.option("--low-impact", "low_impact", is_flag=True, default=False,
               help="v0.19.1: modalità a basso impatto (thread ridotti, priorità "
                    "abbassata), per run di corpus lunghi senza saturare la macchina.")
+@click.option("--synth-timeout", "synth_timeout", type=int, default=None,
+              help=f"v0.19.3: timeout in secondi della sintesi claude (default "
+                   f"{config.CORPUS_REPORT_TIMEOUT_S}; il retry lo raddoppia e "
+                   f"ricade sul modello {config.CORPUS_REPORT_FALLBACK_MODEL}).")
 def report_command(folder, output_dir, corpus_title, rerun, yes, model,
-                   no_synth, golden_path, low_impact):
+                   no_synth, golden_path, low_impact, synth_timeout):
     """Report comparativo su un corpus di file audio.
 
     Lancia analyze su tutti i file della cartella (con cache di freschezza),
@@ -696,6 +727,7 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
         model=model or config.CORPUS_REPORT_MODEL,
         no_synth=no_synth,
         golden_path=golden_path,
+        synth_timeout_s=synth_timeout,
     )
 
 
@@ -712,6 +744,26 @@ def report_merge_command(pdf_path, markdown_path):
     from . import report_cmd as rc
     new_pdf = rc.merge_markdown_into_pdf(pdf_path, markdown_path)
     click.echo(click.style(f"PDF aggiornato: {new_pdf}", fg="green", bold=True))
+
+
+@cli.command("report-resynth")
+@click.argument("report_dir", type=click.Path(exists=True, file_okay=False,
+                                              path_type=Path))
+@click.option("--model", default=None,
+              help=f"Modello Claude per la sintesi (default: quello del run "
+                   f"originale, altrimenti {config.CORPUS_REPORT_MODEL}).")
+@click.option("--synth-timeout", "synth_timeout", type=int, default=None,
+              help=f"Timeout in secondi (default {config.CORPUS_REPORT_TIMEOUT_S}).")
+def report_resynth_command(report_dir, model, synth_timeout):
+    """Rilancia SOLO la sintesi claude di un report corpus e aggiorna il PDF.
+
+    v0.19.3: recupero a un comando quando la sintesi del comando `report` è
+    fallita (timeout, claude assente). Usa il prompt salvato in
+    `corpus_synth_prompt.md` e i metadata `corpus_run_metadata.json` nella
+    cartella del report; non rifà alcuna analisi. Idempotente.
+    """
+    from . import report_cmd as rc
+    rc.resynth_corpus(report_dir, model=model, timeout_s=synth_timeout)
 
 
 @cli.command("enrich")

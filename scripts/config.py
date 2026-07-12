@@ -561,9 +561,22 @@ STRUCTURE_TIMELINE_COLORS = {
 GOLDEN_REPORTS_DIR = REFERENCES_DIR / "golden_reports"
 GOLDEN_VILLA_FICANA = GOLDEN_REPORTS_DIR / "REPORT_ANALISI_villa_ficana.md"
 CORPUS_REPORT_MODEL = "opus"
-CORPUS_REPORT_TIMEOUT_S = 300
+# v0.19.3 (C1 addendum performance): 300 s erano strutturalmente stretti per
+# un compito che legge 11 file e scrive 2000-4000 parole (run 12/07: doppio
+# timeout, PDF senza sintesi). Stessa lezione della v0.6.2 sull'agente.
+# Il retry raddoppia il timeout e ricade sul modello di riserva.
+CORPUS_REPORT_TIMEOUT_S = 900
+CORPUS_REPORT_FALLBACK_MODEL = "sonnet"
 CORPUS_CONFIRM_THRESHOLD_FILES = 10
 CORPUS_CONFIRM_THRESHOLD_MINUTES = 30
+# v0.19.3 (C5): coefficienti della stima di durata mostrata prima della
+# conferma. Calibrati sul run reale del 12/07 su M4 (~0,08-0,10x la durata
+# dell'audio con pipeline v0.19.x; 0,12 prudente) + costo fisso per file
+# (load modelli, grafici) + sintesi claude. La formula storica
+# (durata x 1,2 + 2) sovrastimava di ~10 volte.
+CORPUS_EST_AUDIO_FACTOR = 0.12
+CORPUS_EST_PER_FILE_MIN = 0.4
+CORPUS_EST_SYNTH_MIN = 8.0
 
 # Onset density
 ONSET_DENSITY_SPARSE = 0.5

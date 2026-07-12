@@ -3,11 +3,11 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.19.1 (12 luglio 2026)
-**Test suite**: suite leggera 290 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
+**Versione corrente**: 0.19.2 (12 luglio 2026)
+**Test suite**: suite leggera 296 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
 **Branch**: `main`
 **Aggiornamento ROADMAP**: 12 luglio 2026 (nuovo addendum performance/memoria
-con piano v0.19.1-v0.19.3, prima tranche shippata come v0.19.1; per commit e
+con piano v0.19.1-v0.19.3, tranche v0.19.1 e v0.19.2 shippate; per commit e
 release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ---
@@ -101,7 +101,7 @@ release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 Diagnosi e piano in `ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`,
 nato dal run di corpus del 12/07 che ha saturato la macchina (RSS 27 GB,
-swap, 800% CPU, sintesi in doppio timeout). Tre tranche: **v0.19.1 SHIPPATA**
+swap, 800% CPU, sintesi in doppio timeout). Tre tranche: **v0.19.1 e v0.19.2 SHIPPATE**
 (grafici decimati, cache classifier e prompt CLAP, cap thread, `--low-impact`,
 HF offline); **v0.19.2** compute-once (LUFS singolo, decodifica unica, STFT
 condivise, batching inferenza, structure senza mini-STFT) con parity test;

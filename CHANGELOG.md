@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.19.2] - 2026-07-12
+
+Seconda tranche dell'addendum performance 12/07: compute-once. La pipeline decodificava lo stesso file da disco 6-7 volte e ricalcolava la stessa STFT circa 20 volte per file; ora decodifica una volta e condivide. Parità verificata sul corpus reale: summary identici al baseline v0.19.0 su tutti i valori renderizzati (vedi Note di parità).
+
+### Prestazioni
+
+- **Bundle di decodifica unica** (`io_loader.load_audio_bundle`): per i formati lossless (wav, flac, aiff) il file si legge da disco UNA volta a SR nativo; downmix e ricampionamenti per hum (8 kHz), PANNs (32 kHz) e CLAP (48 kHz) derivati in memoria con lo stesso resampler dei load storici (`librosa`/soxr_hq), a parità bit-esatta verificata (diff 0.0 sulle fixture mono e multicanale). I formati lossy restano sul percorso legacy per non cambiare decoder. Le waveform del bundle vengono rilasciate appena consumate dallo stadio rispettivo.
+- **Un solo LUFS** (`semantic.precheck_loudness(lufs_data=...)`): il pre-check semantico riusa il LUFS già calcolato dallo stadio tecnico; prima rilanciava un secondo ffmpeg ebur128 identico sull'intero file.
+- **STFT condivise** (`spectral.compute_timbre`): la magnitudine STFT (n_fft=2048, hop=512) si calcola una volta e alimenta centroide, bandwidth, rolloff, flatness e flux via `S=`; prima ogni feature rifaceva la propria STFT identica (5 per chiamata, ~1900 mini-STFT nella segmentazione strutturale di un file da 64 minuti, ora ~385). Parità esatta per definizione librosa (`feature(y=y)` equivale a `feature(S=|stft(y)|)`), verificata. `spectral_summary` accetta `spectrum`/`freqs` precomputati e `cli.py` li riusa per i grafici dello stadio 10 (eliminata la seconda STFT 4096 identica).
+- **Batching dell'inferenza** (`config.INFERENCE_BATCH_SIZE = 8`): PANNs e CLAP processano i chunk da 10 s di lunghezza piena in batch, la coda parziale da sola; prima un forward per chunk (385 dispatch sequenziali su MPS per 64 minuti). Ordine dei risultati e timeline invariati.
+- **Guardia HF offline anticipata**: `_maybe_go_offline` ora scatta prima dell'import di laion_clap (huggingface_hub congela le env al momento dell'import) e riconosce i text branch reali in cache (bert-base-uncased, facebook/bart-base, roberta-base). Warning "unauthenticated requests" eliminato a cache calda; retry online automatico se la cache è incompleta.
+- `hum.hum_check(y=...)` accetta la waveform già decodificata dal bundle.
+
+### Note di parità (corpus reale 12/07, baseline v0.19.0)
+
+- `08a` (9 s, quad): summary bit-identico, embedding compresi.
+- `08b` (1 min, quad) e `09` (5,3 min, stereo): tutti i valori renderizzati identici (livelli, indici, classificazioni, structure, narrative, timeline); unica differenza nel blob base64 degli embedding CLAP raw float16, 2 elementi su 3584 a 1 ULP (3e-5), coseno 1.0 su ogni segmento: rumore di riordino floating-point del batching, sotto ogni soglia d'uso.
+- Strumento di confronto riusabile in `tests/parity_compare.py` (`python -m tests.parity_compare <baseline.json> <nuovo.json> [tol]`).
+
+### Test
+
+- Nuovi: `tests/test_perf_v0192.py` (8): bundle vs load legacy (mono, multicanale, estensioni fuori perimetro, waveform opzionali), spectral_summary con spettro precomputato identico, precheck senza secondo ffmpeg, batching con classifier fittizio (stessi risultati di batch=1, gestione coda corta). Suite leggera: 296 passed, 1 skipped.
+
 ## [0.19.1] - 2026-07-12
 
 Prima tranche dell'addendum performance (`ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`): i fix a rischio zero su memoria, modelli e thread. Driver: il run di corpus del 12/07 (10 file, 196,7 min, 2 file oltre i 60 min) ha saturato la macchina di sviluppo, picco RSS 27 GB con swap thrashing, 800% CPU, load average 30. Nessun cambiamento ai valori numerici prodotti: la release tocca solo caching, rendering dei grafici e governo delle risorse.

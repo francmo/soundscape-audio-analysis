@@ -186,8 +186,14 @@ class PANNsClassifier(Classifier):
         n_chunks = max(1, int(np.ceil(len(waveform) / chunk_samples)))
         duration_s = len(waveform) / sr
 
-        all_scores: list[np.ndarray] = []
-        segment_bounds: list[tuple[float, float]] = []
+        # v0.19.2 (A3 addendum performance): i chunk di lunghezza piena
+        # vengono processati in batch (config.INFERENCE_BATCH_SIZE) invece
+        # che uno alla volta; su MPS il dispatch per chiamata dominava sui
+        # file lunghi. La coda più corta (ultimo chunk parziale) viene
+        # processata da sola come prima. Score per chunk invariati (modello
+        # in eval mode).
+        full_chunks: list[tuple[int, np.ndarray, tuple[float, float]]] = []
+        tail_chunk: tuple[int, np.ndarray, tuple[float, float]] | None = None
         for i in range(n_chunks):
             a = i * chunk_samples
             b = min(a + chunk_samples, len(waveform))
@@ -195,11 +201,29 @@ class PANNsClassifier(Classifier):
             if len(chunk) < sr * 0.5:
                 # scarta coda troppo breve, altera poco la distribuzione
                 continue
-            # PANNs richiede shape (batch, samples) float32
-            chunk_batch = chunk[np.newaxis, :].astype(np.float32)
-            clipwise, _embed = self._at.inference(chunk_batch)
-            all_scores.append(np.asarray(clipwise[0], dtype=np.float32))
-            segment_bounds.append((a / sr, b / sr))
+            entry = (i, chunk.astype(np.float32), (a / sr, b / sr))
+            if len(chunk) == chunk_samples:
+                full_chunks.append(entry)
+            else:
+                tail_chunk = entry
+
+        scored: list[tuple[int, np.ndarray, tuple[float, float]]] = []
+        batch_size = max(1, int(config.INFERENCE_BATCH_SIZE))
+        for start in range(0, len(full_chunks), batch_size):
+            group = full_chunks[start:start + batch_size]
+            batch = np.stack([c for _i, c, _b in group], axis=0)
+            clipwise, _embed = self._at.inference(batch)
+            clipwise = np.asarray(clipwise, dtype=np.float32)
+            for row, (idx, _c, bounds) in enumerate(group):
+                scored.append((idx, clipwise[row], bounds))
+        if tail_chunk is not None:
+            idx, chunk, bounds = tail_chunk
+            clipwise, _embed = self._at.inference(chunk[np.newaxis, :])
+            scored.append((idx, np.asarray(clipwise[0], dtype=np.float32), bounds))
+
+        scored.sort(key=lambda t: t[0])
+        all_scores: list[np.ndarray] = [s for _i, s, _b in scored]
+        segment_bounds: list[tuple[float, float]] = [b for _i, _s, b in scored]
 
         if not all_scores:
             return ClassificationResult(
@@ -422,9 +446,16 @@ def precheck_loudness(
     path: str | Path,
     threshold_lufs: float = config.LUFS_SEMANTIC_PRECHECK,
     target_lufs: float = config.LUFS_SEMANTIC_TARGET,
+    lufs_data: dict | None = None,
 ) -> dict:
-    """Pre-check del livello. Se sotto soglia, calcola gain di compensazione."""
-    lufs_data = compute_lufs(path)
+    """Pre-check del livello. Se sotto soglia, calcola gain di compensazione.
+
+    v0.19.2 (A4a addendum performance): accetta `lufs_data` già calcolato
+    dallo stadio tecnico. Prima il precheck rilanciava un secondo ffmpeg
+    ebur128 identico sull'intero file.
+    """
+    if lufs_data is None:
+        lufs_data = compute_lufs(path)
     lufs = lufs_data.get("integrated_lufs")
     if lufs is None:
         return {"requires_normalization": False, "lufs": None,
@@ -477,12 +508,20 @@ def semantic_summary(
     backend: str | None = None,
     enable: bool = True,
     segment_seconds: float = 10.0,
+    lufs_data: dict | None = None,
+    waveform: np.ndarray | None = None,
+    waveform_sr: int | None = None,
 ) -> dict:
     """Orchestrazione completa: precheck + prepare + classify.
 
     Il backend è preso da `config.SEMANTIC_BACKEND` se non specificato.
     Il summary ritornato ha sempre la stessa struttura indipendentemente
     dal backend.
+
+    v0.19.2 (addendum performance): accetta `lufs_data` (evita il secondo
+    ffmpeg) e `waveform`+`waveform_sr` già decodificati dal bundle (evita
+    l'ennesimo load da disco). Il gain di compensazione viene applicato in
+    memoria come faceva `prepare_waveform`.
     """
     if not enable:
         return {"enabled": False, "reason": "disabled"}
@@ -490,12 +529,20 @@ def semantic_summary(
     backend = backend or config.SEMANTIC_BACKEND
     classifier = get_classifier(backend)
 
-    pre = precheck_loudness(path)
-    waveform = prepare_waveform(
-        path, sr=classifier.required_sr, gain_db=pre.get("gain_db", 0.0)
-    )
+    pre = precheck_loudness(path, lufs_data=lufs_data)
+    gain_db = pre.get("gain_db", 0.0)
+    if waveform is not None and waveform_sr == classifier.required_sr:
+        y = waveform
+        if gain_db and abs(gain_db) > 0.01:
+            factor = 10 ** (gain_db / 20.0)
+            y = np.clip(y * factor, -1.0, 1.0)
+        y = y.astype(np.float32, copy=False)
+    else:
+        y = prepare_waveform(
+            path, sr=classifier.required_sr, gain_db=gain_db
+        )
     result = classifier.classify(
-        waveform, sr=classifier.required_sr, segment_seconds=segment_seconds
+        y, sr=classifier.required_sr, segment_seconds=segment_seconds
     )
     return {
         "enabled": True,

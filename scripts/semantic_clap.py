@@ -78,8 +78,17 @@ def _maybe_go_offline() -> None:
     if _os.environ.get("HF_HUB_OFFLINE") is not None:
         return
     hub_dir = Path.home() / ".cache" / "huggingface" / "hub"
-    roberta_cached = any(hub_dir.glob("models--roberta-base*")) if hub_dir.exists() else False
-    if CLAP_CHECKPOINT_FILE.exists() and roberta_cached:
+    if not hub_dir.exists():
+        return
+    # I text branch che laion_clap tocca al load (verificato sulla cache
+    # reale: bert-base-uncased e facebook/bart-base; roberta per i
+    # checkpoint 630k). Basta che uno sia in cache: in caso di miss il
+    # chiamante ritenta online.
+    text_models_cached = any(
+        any(hub_dir.glob(f"models--{name}*"))
+        for name in ("bert-base-uncased", "facebook--bart-base", "roberta-base")
+    )
+    if CLAP_CHECKPOINT_FILE.exists() and text_models_cached:
         _os.environ["HF_HUB_OFFLINE"] = "1"
         _os.environ["_SOUNDSCAPE_SET_HF_OFFLINE"] = "1"
 
@@ -91,12 +100,15 @@ def load_clap_model(device: str | None = None):
         return _CLAP_MODEL_SINGLETON, _CLAP_DEVICE
 
     import os as _os
+    # La guardia offline DEVE precedere l'import di laion_clap/transformers:
+    # huggingface_hub congela le env var (HF_HUB_OFFLINE compresa) al momento
+    # dell'import dei suoi constants.
+    _maybe_go_offline()
     import torch
     import laion_clap
 
     resolved = resolve_device(device or config.SEMANTIC_DEVICE)
     ckpt = str(_ensure_checkpoint())
-    _maybe_go_offline()
 
     # amodel 'HTSAT-base' matcha il checkpoint music_audioset_epoch_15_esc_90
     model = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-base")
@@ -219,22 +231,44 @@ def embed_audio_segments(
     chunk_samples = int(segment_seconds * sr)
     n_chunks = max(1, int(np.ceil(len(waveform) / chunk_samples)))
 
-    bounds: list[tuple[float, float]] = []
-    embeddings: list[np.ndarray] = []
+    # v0.19.2 (A3 addendum performance): batch dei chunk di lunghezza piena
+    # (config.INFERENCE_BATCH_SIZE), coda parziale da sola. Embedding per
+    # chunk invariati (HTSAT in eval mode).
+    full_chunks: list[tuple[int, np.ndarray, tuple[float, float]]] = []
+    tail_chunk: tuple[int, np.ndarray, tuple[float, float]] | None = None
     for i in range(n_chunks):
         a = i * chunk_samples
         b = min(a + chunk_samples, len(waveform))
         chunk = waveform[a:b]
         if len(chunk) < sr * 0.5:
             continue
-        # CLAP vuole shape (1, samples) float32
-        chunk_batch = chunk[np.newaxis, :].astype(np.float32)
-        emb = model.get_audio_embedding_from_data(x=chunk_batch, use_tensor=False)
-        embeddings.append(np.asarray(emb[0], dtype=np.float32))
-        bounds.append((a / sr, b / sr))
+        entry = (i, chunk.astype(np.float32), (a / sr, b / sr))
+        if len(chunk) == chunk_samples:
+            full_chunks.append(entry)
+        else:
+            tail_chunk = entry
 
-    if not embeddings:
+    scored: list[tuple[int, np.ndarray, tuple[float, float]]] = []
+    batch_size = max(1, int(config.INFERENCE_BATCH_SIZE))
+    for start in range(0, len(full_chunks), batch_size):
+        group = full_chunks[start:start + batch_size]
+        batch = np.stack([c for _i, c, _b in group], axis=0)
+        emb = model.get_audio_embedding_from_data(x=batch, use_tensor=False)
+        emb = np.asarray(emb, dtype=np.float32)
+        for row, (idx, _c, bnd) in enumerate(group):
+            scored.append((idx, emb[row], bnd))
+    if tail_chunk is not None:
+        idx, chunk, bnd = tail_chunk
+        emb = model.get_audio_embedding_from_data(
+            x=chunk[np.newaxis, :], use_tensor=False
+        )
+        scored.append((idx, np.asarray(emb[0], dtype=np.float32), bnd))
+
+    if not scored:
         return np.zeros((0, 512), dtype=np.float32), []
+    scored.sort(key=lambda t: t[0])
+    embeddings = [e for _i, e, _b in scored]
+    bounds = [b for _i, _e, b in scored]
     return np.stack(embeddings, axis=0), bounds
 
 

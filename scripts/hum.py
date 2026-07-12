@@ -20,14 +20,22 @@ def hum_check(
     n_fft: int = config.N_FFT_HUM,
     targets_hz: list[int] | None = None,
     bandwidth_hz: float = config.HUM_PEAK_BW,
+    y: "np.ndarray | None" = None,
 ) -> dict:
     """Analisi mirata delle frequenze di rete elettrica e loro armoniche.
 
     FFT ad alta risoluzione, baseline LOCALE nelle bande 30-45 e 70-95 Hz.
+
+    v0.19.2: accetta `y` già mono a `sr_target` (dal bundle di decodifica
+    unica) per evitare l'ennesimo load da disco. Senza `y` il comportamento
+    resta quello storico.
     """
     import librosa
 
-    y, sr = librosa.load(str(path), sr=sr_target, mono=True)
+    if y is None:
+        y, sr = librosa.load(str(path), sr=sr_target, mono=True)
+    else:
+        sr = sr_target
     S = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=n_fft // 4))
     spectrum = np.mean(S, axis=1)
     freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)

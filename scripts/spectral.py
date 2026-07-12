@@ -43,16 +43,20 @@ def compute_bands(spectrum: np.ndarray, freqs: np.ndarray, sr: int) -> dict:
     return bands
 
 
-def _spectral_flux(y: np.ndarray) -> float:
+def _spectral_flux(y: np.ndarray, S: np.ndarray | None = None) -> float:
     """Spectral flux rettificato (half-wave), media sui frame STFT.
 
     Norma L2 delle differenze positive di magnitudine fra frame STFT
     consecutivi (default librosa n_fft=2048, hop=512). Misura quanto lo
     spettro cambia istante per istante: instabilita', attrito, onset.
     Ritorna 0.0 se il segnale ha meno di due frame.
+
+    v0.19.2: accetta la magnitudine `S` precomputata (stessi parametri
+    default librosa) per evitare una STFT ridondante.
     """
     import librosa
-    S = np.abs(librosa.stft(y))
+    if S is None:
+        S = np.abs(librosa.stft(y))
     if S.shape[1] < 2:
         return 0.0
     diff = np.diff(S, axis=1)
@@ -68,14 +72,22 @@ def compute_timbre(y: np.ndarray, sr: int) -> dict:
     librosa.feature.spectral_bandwidth). flux = flusso spettrale
     rettificato (vedi _spectral_flux). Tutte le feature usano i default
     librosa (n_fft=2048, hop=512) per coerenza reciproca.
+
+    v0.19.2 (A4c addendum performance): la magnitudine STFT viene calcolata
+    UNA volta e passata alle feature librosa via `S=`. Prima ogni feature
+    rifaceva la propria STFT identica (5 per chiamata; nella segmentazione
+    strutturale erano ~1900 mini-STFT su un file da 64 minuti). A parità
+    esatta di output: per definizione librosa `feature(y=y)` equivale a
+    `feature(S=np.abs(stft(y)))` con i default n_fft=2048, hop=512.
     """
     import librosa
-    cent = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
-    spread = float(np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr)))
-    rolloff = float(np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=0.85)))
-    flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
+    S = np.abs(librosa.stft(y))  # default n_fft=2048, hop=512
+    cent = float(np.mean(librosa.feature.spectral_centroid(S=S, sr=sr)))
+    spread = float(np.mean(librosa.feature.spectral_bandwidth(S=S, sr=sr)))
+    rolloff = float(np.mean(librosa.feature.spectral_rolloff(S=S, sr=sr, roll_percent=0.85)))
+    flatness = float(np.mean(librosa.feature.spectral_flatness(S=S)))
     zcr = float(np.mean(librosa.feature.zero_crossing_rate(y)))
-    flux = _spectral_flux(y)
+    flux = _spectral_flux(y, S=S)
     return {
         "spectral_centroid_hz": round(cent, 1),
         "spectral_spread_hz": round(spread, 1),
@@ -174,11 +186,19 @@ def compute_bands_schafer_alert(bands: dict,
     }
 
 
-def spectral_summary(y: np.ndarray, sr: int, duration_s: float) -> dict:
+def spectral_summary(y: np.ndarray, sr: int, duration_s: float,
+                     spectrum: np.ndarray | None = None,
+                     freqs: np.ndarray | None = None) -> dict:
     """Orchestrazione: ritorna bande + timbre + peaks + onset + hifi_lofi
     + bands_alert (v0.13.0).
+
+    v0.19.2 (A4c addendum performance): accetta `spectrum`/`freqs` già
+    calcolati (dal chiamante che li riusa anche per i grafici), evitando
+    una seconda STFT n_fft=4096 identica sull'intero file.
     """
-    S, spectrum, freqs = compute_stft_mean(y, sr)
+    if spectrum is None or freqs is None:
+        S, spectrum, freqs = compute_stft_mean(y, sr)
+        del S
     bands = compute_bands(spectrum, freqs, sr)
     timbre = compute_timbre(y, sr)
     peaks = top_peaks(spectrum, freqs)

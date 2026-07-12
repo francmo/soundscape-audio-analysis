@@ -148,6 +148,95 @@ def load_audio_multichannel(path: str | Path, sr: int = config.SR_ANALYSIS) -> d
     }
 
 
+# Formati che libsndfile decodifica in modo affidabile e bit-esatto: per
+# questi il bundle legge il file UNA volta e deriva tutti i sample rate in
+# memoria. I formati lossy (mp3, m4a, ogg) restano sul percorso legacy
+# (load separati) per non cambiare decoder rispetto alle versioni precedenti.
+_BUNDLE_SAFE_EXT = {".wav", ".flac", ".aiff", ".aif"}
+
+
+def load_audio_bundle(
+    path: str | Path,
+    channels_meta: int,
+    want_panns: bool = True,
+    want_clap: bool = True,
+    sr_analysis: int = config.SR_ANALYSIS,
+    sr_hum: int = config.SR_HUM,
+    sr_panns: int | None = None,
+    sr_clap: int = 48000,
+) -> dict | None:
+    """v0.19.2 (A4b addendum performance): una decodifica, tutti i sample rate.
+
+    Prima di questo bundle la pipeline decodificava lo stesso file da disco
+    6-7 volte (multicanale, hum a 8 kHz, PANNs a 32 kHz, CLAP a 48 kHz, due
+    ffmpeg per il LUFS). Qui il file si legge UNA volta a SR nativo e le
+    versioni ricampionate si derivano in memoria con lo stesso resampler
+    (librosa/soxr_hq) che `librosa.load` avrebbe usato, preservando la parità:
+
+    - downmix mono a SR nativo, poi resample -> hum/PANNs/CLAP (identico a
+      `librosa.load(path, sr=X, mono=True)`, che downmixa a nativo e poi
+      ricampiona);
+    - canali separati ricampionati a `sr_analysis` e downmix di quelli come
+      `y` di lavoro (identico a `load_audio_multichannel`).
+
+    Ritorna None se il formato non è nel perimetro sicuro (lossy) o se la
+    lettura fallisce: il chiamante ricade sul percorso legacy per-stadio.
+    """
+    import librosa
+    import soundfile as sf
+
+    path = Path(path)
+    if path.suffix.lower() not in _BUNDLE_SAFE_EXT:
+        return None
+    try:
+        data, sr_native = sf.read(str(path), always_2d=True, dtype="float32")
+    except Exception:
+        return None
+
+    if sr_panns is None:
+        sr_panns = config.PANNS_SR
+
+    def _res(y: np.ndarray, target: int) -> np.ndarray:
+        if sr_native == target:
+            return y.astype(np.float32, copy=False)
+        return librosa.resample(y, orig_sr=sr_native, target_sr=target).astype(np.float32)
+
+    # Downmix a SR nativo: la base per hum/PANNs/CLAP (ordine identico a
+    # librosa.load(mono=True): prima media canali, poi resample).
+    downmix_native = np.mean(data, axis=1).astype(np.float32) if data.shape[1] > 1 else data[:, 0]
+
+    is_multi = channels_meta > 1 and data.shape[1] > 1
+    bundle: dict = {"sr": sr_analysis, "native_sr": sr_native}
+
+    if is_multi:
+        # Percorso multicanale: canali ricampionati singolarmente (come
+        # load_audio_multichannel) e y = media dei canali ricampionati.
+        resampled = [_res(data[:, ch], sr_analysis) for ch in range(data.shape[1])]
+        min_len = min(len(c) for c in resampled)
+        channels = [c[:min_len] for c in resampled]
+        stacked = np.column_stack(channels).astype(np.float32)
+        bundle["mc"] = {
+            "channels": channels,
+            "downmix_mono": np.mean(stacked, axis=1).astype(np.float32),
+            "n_channels": len(channels),
+            "sr": sr_analysis,
+            "layout": detect_layout(len(channels)),
+        }
+        bundle["y"] = bundle["mc"]["downmix_mono"]
+    else:
+        bundle["mc"] = None
+        bundle["y"] = _res(downmix_native, sr_analysis)
+
+    bundle["y_hum"] = _res(downmix_native, sr_hum)
+    if want_panns:
+        bundle["y_panns"] = _res(downmix_native, sr_panns)
+    if want_clap:
+        bundle["y_clap"] = _res(downmix_native, sr_clap)
+
+    del data, downmix_native
+    return bundle
+
+
 def channel_label(idx: int, layout: str) -> str:
     """Etichetta canale secondo layout canonico."""
     layouts = {

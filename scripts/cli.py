@@ -65,14 +65,30 @@ def _analyze_single(
     click.echo(f"\n[1/10] Metadati e caricamento audio: {audio_path.name}")
     meta = io_loader.load_metadata(audio_path)
 
-    is_multi = meta.get("channels", 1) > 1 and multichannel_mode != "downmix-only"
-    if is_multi:
-        mc = io_loader.load_audio_multichannel(audio_path)
-        y = mc["downmix_mono"]
-        sr = mc["sr"]
+    # v0.19.2 (A4b addendum performance): una sola decodifica da disco per i
+    # formati lossless; hum/PANNs/CLAP derivati in memoria a parità esatta
+    # coi load storici. Per i formati fuori perimetro (lossy) bundle=None e
+    # ogni stadio ricade sul proprio load legacy.
+    want_multi = meta.get("channels", 1) > 1 and multichannel_mode != "downmix-only"
+    bundle = io_loader.load_audio_bundle(
+        audio_path, channels_meta=meta.get("channels", 1) if want_multi else 1,
+        want_panns=do_semantic, want_clap=do_clap,
+    )
+
+    if bundle is not None:
+        mc = bundle["mc"]
+        y = bundle["y"]
+        sr = bundle["sr"]
+        is_multi = mc is not None
     else:
-        y, sr = io_loader.load_audio_mono(audio_path)
-        mc = None
+        is_multi = want_multi
+        if is_multi:
+            mc = io_loader.load_audio_multichannel(audio_path)
+            y = mc["downmix_mono"]
+            sr = mc["sr"]
+        else:
+            y, sr = io_loader.load_audio_mono(audio_path)
+            mc = None
 
     duration_s = len(y) / sr
 
@@ -80,10 +96,20 @@ def _analyze_single(
     tech = technical.technical_summary(audio_path, y)
 
     click.echo(f"[3/10] Hum check (baseline locale)")
-    hum_res = hum.hum_check(audio_path)
+    hum_res = hum.hum_check(
+        audio_path, y=bundle.get("y_hum") if bundle else None
+    )
+    if bundle is not None:
+        bundle.pop("y_hum", None)
 
     click.echo(f"[4/10] Spettrale (bande Schafer, feature, onset)")
-    spec = spectral.spectral_summary(y, sr, duration_s)
+    # v0.19.2 (A4c): la STFT 4096 si calcola una volta; spectrum/freqs
+    # vengono riusati anche dai grafici dello stadio 10.
+    _S4096, spectrum_mean, freqs_mean = spectral.compute_stft_mean(y, sr)
+    del _S4096
+    spec = spectral.spectral_summary(
+        y, sr, duration_s, spectrum=spectrum_mean, freqs=freqs_mean
+    )
     from .spectral import hifi_lofi_score
     spec["hifi_lofi"] = hifi_lofi_score(
         tech["levels"]["dynamic_range_db"],
@@ -100,9 +126,16 @@ def _analyze_single(
     if do_semantic:
         backend_name = semantic_backend or config.SEMANTIC_BACKEND
         click.echo(f"[6/10] Semantica {backend_name.upper()} (con pre-check LUFS)")
+        # v0.19.2 (A4a+A4b): riusa il LUFS dello stadio 2 (prima un secondo
+        # ffmpeg identico) e la waveform 32 kHz del bundle (prima un load).
         semantic_res = semantic.semantic_summary(
-            audio_path, backend=backend_name, enable=True
+            audio_path, backend=backend_name, enable=True,
+            lufs_data=tech.get("lufs"),
+            waveform=bundle.get("y_panns") if bundle else None,
+            waveform_sr=config.PANNS_SR if bundle else None,
         )
+        if bundle is not None:
+            bundle.pop("y_panns", None)
 
     # Contestualizza hum sulla base di flatness + top PANNs (v0.5.1):
     # evita falsi positivi su materiale musicale tonale (es. 150 Hz su flauto)
@@ -114,15 +147,20 @@ def _analyze_single(
     if do_clap:
         from . import semantic_clap
         click.echo(f"[7/10] CLAP auto-tagging italiano")
-        # Waveform caricata a 48 kHz per CLAP
-        from .semantic import prepare_waveform
-        clap_waveform = prepare_waveform(audio_path, sr=48000)
+        # Waveform a 48 kHz per CLAP: dal bundle se disponibile (v0.19.2),
+        # altrimenti load legacy.
+        if bundle is not None and bundle.get("y_clap") is not None:
+            clap_waveform = bundle.pop("y_clap")
+        else:
+            from .semantic import prepare_waveform
+            clap_waveform = prepare_waveform(audio_path, sr=48000)
         # v0.6.6: passa classifier (PANNs) per calcolare krause_cross_check
         # dentro academic_hints.
         clap_res = semantic_clap.clap_summary(
             clap_waveform, 48000, enable=True,
             classifier=semantic_res.get("classifier") if do_semantic else None,
         )
+        del clap_waveform  # v0.19.2: ~700 MB su file da 60 min, libera subito
         # v0.5.1: marca tag CLAP speech-related che PANNs non supporta
         # come likely_hallucination. Non rimuove, solo annota.
         # v0.5.2: marca anche i tag italo-specifici con flag geo_specific.
@@ -231,10 +269,11 @@ def _analyze_single(
     graphics_dir = output_dir / "graphics"
     ensure_dir(graphics_dir)
 
-    # v0.19.1 (B4): serve solo lo spettro medio, non la matrice STFT completa.
-    spectrum, freqs = spectral.compute_spectrum_mean(y, sr)
+    # v0.19.2 (A4c): riusa spettro medio e frequenze calcolati allo stadio 4
+    # (prima qui partiva una seconda STFT n_fft=4096 identica).
     plot_paths = plotting.generate_all_plots(
-        y, sr, spectrum, freqs, spec["bands_schafer"], hum_res, graphics_dir, base
+        y, sr, spectrum_mean, freqs_mean, spec["bands_schafer"], hum_res,
+        graphics_dir, base
     )
 
     if known_piece:

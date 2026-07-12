@@ -92,6 +92,13 @@ SCHAFER_BANDS = [
 SEMANTIC_BACKEND = "panns"  # "panns" (default v0.2) | "yamnet" (legacy)
 SEMANTIC_DEVICE = "auto"    # "auto" | "mps" | "cpu" | "cuda"
 
+# v0.19.2 (A3 addendum performance): dimensione batch per l'inferenza
+# PANNs/CLAP sui chunk da 10 s. batch=1 era il collo di bottiglia su MPS
+# (il costo di dispatch per chiamata domina sui file lunghi: 385 forward
+# sequenziali per 64 minuti). I modelli sono in eval mode (BatchNorm su
+# running stats): gli score per chunk non dipendono dal batch.
+INFERENCE_BATCH_SIZE = 8
+
 # YAMNet (legacy)
 YAMNET_URL = "https://tfhub.dev/google/yamnet/1"
 YAMNET_CHUNK_SECONDS = 60

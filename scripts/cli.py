@@ -221,13 +221,18 @@ def _analyze_single(
     if is_multi:
         click.echo(f"[9/10] Analisi multicanale ({mc['n_channels']} canali, layout {mc['layout']})")
         mc_res = multichannel.multichannel_summary(mc)
+        # v0.19.1 (B3 addendum performance): i canali separati non servono
+        # più; liberarli prima dei grafici abbassa il picco RAM (su un file
+        # stereo da 60 min sono ~1,4 GB, il doppio sui quad).
+        mc = None
 
     click.echo(f"[10/10] Grafici e profili")
     base = safe_filename(audio_path.stem)
     graphics_dir = output_dir / "graphics"
     ensure_dir(graphics_dir)
 
-    S_stft, spectrum, freqs = spectral.compute_stft_mean(y, sr)
+    # v0.19.1 (B4): serve solo lo spettro medio, non la matrice STFT completa.
+    spectrum, freqs = spectral.compute_spectrum_mean(y, sr)
     plot_paths = plotting.generate_all_plots(
         y, sr, spectrum, freqs, spec["bands_schafer"], hum_res, graphics_dir, base
     )
@@ -466,17 +471,27 @@ def cli():
                    "compositivo la usa come hint forte e salta la fase di indovinare. "
                    "v0.5.4: utile quando si analizza un brano di repertorio noto e si "
                    "vuole evitare attribuzioni errate del modello.")
+@click.option("--low-impact", "low_impact", is_flag=True, default=False,
+              help="v0.19.1: modalità a basso impatto. Thread CPU ridotti e "
+                   "priorità di processo abbassata, per analisi lunghe che non "
+                   "devono saturare la macchina. Più lenta ma convive col "
+                   "lavoro interattivo.")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 ecoacoustic_backend, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
-                narrative_profile, speech, known_piece, lang):
+                narrative_profile, speech, known_piece, low_impact, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
     semantica (con pre-check LUFS), multicanale se applicabile, confronto con
     profili GRM, grafici, invocazione agente compositivo, PDF finale.
     """
+    from . import runtime
+    if low_impact:
+        runtime.set_low_impact()
+    else:
+        runtime.apply_thread_caps()
     files = list(_iter_audio_paths(path))
     if not files:
         click.echo(click.style("Nessun file audio valido trovato.", fg="red"))
@@ -615,8 +630,11 @@ def init_profiles(overwrite):
               help="Salta la sintesi claude, produce PDF parziale + prompt")
 @click.option("--golden", "golden_path", type=click.Path(exists=True, path_type=Path),
               default=None, help="Path custom al golden report di riferimento")
+@click.option("--low-impact", "low_impact", is_flag=True, default=False,
+              help="v0.19.1: modalità a basso impatto (thread ridotti, priorità "
+                   "abbassata), per run di corpus lunghi senza saturare la macchina.")
 def report_command(folder, output_dir, corpus_title, rerun, yes, model,
-                   no_synth, golden_path):
+                   no_synth, golden_path, low_impact):
     """Report comparativo su un corpus di file audio.
 
     Lancia analyze su tutti i file della cartella (con cache di freschezza),
@@ -624,6 +642,11 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
     prodotta da una sessione Claude Code non interattiva. Infine compone un
     PDF finale in stile ABTEC40.
     """
+    from . import runtime
+    if low_impact:
+        runtime.set_low_impact()
+    else:
+        runtime.apply_thread_caps()
     from . import report_cmd as rc
     rc.run_corpus_report(
         folder=folder,

@@ -387,14 +387,35 @@ class YAMNetClassifier(Classifier):
         )
 
 
+# v0.19.1 (addendum performance 12/07/2026): cache module-level delle istanze.
+# Prima di questa cache un run di corpus ricaricava il checkpoint CNN14
+# (~330 MB) da disco e lo rispediva su MPS per OGNI file analizzato. Il
+# modello è stateless fra classify() successive, quindi il riuso è sicuro;
+# CLAP aveva già lo stesso pattern (_CLAP_MODEL_SINGLETON).
+_CLASSIFIER_CACHE: dict[str, Classifier] = {}
+
+
 def get_classifier(backend: str) -> Classifier:
-    """Factory: ritorna l'istanza di classifier richiesta."""
+    """Factory con cache: ritorna l'istanza di classifier richiesta.
+
+    La stessa istanza viene riusata per tutte le chiamate successive con lo
+    stesso backend (il load lazy del checkpoint avviene una volta sola per
+    processo). `clear_classifier_cache()` per i test.
+    """
     backend = (backend or "").lower()
-    if backend == "panns":
-        return PANNsClassifier()
-    if backend == "yamnet":
-        return YAMNetClassifier()
-    raise ValueError(f"Backend semantico sconosciuto: '{backend}'. Usa 'panns' o 'yamnet'.")
+    if backend not in ("panns", "yamnet"):
+        raise ValueError(f"Backend semantico sconosciuto: '{backend}'. Usa 'panns' o 'yamnet'.")
+    cached = _CLASSIFIER_CACHE.get(backend)
+    if cached is not None:
+        return cached
+    clf: Classifier = PANNsClassifier() if backend == "panns" else YAMNetClassifier()
+    _CLASSIFIER_CACHE[backend] = clf
+    return clf
+
+
+def clear_classifier_cache() -> None:
+    """Svuota la cache dei classifier (per i test)."""
+    _CLASSIFIER_CACHE.clear()
 
 
 def precheck_loudness(

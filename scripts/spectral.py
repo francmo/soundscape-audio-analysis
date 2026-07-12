@@ -17,6 +17,16 @@ def compute_stft_mean(y: np.ndarray, sr: int, n_fft: int = config.N_FFT_ANALYSIS
     return S, spectrum, freqs
 
 
+def compute_spectrum_mean(y: np.ndarray, sr: int, n_fft: int = config.N_FFT_ANALYSIS,
+                           hop: int = config.HOP_LENGTH):
+    """v0.19.1 (B4 addendum performance): come compute_stft_mean ma senza
+    ritornare la matrice S completa (600+ MB su file da 60 min), per i punti
+    dove serve solo lo spettro medio (grafici dello stadio 10)."""
+    _S, spectrum, freqs = compute_stft_mean(y, sr, n_fft=n_fft, hop=hop)
+    del _S
+    return spectrum, freqs
+
+
 def compute_bands(spectrum: np.ndarray, freqs: np.ndarray, sr: int) -> dict:
     """Distribuzione energia nelle 7 bande Schafer."""
     bands = {}

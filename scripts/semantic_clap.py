@@ -65,24 +65,57 @@ def _ensure_checkpoint() -> Path:
     return CLAP_CHECKPOINT_FILE
 
 
+def _maybe_go_offline() -> None:
+    """v0.19.1 (C7 addendum performance): evita round-trip HF Hub inutili.
+
+    Quando il checkpoint CLAP e la cache Hugging Face del text encoder
+    (roberta-base) esistono già in locale, imposta HF_HUB_OFFLINE per il
+    processo, eliminando il warning "unauthenticated requests" e la latenza
+    di rete a ogni load. Rispetta un valore già impostato dall'utente.
+    Se il load dovesse comunque fallire, `load_clap_model` ritenta online.
+    """
+    import os as _os
+    if _os.environ.get("HF_HUB_OFFLINE") is not None:
+        return
+    hub_dir = Path.home() / ".cache" / "huggingface" / "hub"
+    roberta_cached = any(hub_dir.glob("models--roberta-base*")) if hub_dir.exists() else False
+    if CLAP_CHECKPOINT_FILE.exists() and roberta_cached:
+        _os.environ["HF_HUB_OFFLINE"] = "1"
+        _os.environ["_SOUNDSCAPE_SET_HF_OFFLINE"] = "1"
+
+
 def load_clap_model(device: str | None = None):
     """Carica il modello CLAP in singleton. Idempotente."""
     global _CLAP_MODEL_SINGLETON, _CLAP_DEVICE
     if _CLAP_MODEL_SINGLETON is not None:
         return _CLAP_MODEL_SINGLETON, _CLAP_DEVICE
 
+    import os as _os
     import torch
     import laion_clap
 
     resolved = resolve_device(device or config.SEMANTIC_DEVICE)
     ckpt = str(_ensure_checkpoint())
+    _maybe_go_offline()
 
     # amodel 'HTSAT-base' matcha il checkpoint music_audioset_epoch_15_esc_90
     model = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-base")
     try:
         model.load_ckpt(ckpt)
     except Exception as e:
-        raise RuntimeError(f"Impossibile caricare checkpoint CLAP da {ckpt}: {e}") from e
+        # Se l'offline mode l'abbiamo imposto noi e il load è fallito
+        # (cache HF incompleta), ritenta una volta online.
+        if _os.environ.pop("_SOUNDSCAPE_SET_HF_OFFLINE", None):
+            _os.environ.pop("HF_HUB_OFFLINE", None)
+            model = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-base")
+            try:
+                model.load_ckpt(ckpt)
+            except Exception as e2:
+                raise RuntimeError(
+                    f"Impossibile caricare checkpoint CLAP da {ckpt}: {e2}"
+                ) from e2
+        else:
+            raise RuntimeError(f"Impossibile caricare checkpoint CLAP da {ckpt}: {e}") from e
 
     # Sposta su device se possibile. laion_clap non espone API pulita per
     # il move, quindi usiamo l'attributo .model interno.
@@ -106,12 +139,64 @@ def load_vocabulary(path: Path | None = None) -> dict:
     return load_json(path or VOCAB_PATH)
 
 
-def embed_prompts(prompts: list[str], device: str | None = None) -> np.ndarray:
-    """Forward testuale di CLAP su una lista di prompt."""
+# v0.19.1 (A2 addendum performance): cache degli embedding dei prompt.
+# Gli embedding testuali dipendono solo da (testi dei prompt, checkpoint):
+# prima di questa cache il forward del text encoder sui 251 prompt del
+# vocabolario veniva rifatto identico per OGNI file di un corpus. La cache
+# in memoria copre il processo corrente; quella su disco (npz accanto al
+# checkpoint, chiave = hash md5 di testi+modello) copre i run successivi e
+# si invalida da sola a ogni modifica del vocabolario.
+_PROMPT_EMB_CACHE: dict[str, np.ndarray] = {}
+
+
+def _prompts_cache_key(prompts: list[str]) -> str:
+    import hashlib
+    h = hashlib.md5()
+    h.update(config.CLAP_MODEL_NAME.encode("utf-8"))
+    for p in prompts:
+        h.update(b"\x00")
+        h.update(p.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _prompt_emb_disk_path(key: str) -> Path:
+    return CLAP_CHECKPOINT_DIR / f"prompt_embeddings_{key}.npz"
+
+
+def embed_prompts(prompts: list[str], device: str | None = None,
+                  use_cache: bool = True) -> np.ndarray:
+    """Forward testuale di CLAP su una lista di prompt, con cache (v0.19.1)."""
+    if not use_cache:
+        model, dev = load_clap_model(device=device)
+        embeddings = model.get_text_embedding(prompts, use_tensor=False)
+        return np.asarray(embeddings, dtype=np.float32)
+
+    key = _prompts_cache_key(prompts)
+    cached = _PROMPT_EMB_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    disk_path = _prompt_emb_disk_path(key)
+    if disk_path.exists():
+        try:
+            with np.load(disk_path) as data:
+                emb = np.asarray(data["embeddings"], dtype=np.float32)
+            if emb.ndim == 2 and emb.shape[0] == len(prompts):
+                _PROMPT_EMB_CACHE[key] = emb
+                return emb
+        except Exception:
+            pass  # cache su disco corrotta: si rigenera sotto
+
     model, dev = load_clap_model(device=device)
-    # L'API laion_clap: get_text_embedding(list_of_strings)
     embeddings = model.get_text_embedding(prompts, use_tensor=False)
-    return np.asarray(embeddings, dtype=np.float32)
+    emb = np.asarray(embeddings, dtype=np.float32)
+    _PROMPT_EMB_CACHE[key] = emb
+    try:
+        CLAP_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(disk_path, embeddings=emb)
+    except Exception:
+        pass  # la cache su disco è best-effort
+    return emb
 
 
 def embed_audio_segments(

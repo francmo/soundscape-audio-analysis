@@ -125,10 +125,14 @@ class SpeechTranscriber:
         if self._model is not None:
             return
         from faster_whisper import WhisperModel
+        from .runtime import effective_threads
+        # v0.19.1 (A6 addendum performance): allinea CTranslate2 al cap
+        # thread della pipeline invece del suo default.
         self._model = WhisperModel(
             self._model_name,
             device=self._device,
             compute_type=self._compute_type,
+            cpu_threads=effective_threads(),
         )
         log_device(
             f"Whisper {self._model_name}",

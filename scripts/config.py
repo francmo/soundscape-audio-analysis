@@ -18,6 +18,24 @@ N_FFT_ANALYSIS = 4096
 N_FFT_HUM = 16384
 HOP_LENGTH = 1024
 
+# Governo dei thread CPU (v0.19.1, addendum performance 12/07/2026).
+# 0 = auto: max(4, core fisici - 4), lascia respiro al sistema durante i run
+# lunghi. Il cap viene applicato da runtime.apply_thread_caps() all'avvio
+# della pipeline (env BLAS/OpenMP + torch.set_num_threads). Un valore
+# esplicito > 0 forza quel numero di thread.
+CPU_THREADS = 0
+# Modalita' a basso impatto (--low-impact): thread ridotti e priorita' di
+# processo abbassata (nice +10), per far convivere un run di corpus lungo
+# col lavoro interattivo senza saturare la macchina.
+LOW_IMPACT_THREADS = 4
+LOW_IMPACT_NICE = 10
+
+# Decimazione dei grafici (v0.19.1). Oltre queste colonne l'immagine non
+# guadagna nulla (un PNG a dpi 130 largo 12 pollici ha ~1560 px) e matplotlib
+# alloca GB su file lunghi (85 M punti per 64 min a 22050 Hz).
+PLOT_WAVEFORM_MAX_COLS = 4000
+PLOT_SPECTROGRAM_MAX_FRAMES = 4000
+
 # Hum check
 HUM_TARGET_HZ = [50, 60, 100, 120, 150, 180]
 HUM_PEAK_BW = 2.0

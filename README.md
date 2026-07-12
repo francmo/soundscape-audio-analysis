@@ -102,7 +102,7 @@ In formato BibTeX:
                    per l'analisi tecnica e compositiva di soundscape
                    e musica elettroacustica}},
   year         = {2026},
-  version      = {v0.19.0},
+  version      = {v0.19.1},
   url          = {https://github.com/francmo/soundscape-audio-analysis},
   note         = {Codice Apache 2.0, vocabolari e tassonomie CC BY 4.0}
 }

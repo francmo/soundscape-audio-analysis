@@ -17,11 +17,39 @@ def _style(ax):
         spine.set_color(config.PALETTE["muted_gray"])
 
 
+def _minmax_envelope(y: np.ndarray, max_cols: int) -> tuple[np.ndarray, np.ndarray]:
+    """v0.19.1 (B1 addendum performance): inviluppo min/max per colonna.
+
+    Riduce la waveform a `max_cols` coppie (min, max) per blocco di campioni.
+    Preserva esattamente i picchi (il max globale resta il max di una
+    colonna), che è ciò che l'occhio legge in una forma d'onda.
+    """
+    n = len(y)
+    hop = int(np.ceil(n / max_cols))
+    n_cols = int(np.ceil(n / hop))
+    pad = n_cols * hop - n
+    if pad:
+        # pad col valore di bordo per non introdurre zeri spuri nel minimo
+        y = np.concatenate([y, np.full(pad, y[-1], dtype=y.dtype)])
+    blocks = y.reshape(n_cols, hop)
+    return blocks.min(axis=1), blocks.max(axis=1)
+
+
 def plot_waveform(y: np.ndarray, sr: int, out_path: Path, title: str = "Forma d'onda") -> Path:
     dur = len(y) / sr
-    t = np.linspace(0, dur, len(y))
     fig, ax = plt.subplots(figsize=(12, 2.5))
-    ax.plot(t, y, linewidth=0.3, color=config.PALETTE["dark"])
+    max_cols = config.PLOT_WAVEFORM_MAX_COLS
+    if len(y) > max_cols * 2:
+        # v0.19.1: su file lunghi matplotlib con tutti i campioni (85 M punti
+        # per 64 min a 22050 Hz) alloca GB per un PNG largo ~1500 px.
+        # L'inviluppo min/max per pixel è visivamente equivalente.
+        env_min, env_max = _minmax_envelope(y, max_cols)
+        t = np.linspace(0, dur, len(env_min))
+        ax.fill_between(t, env_min, env_max, color=config.PALETTE["dark"],
+                        linewidth=0.0)
+    else:
+        t = np.linspace(0, dur, len(y))
+        ax.plot(t, y, linewidth=0.3, color=config.PALETTE["dark"])
     ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
     ax.set_xlabel("Tempo (s)")
     ax.set_ylabel("Ampiezza")
@@ -35,11 +63,27 @@ def plot_waveform(y: np.ndarray, sr: int, out_path: Path, title: str = "Forma d'
 
 def plot_spectrogram(y: np.ndarray, sr: int, out_path: Path, title: str = "Spettrogramma") -> Path:
     import librosa, librosa.display
-    D = librosa.amplitude_to_db(
-        np.abs(librosa.stft(y, n_fft=2048, hop_length=512)), ref=np.max
-    )
+    S = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
+    hop_effective = 512
+    max_frames = config.PLOT_SPECTROGRAM_MAX_FRAMES
+    if S.shape[1] > max_frames:
+        # v0.19.1 (B2 addendum performance): oltre ~4000 colonne il PNG non
+        # guadagna nulla e pcolormesh alloca GB (1025 x 166k celle su 64 min).
+        # Aggregazione per max di blocchi di frame: preserva i transienti
+        # meglio della media. L'hop effettivo cresce del fattore di
+        # decimazione, così specshow mantiene l'asse tempo corretto.
+        factor = int(np.ceil(S.shape[1] / max_frames))
+        n_frames = S.shape[1]
+        pad = (-n_frames) % factor
+        if pad:
+            S = np.pad(S, ((0, 0), (0, pad)), mode="edge")
+        S = S.reshape(S.shape[0], -1, factor).max(axis=2)
+        hop_effective = 512 * factor
+    D = librosa.amplitude_to_db(S, ref=np.max)
+    del S
     fig, ax = plt.subplots(figsize=(12, 4))
-    img = librosa.display.specshow(D, sr=sr, hop_length=512, x_axis="time", y_axis="log",
+    img = librosa.display.specshow(D, sr=sr, hop_length=hop_effective,
+                                    x_axis="time", y_axis="log",
                                     ax=ax, cmap="magma")
     ax.set_title(title, fontsize=10, color=config.PALETTE["dark"])
     fig.colorbar(img, ax=ax, format="%+2.0f dB")

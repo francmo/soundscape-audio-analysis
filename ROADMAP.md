@@ -3,12 +3,12 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.19.0 (2 luglio 2026)
-**Test suite**: suite leggera 275 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
+**Versione corrente**: 0.19.1 (12 luglio 2026)
+**Test suite**: suite leggera 290 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
 **Branch**: `main`
-**Aggiornamento ROADMAP**: 2 luglio 2026 (riallineamento post-audit, testata
-aggiornata, piano statistico rinumerato v0.20-v0.23, esiti nell'addendum 02/07;
-per commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
+**Aggiornamento ROADMAP**: 12 luglio 2026 (nuovo addendum performance/memoria
+con piano v0.19.1-v0.19.3, prima tranche shippata come v0.19.1; per commit e
+release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ---
 
@@ -96,6 +96,20 @@ per commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 ---
 
 ## Pianificato (priorita' decrescente)
+
+### Addendum 12/07/2026 - performance, memoria e robustezza del corpus
+
+Diagnosi e piano in `ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`,
+nato dal run di corpus del 12/07 che ha saturato la macchina (RSS 27 GB,
+swap, 800% CPU, sintesi in doppio timeout). Tre tranche: **v0.19.1 SHIPPATA**
+(grafici decimati, cache classifier e prompt CLAP, cap thread, `--low-impact`,
+HF offline); **v0.19.2** compute-once (LUFS singolo, decodifica unica, STFT
+condivise, batching inferenza, structure senza mini-STFT) con parity test;
+**v0.19.3** robustezza corpus (timeout sintesi 900 s, `report-resynth`,
+fallback modello, telemetria tempi per stadio, stima calibrata, cache con
+version check). Gli esperimenti semantici dell'addendum (calibrazione soglie
+dai dati `compare`, A/B checkpoint CLAP, ensemble template, max-pooling)
+seguono il protocollo statistico v0.20+.
 
 ### Addendum 02/07/2026 - esiti audit, v0.18.1/v0.19.0 e rinumerazione
 

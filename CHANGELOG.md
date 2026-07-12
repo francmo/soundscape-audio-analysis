@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.19.1] - 2026-07-12
+
+Prima tranche dell'addendum performance (`ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`): i fix a rischio zero su memoria, modelli e thread. Driver: il run di corpus del 12/07 (10 file, 196,7 min, 2 file oltre i 60 min) ha saturato la macchina di sviluppo, picco RSS 27 GB con swap thrashing, 800% CPU, load average 30. Nessun cambiamento ai valori numerici prodotti: la release tocca solo caching, rendering dei grafici e governo delle risorse.
+
+### Prestazioni e memoria
+
+- **Grafici decimati** (`plotting.py`): `plot_waveform` disegna un inviluppo min/max per pixel (`_minmax_envelope`, cap `config.PLOT_WAVEFORM_MAX_COLS = 4000`) invece di passare a matplotlib tutti i campioni (85 M punti per 64 min a 22050 Hz, GB di vertici per un PNG largo ~1500 px); `plot_spectrogram` aggrega i frame STFT per max di blocco sopra `config.PLOT_SPECTROGRAM_MAX_FRAMES = 4000` colonne, con hop effettivo scalato per mantenere corretto l'asse tempo di specshow. Era la causa principale del picco RAM. Resa visiva equivalente (il max di blocco preserva picchi e transienti).
+- **Cache dei classifier** (`semantic.py`): `get_classifier` riusa l'istanza per backend (`_CLASSIFIER_CACHE`, `clear_classifier_cache()` per i test). Prima il checkpoint CNN14 (~330 MB) veniva riletto da disco e rispedito su MPS per ogni file del corpus; CLAP aveva già il singleton, PANNs no.
+- **Cache degli embedding dei prompt CLAP** (`semantic_clap.py::embed_prompts`): il forward del text encoder sui 251 prompt del vocabolario, identico per ogni file, ora si paga una volta per processo (cache in memoria) e una volta per versione del vocabolario (cache npz in `~/.cache/clap/prompt_embeddings_<md5>.npz`, chiave su testi+modello, invalidazione automatica a ogni modifica del vocabolario). Bypass con `use_cache=False`.
+- **Rilascio dell'audio multicanale** (`cli.py`): i canali separati vengono liberati dopo l'analisi multicanale (stadio 9), prima dei grafici; su un file stereo da 60 min sono ~1,4 GB di picco in meno, il doppio sui quad.
+- **Niente matrici inutilizzate**: nuovo `spectral.compute_spectrum_mean` per lo stadio grafici, che non ritorna la matrice STFT completa (prima `S_stft` veniva calcolata e mai usata).
+
+### Governo delle risorse
+
+- **Nuovo modulo `scripts/runtime.py`**: `apply_thread_caps()` imposta i pool BLAS/OpenMP (env, con setdefault per rispettare l'utente) e `torch.set_num_threads`; default `config.CPU_THREADS = 0` (auto: core - 4, minimo 4). Applicato all'ingresso di `analyze` e `report`. Prima nessun cap: 800% CPU osservati.
+- **Flag `--low-impact`** su `analyze` e `report`: thread a `config.LOW_IMPACT_THREADS = 4` e priorità di processo abbassata (`nice +10`), per run lunghi che devono convivere col lavoro interattivo.
+- **faster-whisper allineato al cap** (`speech.py`): `WhisperModel(..., cpu_threads=runtime.effective_threads())` invece del default CTranslate2.
+
+### Rete
+
+- **HF Hub offline quando tutto è in cache** (`semantic_clap._maybe_go_offline`): se checkpoint CLAP e cache roberta-base esistono già in locale, il load imposta `HF_HUB_OFFLINE=1` (eliminati warning "unauthenticated requests" e round-trip di rete); rispetta un valore già impostato dall'utente e ritenta online una volta se il load offline fallisce.
+
+### Test
+
+- Nuovi: `tests/test_perf_v0191.py` (15): cap thread ed env, cache classifier per identità, cache embedding prompt (memoria, disco, chiave su testo, bypass), guardia offline, inviluppo min/max (estremi preservati), waveform e spettrogramma decimati su segnali lunghi. Suite leggera: 290 passed, 1 skipped, zero regressioni.
+
 ## [0.19.0] - 2026-07-02
 
 Chiude il verso mancante del loop con la PWA Annotation Atelier (la "v0.5" della roadmap della PWA, rimasta aperta dal 22/06) e l'addendum ROADMAP del 19/06 sulla timeline PANNs citabile. Additivo, output esistenti invariati.

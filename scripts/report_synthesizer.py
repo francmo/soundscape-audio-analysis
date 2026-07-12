@@ -41,14 +41,23 @@ def invoke_corpus_synthesizer(
     model: str = "opus",
     timeout_s: int = 300,
     retries: int = 1,
+    fallback_model: str | None = None,
 ) -> dict:
     """Invoca `claude -p` non interattivo via stdin.
+
+    v0.19.3 (C1+C3 addendum performance): retry adattivo. Se un tentativo
+    scade per timeout, il successivo raddoppia il timeout e (se
+    `fallback_model` è indicato) passa al modello di riserva, più veloce.
+    Stessa lezione della v0.6.2 sull'agente (300 s erano strutturalmente
+    stretti per leggere 11 file e scrivere 2000-4000 parole).
 
     Ritorna dict con chiavi:
         text          markdown dell'agente (sanitizzato) o placeholder
         fallback_used True se `claude` manca o è fallito
         error         stringa di errore se fallback_used
-        model         nome modello usato
+        model         modello EFFETTIVO dell'ultimo tentativo
+        model_requested  modello richiesto in origine
+        attempts      numero di tentativi eseguiti
         elapsed_s     tempo di esecuzione
     """
     import time
@@ -59,20 +68,26 @@ def invoke_corpus_synthesizer(
             "fallback_used": True,
             "error": "claude non nel PATH",
             "model": model,
+            "model_requested": model,
+            "attempts": 0,
             "elapsed_s": 0.0,
         }
 
-    cmd = ["claude", "-p", "--model", model]
     last_error: str | None = None
     t0 = time.time()
+    current_model = model
+    current_timeout = timeout_s
+    attempts = 0
     for attempt in range(retries + 1):
+        attempts += 1
+        cmd = ["claude", "-p", "--model", current_model]
         try:
             result = subprocess.run(
                 cmd,
                 input=prompt_text,
                 capture_output=True,
                 text=True,
-                timeout=timeout_s,
+                timeout=current_timeout,
                 encoding="utf-8",
             )
             if result.returncode == 0 and result.stdout.strip():
@@ -83,12 +98,18 @@ def invoke_corpus_synthesizer(
                     "text": clean,
                     "fallback_used": False,
                     "error": None,
-                    "model": model,
+                    "model": current_model,
+                    "model_requested": model,
+                    "attempts": attempts,
                     "elapsed_s": round(time.time() - t0, 1),
                 }
             last_error = result.stderr.strip() or "output vuoto"
         except subprocess.TimeoutExpired:
-            last_error = f"timeout dopo {timeout_s}s"
+            last_error = f"timeout dopo {current_timeout}s (model {current_model})"
+            # Retry adattivo: timeout raddoppiato, modello di riserva se dato.
+            current_timeout = current_timeout * 2
+            if fallback_model and current_model != fallback_model:
+                current_model = fallback_model
         except Exception as e:
             last_error = str(e)
 
@@ -96,12 +117,14 @@ def invoke_corpus_synthesizer(
         "text": (
             "La sintesi automatica del corpus non è stata generata. "
             f"Errore: {last_error}. "
-            f"Il prompt completo è stato salvato; puoi invocarlo manualmente con: "
-            f"claude -p --model {model} < corpus_synth_prompt.md"
+            f"Il prompt completo è stato salvato; puoi rilanciare solo la "
+            f"sintesi con: soundscape report-resynth <cartella del report>"
         ),
         "fallback_used": True,
         "error": last_error,
-        "model": model,
+        "model": current_model,
+        "model_requested": model,
+        "attempts": attempts,
         "elapsed_s": round(time.time() - t0, 1),
     }
 

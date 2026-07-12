@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.19.3] - 2026-07-12
+
+Terza e ultima tranche dell'addendum performance 12/07: robustezza del run di corpus. Driver: nel run del 12/07 la sintesi claude era scaduta due volte a 300 s e il PDF era uscito senza sintesi, con recupero manuale a due comandi e nessuna telemetria per capire dove fosse andato il tempo.
+
+### Robustezza della sintesi
+
+- **Timeout adeguato e retry adattivo** (`report_synthesizer.invoke_corpus_synthesizer`): `CORPUS_REPORT_TIMEOUT_S` 300 -> 900 (stessa lezione della v0.6.2 sull'agente); se un tentativo scade, il retry raddoppia il timeout e passa al modello di riserva (`CORPUS_REPORT_FALLBACK_MODEL = "sonnet"`). Il risultato riporta modello effettivo, modello richiesto e numero di tentativi (`model`, `model_requested`, `attempts`), registrati anche in `corpus_run_metadata.json` (`synth_model`, `synth_attempts`). Flag `--synth-timeout` sul comando `report`.
+- **Nuovo comando `soundscape report-resynth <cartella>`** (`report_cmd.resynth_corpus`): rilancia SOLO la sintesi dal `corpus_synth_prompt.md` salvato e rigenera il PDF via merge, in un comando idempotente. Prima il recupero richiedeva `claude -p` manuale + `report-merge`. Il messaggio di fallback della sintesi ora indica questo comando.
+
+### Telemetria e stima
+
+- **Tempi per stadio nel summary** (`cli._analyze_single`): nuovo campo additivo `timings` (secondi per load, levels_lufs, hum, spectral, ecoacoustic, semantic, clap, speech, multichannel, plots, structure, narrative) e riga di log compatta "Tempi (s): ...". Nel loop del corpus, log del tempo totale per file. Base empirica per le ottimizzazioni future e per i costi computazionali citabili nel paper. `tests/parity_compare.py` ignora il campo.
+- **Stima di durata calibrata** (`_require_confirm`): la formula storica (`durata x 1,2 + 2 min`) sovrastimava di ~10 volte; la nuova usa coefficienti calibrati sul run reale del 12/07 (`CORPUS_EST_AUDIO_FACTOR = 0.12`, `CORPUS_EST_PER_FILE_MIN = 0.4`, `CORPUS_EST_SYNTH_MIN = 8`).
+
+### Cache
+
+- **Version check sulla cache dei summary** (`_summary_cache_valid`): oltre agli mtime, il summary deve provenire dalla stessa minor della skill (le patch della stessa minor sono a parità numerica dichiarata). Prima un summary di una versione precedente veniva riusato in silenzio dentro un report nuovo; ora viene rianalizzato con messaggio esplicito.
+
+### Test
+
+- Nuovi: `tests/test_perf_v0193.py` (6): retry con timeout raddoppiato e switch di modello, fallback senza modello di riserva, hint report-resynth a esaurimento tentativi, resynth end-to-end su cartella finta, resynth senza metadata, stima calibrata sotto soglia. Aggiornati i test della cache (version corrente, mismatch di minor, patch della stessa minor). Suite leggera: 304 passed, 1 skipped.
+
 ## [0.19.2] - 2026-07-12
 
 Seconda tranche dell'addendum performance 12/07: compute-once. La pipeline decodificava lo stesso file da disco 6-7 volte e ricalcolava la stessa STFT circa 20 volte per file; ora decodifica una volta e condivide. Parità verificata sul corpus reale: summary identici al baseline v0.19.0 su tutti i valori renderizzati (vedi Note di parità).

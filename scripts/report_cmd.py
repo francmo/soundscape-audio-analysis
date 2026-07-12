@@ -52,13 +52,35 @@ def _estimate_duration_s(path: Path) -> float:
 
 
 def _summary_cache_valid(audio_path: Path, summary_path: Path) -> bool:
-    """Ritorna True se il summary esiste ed è più recente del file audio."""
+    """Ritorna True se il summary esiste, è più recente del file audio ed è
+    stato prodotto da una versione compatibile della skill.
+
+    v0.19.3 (C6 addendum performance): il solo confronto di mtime riusava in
+    silenzio summary di versioni precedenti dentro report nuovi. Il check di
+    versione confronta major.minor (le patch della stessa minor sono a
+    parità numerica dichiarata, quindi la cache resta valida).
+    """
     if not summary_path.exists():
         return False
     try:
-        return summary_path.stat().st_mtime >= audio_path.stat().st_mtime
+        if summary_path.stat().st_mtime < audio_path.stat().st_mtime:
+            return False
     except OSError:
         return False
+    try:
+        data = load_json(summary_path)
+        summary_ver = str(data.get("version", ""))
+        current_ver = skill_version()
+        if summary_ver.rsplit(".", 1)[0] != current_ver.rsplit(".", 1)[0]:
+            click.echo(click.style(
+                f"  cache invalidata: summary v{summary_ver or '?'} "
+                f"contro skill v{current_ver}",
+                fg="yellow",
+            ))
+            return False
+    except Exception:
+        return False
+    return True
 
 
 def _require_confirm(n_files: int, total_duration_s: float, yes: bool) -> bool:
@@ -69,8 +91,11 @@ def _require_confirm(n_files: int, total_duration_s: float, yes: bool) -> bool:
     if (n_files <= config.CORPUS_CONFIRM_THRESHOLD_FILES
             and total_minutes <= config.CORPUS_CONFIRM_THRESHOLD_MINUTES):
         return True
-    # Stima tempo di elaborazione: ~ durata_audio + 2 min di sintesi
-    est_min = total_minutes * 1.2 + 2
+    # v0.19.3 (C5): stima calibrata sul run reale del 12/07 (la formula
+    # storica durata x 1,2 + 2 sovrastimava di ~10 volte).
+    est_min = (total_minutes * config.CORPUS_EST_AUDIO_FACTOR
+               + n_files * config.CORPUS_EST_PER_FILE_MIN
+               + config.CORPUS_EST_SYNTH_MIN)
     click.echo()
     click.echo(click.style(
         f"Trovati {n_files} file audio, durata totale {total_minutes:.1f} min.",
@@ -91,6 +116,7 @@ def _run_or_reuse_analyze(
 ) -> list[Path]:
     """Per ogni file: riusa summary se cache valida, altrimenti lancia
     _analyze_single. Ritorna la lista dei summary JSON prodotti (o trovati)."""
+    import time
     from .cli import _analyze_single
 
     summary_paths: list[Path] = []
@@ -110,6 +136,7 @@ def _run_or_reuse_analyze(
             f"[{i}/{len(audio_paths)}] Analisi di {audio.name}",
             fg="cyan", bold=True,
         ))
+        t_file = time.perf_counter()
         try:
             r = _analyze_single(
                 audio_path=audio,
@@ -129,6 +156,11 @@ def _run_or_reuse_analyze(
             summary_json = r.get("summary_json")
             if summary_json:
                 summary_paths.append(Path(summary_json))
+            # v0.19.3 (C4): tempo totale per file nel log del corpus.
+            click.echo(click.style(
+                f"  completato in {time.perf_counter() - t_file:.0f}s",
+                fg="green",
+            ))
         except Exception as e:
             click.echo(click.style(
                 f"  ERRORE su {audio.name}: {e}", fg="red"
@@ -147,6 +179,7 @@ def run_corpus_report(
     model: str = "opus",
     no_synth: bool = False,
     golden_path: Path | None = None,
+    synth_timeout_s: int | None = None,
 ) -> dict:
     """Orchestrazione completa del comando `report`.
 
@@ -246,12 +279,14 @@ def run_corpus_report(
     }
     synth_md_path: Path | None = None
     if not no_synth:
+        timeout_s = synth_timeout_s or config.CORPUS_REPORT_TIMEOUT_S
         click.echo(f"Invocazione sintesi via claude (model {model}, timeout "
-                   f"{config.CORPUS_REPORT_TIMEOUT_S}s)...")
+                   f"{timeout_s}s, riserva {config.CORPUS_REPORT_FALLBACK_MODEL})...")
         synth_result = rs.invoke_corpus_synthesizer(
             prompt_text,
             model=model,
-            timeout_s=config.CORPUS_REPORT_TIMEOUT_S,
+            timeout_s=timeout_s,
+            fallback_model=config.CORPUS_REPORT_FALLBACK_MODEL,
         )
         if synth_result["fallback_used"]:
             click.echo(click.style(
@@ -262,8 +297,11 @@ def run_corpus_report(
             corpus_slug = safe_filename(corpus_title).replace(" ", "_")
             synth_md_path = output_dir / f"REPORT_ANALISI_{corpus_slug}.md"
             synth_md_path.write_text(synth_result["text"], encoding="utf-8")
+            used = synth_result.get("model", model)
+            note_model = "" if used == model else f", modello effettivo {used}"
             click.echo(click.style(
-                f"  Sintesi markdown: {synth_md_path} ({synth_result['elapsed_s']}s)",
+                f"  Sintesi markdown: {synth_md_path} "
+                f"({synth_result['elapsed_s']}s{note_model})",
                 fg="green",
             ))
     else:
@@ -309,11 +347,79 @@ def run_corpus_report(
         "pdf_path": str(pdf_path),
         "synth_fallback": synth_result["fallback_used"],
         "synth_error": synth_result.get("error"),
+        "synth_model": synth_result.get("model"),
+        "synth_attempts": synth_result.get("attempts"),
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
     run_meta_path = output_dir / "corpus_run_metadata.json"
     dump_json(run_meta, run_meta_path)
 
+    return run_meta
+
+
+def resynth_corpus(
+    report_dir: Path,
+    model: str | None = None,
+    timeout_s: int | None = None,
+) -> dict:
+    """v0.19.3 (C2 addendum performance): rilancia SOLO la sintesi claude di
+    un report corpus esistente e la integra nel PDF, in un comando.
+
+    Prima il recupero di una sintesi fallita richiedeva due passi manuali
+    (claude -p sul prompt salvato + report-merge). Qui: legge
+    `corpus_run_metadata.json`, rilancia la sintesi dal prompt salvato,
+    scrive `REPORT_ANALISI_<slug>.md` e rigenera il PDF via
+    `merge_markdown_into_pdf`. Idempotente: si può rilanciare più volte.
+    """
+    from . import report_synthesizer as rs2
+
+    report_dir = Path(report_dir).resolve()
+    meta_path = report_dir / "corpus_run_metadata.json"
+    if not meta_path.exists():
+        raise click.ClickException(
+            f"Metadata di run non trovati in {meta_path}. "
+            "Serve la cartella di output di un comando `report` precedente."
+        )
+    run_meta = load_json(meta_path)
+
+    prompt_path = Path(run_meta.get("prompt_path", report_dir / "corpus_synth_prompt.md"))
+    if not prompt_path.exists():
+        raise click.ClickException(f"Prompt di sintesi non trovato: {prompt_path}")
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    model = model or run_meta.get("synth_model") or config.CORPUS_REPORT_MODEL
+    timeout_s = timeout_s or config.CORPUS_REPORT_TIMEOUT_S
+    click.echo(f"Invocazione sintesi via claude (model {model}, timeout "
+               f"{timeout_s}s, riserva {config.CORPUS_REPORT_FALLBACK_MODEL})...")
+    synth_result = rs2.invoke_corpus_synthesizer(
+        prompt_text,
+        model=model,
+        timeout_s=timeout_s,
+        fallback_model=config.CORPUS_REPORT_FALLBACK_MODEL,
+    )
+    if synth_result["fallback_used"]:
+        raise click.ClickException(
+            f"Sintesi non completata: {synth_result['error']}"
+        )
+
+    corpus_slug = safe_filename(run_meta["corpus_title"]).replace(" ", "_")
+    synth_md_path = report_dir / f"REPORT_ANALISI_{corpus_slug}.md"
+    synth_md_path.write_text(synth_result["text"], encoding="utf-8")
+    click.echo(click.style(
+        f"Sintesi markdown: {synth_md_path} ({synth_result['elapsed_s']}s, "
+        f"model {synth_result.get('model')})", fg="green",
+    ))
+
+    pdf_path = Path(run_meta["pdf_path"])
+    merge_markdown_into_pdf(pdf_path, synth_md_path)
+
+    # Aggiorna i metadata con l'esito della nuova sintesi
+    run_meta = load_json(meta_path)
+    run_meta["synth_model"] = synth_result.get("model")
+    run_meta["synth_attempts"] = synth_result.get("attempts")
+    dump_json(run_meta, meta_path)
+
+    click.echo(click.style(f"PDF aggiornato: {pdf_path}", fg="green", bold=True))
     return run_meta
 
 

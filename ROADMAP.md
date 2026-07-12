@@ -3,12 +3,12 @@
 Documento unico per orientarsi: cosa fa la skill oggi, cosa e' pianificato,
 chi fa cosa. Aggiornato a ogni release.
 
-**Versione corrente**: 0.19.2 (12 luglio 2026)
-**Test suite**: suite leggera 296 passed + 1 skipped (32 deselezionati, i test con modelli PANNs/CLAP reali)
+**Versione corrente**: 0.19.3 (12 luglio 2026)
+**Test suite**: suite leggera 304 passed + 1 skipped (34 deselezionati, i test con modelli PANNs/CLAP reali)
 **Branch**: `main`
-**Aggiornamento ROADMAP**: 12 luglio 2026 (nuovo addendum performance/memoria
-con piano v0.19.1-v0.19.3, tranche v0.19.1 e v0.19.2 shippate; per commit e
-release fa fede CHANGELOG.md, qui niente hash che invecchiano)
+**Aggiornamento ROADMAP**: 12 luglio 2026 (addendum performance/memoria
+eseguito per intero: v0.19.1, v0.19.2 e v0.19.3 shippate in giornata; per
+commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ---
 
@@ -101,15 +101,18 @@ release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 Diagnosi e piano in `ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`,
 nato dal run di corpus del 12/07 che ha saturato la macchina (RSS 27 GB,
-swap, 800% CPU, sintesi in doppio timeout). Tre tranche: **v0.19.1 e v0.19.2 SHIPPATE**
-(grafici decimati, cache classifier e prompt CLAP, cap thread, `--low-impact`,
-HF offline); **v0.19.2** compute-once (LUFS singolo, decodifica unica, STFT
-condivise, batching inferenza, structure senza mini-STFT) con parity test;
-**v0.19.3** robustezza corpus (timeout sintesi 900 s, `report-resynth`,
-fallback modello, telemetria tempi per stadio, stima calibrata, cache con
-version check). Gli esperimenti semantici dell'addendum (calibrazione soglie
-dai dati `compare`, A/B checkpoint CLAP, ensemble template, max-pooling)
-seguono il protocollo statistico v0.20+.
+swap, 800% CPU, sintesi in doppio timeout). Tre tranche, TUTTE SHIPPATE
+il 12/07:
+**v0.19.1** (grafici decimati, cache classifier e prompt CLAP, cap thread,
+`--low-impact`, HF offline);
+**v0.19.2** (compute-once: LUFS singolo, decodifica unica, STFT condivise,
+batching inferenza; parity verificato sul corpus reale);
+**v0.19.3** (robustezza corpus: timeout sintesi 900 s con retry adattivo e
+riserva sonnet, `report-resynth`, telemetria tempi per stadio, stima
+calibrata, cache con version check). Gli esperimenti semantici dell'addendum
+(calibrazione soglie dai dati `compare`, A/B checkpoint CLAP, ensemble
+template, max-pooling) restano aperti e seguono il protocollo statistico
+v0.20+.
 
 ### Addendum 02/07/2026 - esiti audit, v0.18.1/v0.19.0 e rinumerazione
 

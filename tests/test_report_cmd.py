@@ -30,15 +30,43 @@ def test_iter_audio_paths(tmp_path):
 
 
 def test_summary_cache_valid_true(tmp_path):
+    from scripts.version import skill_version
     audio = tmp_path / "file.wav"
     audio.write_bytes(b"x")
     summary = tmp_path / "file_summary.json"
-    summary.write_text("{}")
+    # v0.19.3: la cache richiede anche la versione compatibile (major.minor)
+    summary.write_text(json.dumps({"version": skill_version()}))
     # Summary è appena scritto quindi è più recente del wav
     import time
     time.sleep(0.01)
     import os
     os.utime(summary, None)  # forza mtime corrente
+    assert rc._summary_cache_valid(audio, summary)
+
+
+def test_summary_cache_invalid_on_version_mismatch(tmp_path):
+    """v0.19.3 (C6): un summary di una minor precedente non viene riusato."""
+    audio = tmp_path / "file.wav"
+    audio.write_bytes(b"x")
+    summary = tmp_path / "file_summary.json"
+    summary.write_text(json.dumps({"version": "0.18.0"}))
+    import time, os
+    time.sleep(0.01)
+    os.utime(summary, None)
+    assert not rc._summary_cache_valid(audio, summary)
+
+
+def test_summary_cache_valid_same_minor_different_patch(tmp_path):
+    """Le patch della stessa minor sono a parità numerica: cache valida."""
+    from scripts.version import skill_version
+    audio = tmp_path / "file.wav"
+    audio.write_bytes(b"x")
+    summary = tmp_path / "file_summary.json"
+    minor = skill_version().rsplit(".", 1)[0]
+    summary.write_text(json.dumps({"version": f"{minor}.0"}))
+    import time, os
+    time.sleep(0.01)
+    os.utime(summary, None)
     assert rc._summary_cache_valid(audio, summary)
 
 

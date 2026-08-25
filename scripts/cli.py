@@ -246,6 +246,20 @@ def _analyze_single(
             eco["ndsi"], semantic_res.get("classifier")
         )
 
+    # v0.20.0 (P2 addendum heritage): gate di dominio interpretativo. Campo
+    # additivo eco["domain_gate"]; quando scatta, marca fuori dominio anche
+    # la triade Krause negli academic_hints CLAP. I valori non cambiano.
+    if eco:
+        gate = ecoacoustic.domain_gate(
+            semantic_res.get("classifier") if do_semantic else None
+        )
+        eco["domain_gate"] = gate
+        hints = clap_res.get("academic_hints") if isinstance(clap_res, dict) else None
+        if gate.get("out_of_domain") and isinstance(hints, dict) \
+                and isinstance(hints.get("krause"), dict):
+            hints["krause"]["out_of_domain"] = True
+            hints["krause"]["out_of_domain_reason"] = gate.get("reason", "")
+
     # v0.13.0 (Intervento C dossier P&T): risoluzione tri-stato di --speech.
     # do_transcribe_speech in input puo' essere True (forzato ON via --speech),
     # False (forzato OFF via --no-speech), None (auto: decide la skill in base

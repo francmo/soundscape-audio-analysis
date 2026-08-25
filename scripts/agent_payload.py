@@ -269,6 +269,10 @@ def build_agent_payload(summary: dict, narrative_md: str) -> dict:
             "ndsi": (eco.get("ndsi") or {}).get("ndsi"),
             "h_total": (eco.get("h_entropy") or {}).get("h_total"),
             "bi": eco.get("bi"),
+            # v0.20.0 (P2 addendum heritage): l'agente compositivo deve
+            # sapere quando gli indici sono fuori dominio interpretativo,
+            # per non costruirci letture ecologiche sopra.
+            "domain_gate": eco.get("domain_gate"),
         },
         "classifier": {
             "model_name": classifier.get("model_name"),

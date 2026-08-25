@@ -165,6 +165,31 @@ SPEECH_KEYWORDS_IT = {
     "discussione di vicini", "vociare di",
 }
 
+# v0.20.0 (P2 addendum heritage, lezione 4): gate di dominio interpretativo
+# per indici ecoacustici e mappature Krause. Scatta quando il top-1 PANNs e'
+# una classe antropofonica di palinsesto (Music/Speech) con score almeno
+# DOMAIN_GATE_TOP_SCORE_MIN e nessuna label naturale (bio o geofonia) supera
+# DOMAIN_GATE_NATURE_SCORE_MIN nei top globali. Non altera i valori: annota.
+DOMAIN_GATE_ANTHROPO_TOP = {"Music", "Speech"}
+DOMAIN_GATE_TOP_SCORE_MIN = 0.15
+DOMAIN_GATE_NATURE_SCORE_MIN = 0.05
+# Label AudioSet di supporto naturale: biofonia (animali) e geofonia
+# (acqua, vento, pioggia). Se una di queste e' presente il materiale non e'
+# palinsesto puro e gli indici restano nel loro dominio interpretativo.
+NATURE_SUPPORT_LABELS = {
+    # biofonia
+    "Animal", "Wild animals", "Bird", "Bird vocalization, bird call, tweet",
+    "Chirp, tweet", "Bird flight, flapping wings", "Pigeon, dove", "Crow",
+    "Owl", "Fowl", "Insect", "Cricket", "Mosquito", "Fly, housefly",
+    "Bee, wasp, etc.", "Frog", "Croak", "Livestock, farm animals, working animals",
+    "Canidae, dogs, wolves", "Rodents, rats, mice", "Dog", "Bark", "Cat",
+    "Meow", "Sheep", "Goat", "Cattle, bovinae", "Roaring cats (lions, tigers)",
+    # geofonia
+    "Wind", "Rustling leaves", "Wind noise (microphone)", "Rain", "Raindrop",
+    "Rain on surface", "Thunderstorm", "Thunder", "Water", "Stream",
+    "Waterfall", "Ocean", "Waves, surf", "Gurgling",
+}
+
 # v0.20.0 (lezione 9 addendum heritage): soglie di avviso del valutatore di
 # vocabolari `vocab-eval` sulla concentrazione delle predizioni top-1.
 # L'effetto calamita misurato sul campo: un vocabolario che spinge il 58%

@@ -173,6 +173,17 @@ def _build_eco_table(eco: dict, styles) -> Table:
         [PARAMETRI["h_entropy"] + " temporale", _fmt(h.get("h_temporal"), "{:.4f}"), ""],
         [PARAMETRI["bi"], _fmt(eco.get("bi"), "{:.2f}"), "area banda biofonica (2-8 kHz)"],
     ]
+    # v0.20.0 (P2 addendum heritage): quando il gate di dominio e' scattato
+    # la tabella lo dice in corpo, non in una nota separata che si perde.
+    gate = eco.get("domain_gate") or {}
+    if gate.get("out_of_domain"):
+        rows.append([
+            "Dominio interpretativo",
+            "fuori dominio",
+            f"materiale antropofonico di palinsesto "
+            f"({_esc(str(gate.get('dominant_class', '')))}): indici "
+            f"calcolati ma non interpretabili nel quadro ambientale",
+        ])
     return report_styles.styled_table(rows, [60 * mm, 45 * mm, 55 * mm], styles)
 
 
@@ -606,7 +617,16 @@ def _format_academic_hints(hints: dict) -> str:
             f"{k} {int(v * 100)}%"
             for k, v in sorted(krause.items(), key=lambda kv: -kv[1])
         )
-        parts.append(f"<b>Distribuzione Krause:</b> {krause_str}")
+        # v0.20.0 (P2 addendum heritage): fuori dominio dichiarato inline.
+        if hints.get("krause", {}).get("out_of_domain"):
+            parts.append(
+                f"<b>Distribuzione Krause:</b> {krause_str} "
+                f"<i>(fuori dominio: materiale di palinsesto, la triade "
+                f"biofonia/antropofonia/geofonia non e' interpretabile "
+                f"qui)</i>"
+            )
+        else:
+            parts.append(f"<b>Distribuzione Krause:</b> {krause_str}")
     schafer_present = hints.get("schafer_role", {}).get("present", [])
     if schafer_present:
         parts.append(

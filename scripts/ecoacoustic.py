@@ -85,6 +85,59 @@ def compute_ndsi(
     }
 
 
+def domain_gate(classifier: dict | None) -> dict:
+    """Gate di dominio interpretativo per gli indici ecoacustici (v0.20.0,
+    P2 addendum heritage, lezione 4).
+
+    ACI, NDSI, BI e H, e con loro le famiglie Krause, nascono per
+    registrazioni ambientali. Su materiale broadcast o comunque
+    antropofonico puro (radio, musica, parlato trasmesso) restano
+    calcolabili ma non interpretabili nel quadro per cui sono nati: nella
+    campagna radio religiose 08/2026 NDSI e' risultato negativo su tutte
+    le tradizioni, ovvio a posteriori perche' e' tutta antropofonia
+    trasmessa, e nessuna avvertenza lo diceva. Il gate scatta quando PANNs
+    vede Music o Speech dominante senza alcun supporto biofonico o
+    geofonico nei top globali. Non altera i valori: annota, sul modello
+    dell'interpretation_hint dell'hum e del caveat NDSI.
+
+    Il gate dichiara il fuori-dominio e si ferma li': non prova a dire
+    quale contesto culturale sia, perche' l'ontologia AudioSet non ha le
+    categorie. L'unica classe devozionale non cristiana e' `Mantra`, che
+    e' indu', e sul campo la recitazione coranica e' finita in `Mantra`
+    132 volte su 265: le classi AudioSet possono dire parlato o cantato,
+    mai la tradizione.
+    """
+    top = (classifier or {}).get("top_global") or []
+    if not top:
+        return {"out_of_domain": False,
+                "reason": "classificatore assente, gate non valutabile"}
+    name0 = top[0].get("name") or ""
+    score0 = float(top[0].get("score", 0) or 0)
+    if name0 not in config.DOMAIN_GATE_ANTHROPO_TOP \
+            or score0 < config.DOMAIN_GATE_TOP_SCORE_MIN:
+        return {"out_of_domain": False, "reason": ""}
+    naturale = [t.get("name") for t in top
+                if t.get("name") in config.NATURE_SUPPORT_LABELS
+                and float(t.get("score", 0) or 0)
+                >= config.DOMAIN_GATE_NATURE_SCORE_MIN]
+    if naturale:
+        return {"out_of_domain": False,
+                "reason": "supporto naturale presente: "
+                          + ", ".join(str(n) for n in naturale[:3])}
+    return {
+        "out_of_domain": True,
+        "dominant_class": name0,
+        "dominant_score": round(score0, 3),
+        "reason": (
+            f"PANNs indica materiale antropofonico di palinsesto dominante "
+            f"({name0} {score0:.2f}) senza supporto biofonico o geofonico: "
+            f"gli indici ecoacustici e le famiglie Krause restano calcolati "
+            f"ma non sono interpretabili nel quadro ambientale per cui "
+            f"nascono."
+        ),
+    }
+
+
 def ndsi_water_caveat(ndsi_result: dict, classifier: dict | None) -> dict:
     """Caveat NDSI per ambienti idrici (v0.14, INT-5).
 

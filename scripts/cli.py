@@ -797,6 +797,80 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
     )
 
 
+@cli.command("vocab-eval")
+@click.argument("summaries_dir", type=click.Path(path_type=Path))
+@click.option("--vocab", "vocab_path", required=True,
+              type=click.Path(path_type=Path),
+              help="Vocabolario da valutare (JSON, schema di --clap-vocab).")
+@click.option("--vocab-b", "vocab_b_path", default=None,
+              type=click.Path(path_type=Path),
+              help="Secondo vocabolario per il confronto appaiato "
+                   "(McNemar esatto su top-1 e top-3).")
+@click.option("--truth", "truth_path", required=True,
+              type=click.Path(path_type=Path),
+              help="CSV di verita': colonne id/chiave/stazione ed "
+                   "etichetta/label/tradizione. La chiave puo' essere lo stem "
+                   "esatto del file o un suo prefisso.")
+@click.option("--eval-da", "eval_da", default=None, metavar="AAAAMMGG",
+              help="Valuta solo i campioni con data >= AAAAMMGG nel path "
+                   "(protocollo antioverfitting). Obbligatorio questo o "
+                   "--eval-match.")
+@click.option("--eval-match", "eval_match", default=None, metavar="REGEX",
+              help="Valuta solo i summary il cui path relativo matcha la "
+                   "regex. Alternativa a --eval-da.")
+@click.option("--sheet", "sheet_path", default=None,
+              type=click.Path(path_type=Path),
+              help="Scheda di ascolto compilata (CSV id/stazione + forma) per "
+                   "la stratificazione con annotazione umana; senza scheda si "
+                   "usa l'indicatore di forma da PANNs (kappa 0,842 sul gold "
+                   "della campagna heritage).")
+@click.option("--durata-min", "durata_min", type=float, default=None,
+              metavar="SEC",
+              help="Esclude i campioni sotto questa durata; la quota fuori "
+                   "criterio viene riportata comunque, anche senza il flag.")
+@click.option("--output", "output_dir", type=click.Path(path_type=Path),
+              default=None,
+              help="Cartella delle tabelle (default: <summaries_dir>/vocab_eval/)")
+def vocab_eval_command(summaries_dir, vocab_path, vocab_b_path, truth_path,
+                       eval_da, eval_match, sheet_path, durata_min, output_dir):
+    """Valuta uno o due vocabolari CLAP su un corpus di summary (v0.20.0).
+
+    Legge gli embedding audio gia' presenti nei summary (nessuna ricattura),
+    applica il protocollo della campagna heritage: split obbligatorio fra
+    sviluppo e valutazione, stratificazione per forma acustica, McNemar
+    esatto appaiato fra due vocabolari, misura della concentrazione delle
+    predizioni (effetto calamita), quota dei campioni fuori criterio di
+    durata, rifiuto di confrontare embedding di checkpoint diversi.
+    """
+    from .vocab_eval import VocabEvalError, run_vocab_eval
+    summaries_dir = _resolve_user_path(summaries_dir)
+    vocab_path = _resolve_user_path(vocab_path)
+    vocab_b_path = _resolve_user_path(vocab_b_path)
+    truth_path = _resolve_user_path(truth_path)
+    sheet_path = _resolve_user_path(sheet_path)
+    output_dir = _resolve_user_path(output_dir)
+    if not Path(summaries_dir).is_dir():
+        raise click.UsageError(f"cartella summary non trovata: {summaries_dir}")
+    for etichetta, p in (("--vocab", vocab_path), ("--vocab-b", vocab_b_path),
+                         ("--truth", truth_path), ("--sheet", sheet_path)):
+        if p is not None and not Path(p).is_file():
+            raise click.UsageError(f"{etichetta}: file non trovato: {p}")
+    try:
+        run_vocab_eval(
+            summaries_dir=summaries_dir,
+            vocab_path=vocab_path,
+            truth_path=truth_path,
+            vocab_b_path=vocab_b_path,
+            eval_da=eval_da,
+            eval_match=eval_match,
+            sheet_path=sheet_path,
+            durata_min=durata_min,
+            output_dir=output_dir,
+        )
+    except VocabEvalError as e:
+        raise click.ClickException(str(e))
+
+
 @cli.command("report-merge")
 @click.argument("pdf_path", type=click.Path(exists=True, path_type=Path))
 @click.argument("markdown_path", type=click.Path(exists=True, path_type=Path))

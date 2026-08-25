@@ -165,6 +165,15 @@ SPEECH_KEYWORDS_IT = {
     "discussione di vicini", "vociare di",
 }
 
+# v0.20.0 (lezione 9 addendum heritage): soglie di avviso del valutatore di
+# vocabolari `vocab-eval` sulla concentrazione delle predizioni top-1.
+# L'effetto calamita misurato sul campo: un vocabolario che spinge il 58%
+# dei campioni cantabili su una sola classe con precisione 9%. Quota della
+# classe modale sopra la soglia, o entropia normalizzata sotto, produce un
+# WARNING esplicito (mai silenzioso, mai bloccante).
+VOCAB_EVAL_MODAL_SHARE_WARN = 0.50
+VOCAB_EVAL_ENTROPY_NORM_WARN = 0.60
+
 # v0.20.0 (lezione 2 addendum heritage): la guardia anti-allucinazione
 # riconosceva i prompt vocali solo in italiano, quindi un vocabolario utente
 # in inglese ("a male voice reciting...") la attraversava in silenzio.

@@ -97,6 +97,23 @@ commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ## Pianificato (priorita' decrescente)
 
+### Addendum 14/08/2026 - caso heritage, radio religiose (in lavorazione, v0.20.0)
+
+Lezioni e backlog in `ROADMAP_ADDENDUM_caso_heritage_2026-08-14.md`, nato dal
+primo impiego su un dominio lontano dal progetto, campagna batch su 63 flussi
+radio religiosi di dieci tradizioni conclusa il 24/08 (81 sessioni, 4.570
+analisi riuscite, zero fallite) con valutazione fuori campione definitiva su
+4.216 campioni (lezioni 9 e 10). Revisione in corso dal 25/08 verso la
+**v0.20.0**: P1 vocabolario CLAP innestabile multi-vocabolario con guardia
+anti-allucinazione generalizzata, impronte del checkpoint nel summary e cache
+dei prompt con chiave per modello; famiglia di valutazione `vocab-eval`
+(split obbligatorio, McNemar esatto, stratificazione per forma, misura della
+concentrazione); P2 gate di dominio per indici ecoacustici e mappature
+Krause; P4 papercut (path del wrapper, `--no-graphics`, modalita' cartella
+documentata); P3 estrazione tabellare `tabulate`. Le tappe del piano
+statistico gia' numerate v0.20-v0.23 slittano di conseguenza a v0.21-v0.24
+(rinumerazione del 25/08/2026).
+
 ### Addendum 12/07/2026 - performance, memoria e robustezza del corpus
 
 Diagnosi e piano in `ROADMAP_ADDENDUM_performance_memoria_2026-07-12.md`,

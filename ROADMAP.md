@@ -21,7 +21,12 @@ commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 > comando `enrich` (v0.16-v0.17), il benchmark con similarità semantica e
 > rigore statistico (v0.18), la release di igiene post-audit (v0.18.1), il
 > confronto annotazioni umane vs skill (`compare`) e la timeline PANNs
-> citabile nel PDF (v0.19). Dettagli release per release in CHANGELOG.md.
+> citabile nel PDF (v0.19), le tre tranche performance/robustezza
+> (v0.19.1-v0.19.3), e la revisione heritage (v0.20.0): vocabolario CLAP
+> innestabile `--clap-vocab`, impronte del checkpoint e cache per modello,
+> guardia anti-allucinazione multilingue, `vocab-eval`, gate di dominio
+> ecoacustico, `tabulate`, `--no-graphics`, path del chiamante nel wrapper.
+> Dettagli release per release in CHANGELOG.md.
 
 ### Capabilities attive
 
@@ -85,6 +90,8 @@ commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 | CLAP | `scripts/semantic_clap.py` |
 | Mapping accademico CLAP | `scripts/clap_mapping.py` + `references/clap_academic_mapping_it.json` |
 | Vocabolario CLAP | `references/clap_vocabulary_it.json` |
+| Vocabolari utente e valutazione (v0.20) | `scripts/vocab_eval.py` (comando `vocab-eval`), loader in `scripts/semantic_clap.py::load_user_vocabulary` |
+| Estrazione tabellare corpus (v0.20) | `scripts/corpus_csv.py` (comando `tabulate`) |
 | Speech | `scripts/speech.py` |
 | Narrativa segmentata | `scripts/narrative.py` |
 | Agente compositivo | `scripts/agent_bridge.py`, `templates/agent_prompt.md`, `~/.claude/agents/soundscape-composer-analyst.md` |
@@ -97,22 +104,33 @@ commit e release fa fede CHANGELOG.md, qui niente hash che invecchiano)
 
 ## Pianificato (priorita' decrescente)
 
-### Addendum 14/08/2026 - caso heritage, radio religiose (in lavorazione, v0.20.0)
+### Addendum 14/08/2026 - caso heritage, radio religiose (v0.20.0 SHIPPATA il 25/08)
 
 Lezioni e backlog in `ROADMAP_ADDENDUM_caso_heritage_2026-08-14.md`, nato dal
 primo impiego su un dominio lontano dal progetto, campagna batch su 63 flussi
 radio religiosi di dieci tradizioni conclusa il 24/08 (81 sessioni, 4.570
 analisi riuscite, zero fallite) con valutazione fuori campione definitiva su
-4.216 campioni (lezioni 9 e 10). Revisione in corso dal 25/08 verso la
-**v0.20.0**: P1 vocabolario CLAP innestabile multi-vocabolario con guardia
+4.216 campioni (lezioni 9 e 10). **v0.20.0 SHIPPATA il 25/08** con: P1
+vocabolario CLAP innestabile multi-vocabolario (`--clap-vocab`) con guardia
 anti-allucinazione generalizzata, impronte del checkpoint nel summary e cache
 dei prompt con chiave per modello; famiglia di valutazione `vocab-eval`
 (split obbligatorio, McNemar esatto, stratificazione per forma, misura della
 concentrazione); P2 gate di dominio per indici ecoacustici e mappature
 Krause; P4 papercut (path del wrapper, `--no-graphics`, modalita' cartella
-documentata); P3 estrazione tabellare `tabulate`. Le tappe del piano
-statistico gia' numerate v0.20-v0.23 slittano di conseguenza a v0.21-v0.24
-(rinumerazione del 25/08/2026).
+documentata); P3 estrazione tabellare `tabulate`. Non regressione verificata
+contro le tabelle congelate della campagna (diff zero) e con embed_prompts
+bit-identica sul modello reale. Dettagli release in CHANGELOG.
+
+Resta aperto, con decisione preparata: **trascrizione su Metal via
+mlx_whisper**. Misura del 25/08 su campioni reali del corpus, stessi pesi
+large-v3: 89,2 s -> 10,2 s (EN, 8,7x) e 34,3 s -> 7,0 s (IT, 4,9x) rispetto
+a faster-whisper su CPU, testi sovrapponibili. L'integrazione richiede la
+dipendenza mlx nel venv e un backend switch in `speech.py`
+(`--speech-backend mlx|faster`, default faster): candidata a una v0.20.x
+dedicata, non inclusa nella v0.20.0 per tenere stabili le dipendenze.
+
+Le tappe del piano statistico gia' numerate v0.20-v0.23 slittano di
+conseguenza a v0.21-v0.24 (rinumerazione del 25/08/2026).
 
 ### Addendum 12/07/2026 - performance, memoria e robustezza del corpus
 

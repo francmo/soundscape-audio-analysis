@@ -63,6 +63,12 @@ bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape benchmark <audio>
 # Confronto annotazione umana dell'Atelier vs analisi della skill (v0.19.0)
 bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape compare <annotation.json> <summary.json> [--pdf out.pdf]
 
+# Valutazione onesta di vocabolari CLAP su un corpus di summary (v0.20.0)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape vocab-eval <summaries_dir> --vocab <voc.json> [--vocab-b <voc2.json>] --truth <truth.csv> --eval-da AAAAMMGG [--sheet <scheda.csv>] [--durata-min 54]
+
+# Estrazione tabellare da un corpus di summary a CSV (v0.20.0)
+bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape tabulate <summaries_dir> [--group-by-parent | --group-map <mappa.csv>]
+
 # Versione corrente (fonte unica: pyproject.toml)
 bash ~/.claude/skills/soundscape-audio-analysis/bin/soundscape version
 ```
@@ -82,7 +88,27 @@ Flag principali:
 - `--multichannel=auto|split|downmix-only`  gestione file multicanale (default auto)
 - `--agent/--no-agent`          invocazione agente compositivo (default attivo)
 - `--speech`                    trascrizione dialoghi via faster-whisper + Silero VAD, con traduzione italiana automatica (opt-in, v0.5.0)
+- `--clap-vocab=<file.json>`    vocabolario CLAP dell'utente, ripetibile (v0.20.0): blocchi additivi in `clap.custom_vocabularies` del summary, stessi embedding audio del vocabolario nativo
+- `--no-graphics`               salta tutti i grafici PNG, solo con `--report json` (v0.20.0)
 - `--lang=it|en`                lingua output (default it)
+
+### Batch su corpus (via canonica, v0.20.0)
+
+Per analizzare una cartella in batch la via canonica è UNA invocazione sulla
+cartella, non un loop esterno file per file: i modelli (PANNs, CLAP, cache
+degli embedding dei prompt) si caricano una volta per processo e vengono
+riusati su ogni file. Il caso heritage pagava il load 59 volte a sessione
+iterando da uno script esterno.
+
+```bash
+bash bin/soundscape analyze <cartella> --report json --no-agent \
+    --narrative none --no-graphics --low-impact --output <dir>
+```
+
+`--no-graphics` evita PNG che un client batch in genere scarta (76 s a
+sessione misurati sul campo); i summary JSON con gli embedding CLAP restano
+la base per `vocab-eval`, `tabulate`, `report` e per ri-taggare offline con
+vocabolari nuovi senza ricatturare l'audio.
 
 Sub-comandi per gestione profili GRM:
 

@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.20.0] - 2026-08-25
+
+Revisione nata dal caso heritage (`ROADMAP_ADDENDUM_caso_heritage_2026-08-14.md`, lezioni 1-10): primo impiego prolungato su un dominio lontano dal progetto, campagna batch su 63 flussi radio religiosi di dieci tradizioni chiusa il 24/08 con 81 sessioni, 4.570 analisi riuscite e zero fallite, e valutazione fuori campione definitiva su 4.216 campioni. Ogni intervento nasce da un limite misurato sul materiale vero. Interfaccia `analyze` storica invariata, campi del summary esistenti intatti, modifiche solo additive, contratto interchange v1.2 non toccato.
+
+### Vocabolario CLAP innestabile e multi-vocabolario (P1, lezioni 1-3)
+
+- **`--clap-vocab <file.json>` ripetibile** su `analyze` e `report`: N vocabolari dell'utente applicati agli stessi embedding audio del vocabolario nativo (un solo forward audio, costo marginale solo testuale, in cache). Risultati in `clap.custom_vocabularies` (additivo): nome, versione, lingua, SHA-256 del contenuto, impronta del checkpoint, `top_global`, `timeline`, embedding dei prompt float16.
+- **`load_user_vocabulary`**: schema minimo `{"prompts": [{"text"|"prompt": ...}]}`, id autogenerati, metadati liberi per prompt (`category`, `vocal`, `tradizione`), top-level `name`/`version`/`language` (alias `lingua`). I vocabolari del caso heritage si caricano senza conversioni.
+- Le mappature accademiche (Schafer, Krause, Schaeffer, Smalley) restano legate al vocabolario nativo: un vocabolario custom non ci passa.
+
+### Impronta del checkpoint e cache per modello (lezione 10)
+
+- Blocco `clap` del summary: campi additivi **`checkpoint_file`** e **`checkpoint_sha256`**. Ogni summary dichiara con quale modello sono nati i suoi embedding.
+- **Chiave della cache degli embedding dei prompt** (`_prompts_cache_key`): ora include l'impronta SHA-256 del checkpoint oltre al nome (`prompt_embeddings_v2_<key>.npz`); un checkpoint sostituito a parita' di nome non viene mai servito dalla cache di quello vecchio. Sweep esplicito delle cache legacy senza impronta alla prima scrittura. `checkpoint_fingerprint()` memoizzata su (path, size, mtime).
+
+### Guardia anti-allucinazione generalizzata (lezione 2)
+
+- `mark_speech_hallucinations` accetta keyword per lingua (nuova `SPEECH_KEYWORDS_EN`, scelta evitando le collisioni note: "song" matcherebbe "birdsong") e il metadato per prompt `vocal`, che vince sulle keyword. Lingua non coperta e nessun metadato: la guardia si dichiara `inattiva` nel blocco invece di passare in silenzio. Percorso nativo italiano invariato.
+
+### Famiglia di valutazione: `soundscape vocab-eval` (P5/lezioni 8-9)
+
+- Nuovo sottocomando e modulo `scripts/vocab_eval.py` (solo stdlib+numpy), industrializza i tre prototipi della campagna: **split obbligatorio** sviluppo/valutazione con rifiuto esplicito (`--eval-da`/`--eval-match`, controllo su `dev_until` del vocabolario), **stratificazione per forma acustica** (indicatore proxy a zero parametri da PANNs, kappa 0,842 contro l'ascolto umano, oppure `--sheet` compilata con accordo scheda-proxy riportato), **McNemar esatto appaiato** su top-1 e top-3 per strato, **concentrazione delle predizioni** (quota della classe modale ed entropia normalizzata, WARNING sopra soglia: l'effetto calamita misurato spingeva il 58% dei cantabili su una classe con precisione 9%), **quota fuori criterio di durata** sempre riportata, **rifiuto di confrontare embedding di checkpoint diversi** (warning sui summary pre-0.20 senza impronta).
+
+### Gate di dominio interpretativo (P2, lezione 4)
+
+- `ecoacoustic.domain_gate`: quando PANNs vede Music o Speech dominante (score >= 0,15) senza supporto biofonico o geofonico, `eco["domain_gate"]` dichiara il fuori dominio e la triade Krause negli `academic_hints` viene marcata `out_of_domain`. I valori degli indici non cambiano. Tabella ecoacustica del PDF e prosa degli hints lo dichiarano inline; il payload dell'agente compositivo porta il gate. Motivo misurato: NDSI negativo su tutte le tradizioni senza avvertenza, e AudioSet senza categorie devozionali non cristiane (recitazione coranica in `Mantra` 132/265), le classi possono dire parlato o cantato, mai la tradizione.
+
+### Estrazione tabellare: `soundscape tabulate` (P3, lezione 7)
+
+- Nuovo sottocomando e modulo `scripts/corpus_csv.py`: corpus di summary -> CSV per campione (livelli, LUFS, timbro, onset, indici con gate, top PANNs e top-5, top CLAP, Krause e Schafer dominanti, versione skill, impronta checkpoint) e aggregato mediano per gruppo (`--group-by-parent` o `--group-map` con match per prefisso). Summary illeggibili contati, mai saltati in silenzio.
+
+### Papercut operativi (P4, lezioni 5-6)
+
+- **`--no-graphics`** su `analyze` (solo `--report json`): salta tutti i PNG; nel caso heritage costavano 76 s a sessione e il client batch li cancellava subito.
+- **Path relativi del wrapper**: `bin/soundscape` esporta `SOUNDSCAPE_CALLER_CWD` e il CLI risolve argomento, `--output`, `--clap-vocab`, `--truth`, `--sheet` contro la cwd del chiamante quando il path relativo non esiste sotto la cartella della skill.
+- **Modalita' cartella**: documentata in SKILL.md come via canonica per i batch (`--report json --no-graphics`); i modelli si caricano una volta per processo (singleton CLAP, cache classifier v0.19.1, cache prompt).
+- **Trascrizione, valutazione mlx_whisper** (misura del 25/08 su campioni reali del corpus, stessi pesi large-v3): `ancient-faith-talk` 89,2 s (faster-whisper CPU) -> 10,2 s (mlx Metal, 8,7x), `radio-maria-italia` 34,3 s -> 7,0 s (4,9x), testi sovrapponibili. Integrazione RIMANDATA (porterebbe la dipendenza mlx nel venv): decisione preparata in ROADMAP.
+
+### Verifica di non regressione (25/08, prima del tag)
+
+- Rilancio di `vocab_experiment.py` del workspace heritage contro la skill revisionata, cache intatte: differenza ZERO su tutte le tabelle congelate `24ago` (dettaglio, per tradizione, stratificazione, McNemar).
+- `embed_prompts` con la chiave nuova e il modello vero riproduce le cache npz del workspace bit-identiche (max|diff| 0,0) e l'impronta del checkpoint coincide con quella congelata il 23/08 (`fae3e9c0...`).
+- `analyze` end-to-end sull'interfaccia storica esatta su un wav reale della campagna: nessuna chiave sparita dal summary, solo le additive attese (`clap.checkpoint_*`, `ecoacoustic.domain_gate*`), top PANNs e CLAP identici alla campagna, gate correttamente attivo sul materiale di palinsesto.
+
+### Test
+
+- Nuovi: `tests/test_vocab_pluggable.py` (15), `tests/test_vocab_eval.py` (13, con ancore numeriche dalle tabelle reali), `tests/test_domain_gate.py` (9), `tests/test_no_graphics.py` (2, pipeline reale end-to-end), `tests/test_tabulate.py` (4). Suite leggera: 346 passed, 1 skipped. Suite con modelli reali (panns, clap_tagging, semantic_classifier) verde prima del tag.
+
 ## [0.19.3] - 2026-07-12
 
 Terza e ultima tranche dell'addendum performance 12/07: robustezza del run di corpus. Driver: nel run del 12/07 la sintesi claude era scaduta due volte a 300 s e il PDF era uscito senza sintesi, con recupero manuale a due comandi e nessuna telemetria per capire dove fosse andato il tempo.

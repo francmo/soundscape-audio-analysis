@@ -165,6 +165,20 @@ SPEECH_KEYWORDS_IT = {
     "discussione di vicini", "vociare di",
 }
 
+# v0.20.0 (lezione 2 addendum heritage): la guardia anti-allucinazione
+# riconosceva i prompt vocali solo in italiano, quindi un vocabolario utente
+# in inglese ("a male voice reciting...") la attraversava in silenzio.
+# Keyword inglesi con match per sottostringa come la lista italiana; scelte
+# per evitare collisioni note ("song" matcherebbe "birdsong", "vocal"
+# matcherebbe "bird vocalizations", quindi restano fuori).
+SPEECH_KEYWORDS_EN = {
+    "voice", "voices", "vocals", "vocal music", "spoken", "speech",
+    "speaking", "talking", "conversation", "dialogue", "narrat", "recit",
+    "chant", "singing", "sings", "sung", "choir", "chorus", "choral",
+    "a cappella", "prayer", "praying", "sermon", "preach", "whisper",
+    "people talking", "crowd chatter",
+}
+
 # Filtro geo-specificita' (v0.5.2): tag CLAP che contengono keyword di luoghi
 # italo-specifici vengono marcati con flag `geo_specific=True` su materiale
 # non identificato come italiano. Il flag e' separato da `likely_hallucination`:

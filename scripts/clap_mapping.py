@@ -77,9 +77,28 @@ def get_prompt_mapping(prompt_id: str, vocabulary: dict, mapping: dict) -> dict:
     return resolved
 
 
+def vocal_keywords_for_language(language: str) -> frozenset[str]:
+    """Keyword di voce/parlato/canto per la lingua di un vocabolario
+    (v0.20.0, lezione 2 addendum heritage).
+
+    Ritorna il set per le lingue coperte (it, en) e un set vuoto per le
+    altre: in quel caso la guardia lavora solo sui metadati ``vocal``
+    dichiarati per prompt, e chi la invoca deve dichiarare lo stato invece
+    di lasciarla passare in silenzio.
+    """
+    lang = (language or "it").strip().lower()[:2]
+    if lang == "en":
+        return frozenset(config.SPEECH_KEYWORDS_EN)
+    if lang == "it":
+        return frozenset(config.SPEECH_KEYWORDS_IT)
+    return frozenset()
+
+
 def mark_speech_hallucinations(
     top_global: list[dict],
     classifier: dict | None,
+    keywords: frozenset[str] | set[str] | None = None,
+    vocal_by_id: dict[str, bool] | None = None,
 ) -> list[dict]:
     """Marca i tag CLAP che dipendono da voce umana come likely_hallucination
     quando PANNs non rileva voce nel materiale (v0.5.1).
@@ -89,6 +108,12 @@ def mark_speech_hallucinations(
     dominanti, il tag e' probabilmente un'allucinazione del modello CLAP. Il
     tag NON viene rimosso (l'utente vede comunque il match), viene solo
     marcato per il rendering nel PDF e per l'agente compositivo.
+
+    v0.20.0 (lezione 2 addendum heritage): generalizzata oltre l'italiano.
+    ``keywords`` sostituisce la lista italiana di default (per i vocabolari
+    utente in altra lingua); ``vocal_by_id`` mappa id del prompt -> bool
+    dichiarato nel vocabolario e, dove presente, vince sulle keyword. Il
+    percorso storico (chiamata a due argomenti) resta identico.
 
     Ritorna nuova lista (non modifica in-place).
     """
@@ -109,13 +134,16 @@ def mark_speech_hallucinations(
         or speech_pct > config.HALLUCINATION_SPEECH_DOMINANT_PCT_MAX
     )
 
+    kws = config.SPEECH_KEYWORDS_IT if keywords is None else keywords
     out = []
     for tag in top_global:
         new_tag = dict(tag)
         prompt_lower = (tag.get("prompt") or "").lower()
-        contains_speech_kw = any(
-            kw in prompt_lower for kw in config.SPEECH_KEYWORDS_IT
-        )
+        vocal_meta = (vocal_by_id or {}).get(tag.get("id"))
+        if vocal_meta is not None:
+            contains_speech_kw = bool(vocal_meta)
+        else:
+            contains_speech_kw = any(kw in prompt_lower for kw in kws)
         if contains_speech_kw and not has_voice:
             new_tag["likely_hallucination"] = True
             new_tag["hallucination_reason"] = (

@@ -50,6 +50,12 @@ class ClapResult:
     embeddings_audio_b64: str = ""
     embeddings_prompts_b64: str = ""
     embeddings_shape: list[int] = field(default_factory=list)
+    # v0.20.0: identificativo e impronta del checkpoint che ha prodotto gli
+    # embedding, cosi' ogni summary dichiara con quale modello e' nato e un
+    # valutatore puo' rifiutarsi di confrontare embedding di checkpoint
+    # diversi (lezione 10 addendum heritage).
+    checkpoint_file: str = ""
+    checkpoint_sha256: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -151,13 +157,91 @@ def load_vocabulary(path: Path | None = None) -> dict:
     return load_json(path or VOCAB_PATH)
 
 
+def load_user_vocabulary(path: Path) -> dict:
+    """Carica e normalizza un vocabolario CLAP dell'utente (v0.20.0, P1
+    addendum heritage).
+
+    Schema minimo: ``{"prompts": [{"text": ...} | {"prompt": ...}]}``. Ogni
+    prompt puo' portare metadati liberi (``id``, ``category``, ``vocal``,
+    ``tradizione``, ...); gli ``id`` mancanti vengono autogenerati (v001,
+    v002, ...). Top-level riconosciuti: ``name``, ``version``, ``language``
+    (alias ``lingua``), ``model``. Ritorna il vocabolario normalizzato con
+    in piu' ``name`` (default: stem del file), ``language`` e
+    ``content_sha256`` (impronta del file sorgente).
+    """
+    import hashlib
+    path = Path(path)
+    raw_bytes = path.read_bytes()
+    import json as _json
+    voc = _json.loads(raw_bytes.decode("utf-8"))
+    prompts_in = voc.get("prompts")
+    if not isinstance(prompts_in, list) or not prompts_in:
+        raise ValueError(f"vocabolario senza lista 'prompts': {path}")
+
+    prompts: list[dict] = []
+    for i, p in enumerate(prompts_in):
+        if not isinstance(p, dict):
+            raise ValueError(f"prompt non a dizionario in {path} (indice {i})")
+        text = p.get("text") or p.get("prompt") or ""
+        if not str(text).strip():
+            raise ValueError(f"prompt senza testo in {path} (indice {i})")
+        entry = dict(p)
+        entry["text"] = str(text)
+        entry.setdefault("id", f"v{i + 1:03d}")
+        entry.setdefault("category", entry.get("tradizione", ""))
+        prompts.append(entry)
+
+    return {
+        "name": str(voc.get("name") or path.stem),
+        "version": str(voc.get("version", "")),
+        "language": str(voc.get("language") or voc.get("lingua") or ""),
+        "model": str(voc.get("model", "")),
+        "source_file": path.name,
+        "content_sha256": hashlib.sha256(raw_bytes).hexdigest(),
+        "prompts": prompts,
+    }
+
+
+# v0.20.0 (lezione 10 addendum heritage): impronta SHA-256 del checkpoint,
+# memoizzata su (path, size, mtime) perche' il file pesa ~400 MB e l'impronta
+# entra in ogni chiave di cache dei prompt e in ogni summary.
+_CHECKPOINT_FP_CACHE: dict[tuple, str] = {}
+
+
+def checkpoint_fingerprint(path: Path | None = None) -> str:
+    """SHA-256 del checkpoint CLAP; stringa vuota se il file non esiste.
+
+    Non scarica mai il checkpoint: l'assenza e' uno stato legittimo (il
+    download avviene solo quando serve il modello vero).
+    """
+    p = Path(path) if path is not None else CLAP_CHECKPOINT_FILE
+    try:
+        st = p.stat()
+    except OSError:
+        return ""
+    key = (str(p), st.st_size, int(st.st_mtime))
+    cached = _CHECKPOINT_FP_CACHE.get(key)
+    if cached is not None:
+        return cached
+    import hashlib
+    h = hashlib.sha256()
+    with p.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    digest = h.hexdigest()
+    _CHECKPOINT_FP_CACHE[key] = digest
+    return digest
+
+
 # v0.19.1 (A2 addendum performance): cache degli embedding dei prompt.
-# Gli embedding testuali dipendono solo da (testi dei prompt, checkpoint):
-# prima di questa cache il forward del text encoder sui 251 prompt del
+# Prima di questa cache il forward del text encoder sui 251 prompt del
 # vocabolario veniva rifatto identico per OGNI file di un corpus. La cache
 # in memoria copre il processo corrente; quella su disco (npz accanto al
-# checkpoint, chiave = hash md5 di testi+modello) copre i run successivi e
-# si invalida da sola a ogni modifica del vocabolario.
+# checkpoint) copre i run successivi e si invalida da sola a ogni modifica
+# del vocabolario.
+# v0.20.0 (lezione 10 addendum heritage): la chiave include anche l'impronta
+# SHA-256 del checkpoint, non solo il suo nome: un checkpoint sostituito a
+# parita' di nome non deve mai essere servito dalla cache di quello vecchio.
 _PROMPT_EMB_CACHE: dict[str, np.ndarray] = {}
 
 
@@ -165,6 +249,8 @@ def _prompts_cache_key(prompts: list[str]) -> str:
     import hashlib
     h = hashlib.md5()
     h.update(config.CLAP_MODEL_NAME.encode("utf-8"))
+    h.update(b"\x00")
+    h.update(checkpoint_fingerprint().encode("ascii"))
     for p in prompts:
         h.update(b"\x00")
         h.update(p.encode("utf-8"))
@@ -172,7 +258,30 @@ def _prompts_cache_key(prompts: list[str]) -> str:
 
 
 def _prompt_emb_disk_path(key: str) -> Path:
-    return CLAP_CHECKPOINT_DIR / f"prompt_embeddings_{key}.npz"
+    # Prefisso v2: distingue le cache con impronta del checkpoint nella
+    # chiave da quelle legacy (solo nome+testi), che vengono invalidate
+    # esplicitamente da _sweep_legacy_prompt_caches.
+    return CLAP_CHECKPOINT_DIR / f"prompt_embeddings_v2_{key}.npz"
+
+
+def _sweep_legacy_prompt_caches() -> None:
+    """Rimuove le cache npz legacy senza impronta del checkpoint (v0.20.0).
+
+    Best-effort: sono pure cache rigenerabili, ma lasciarle su disco
+    permetterebbe a un downgrade della skill di riusarle con un checkpoint
+    diverso da quello che le ha prodotte.
+    """
+    import re
+    legacy = re.compile(r"^prompt_embeddings_[0-9a-f]{32}\.npz$")
+    try:
+        for p in CLAP_CHECKPOINT_DIR.iterdir():
+            if legacy.match(p.name):
+                try:
+                    p.unlink()
+                except OSError:
+                    pass
+    except OSError:
+        pass
 
 
 def embed_prompts(prompts: list[str], device: str | None = None,
@@ -206,6 +315,7 @@ def embed_prompts(prompts: list[str], device: str | None = None,
     try:
         CLAP_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(disk_path, embeddings=emb)
+        _sweep_legacy_prompt_caches()
     except Exception:
         pass  # la cache su disco è best-effort
     return emb
@@ -333,6 +443,72 @@ def _encode_float16(a: np.ndarray) -> str:
     return base64.b64encode(a.astype(np.float16).tobytes()).decode("ascii")
 
 
+def tag_custom_vocabulary(
+    vocab: dict,
+    audio_emb: np.ndarray,
+    bounds: list[tuple[float, float]],
+    classifier: dict | None = None,
+    prompt_emb: np.ndarray | None = None,
+    top_k: int = config.CLAP_TOP_K,
+    include_embeddings: bool = True,
+) -> dict:
+    """Applica un vocabolario utente normalizzato agli embedding audio gia'
+    calcolati e ritorna il blocco per ``clap["custom_vocabularies"]``
+    (v0.20.0, P1 addendum heritage).
+
+    Un solo embedding audio, N insiemi di prompt: il costo marginale di un
+    vocabolario in piu' e' il solo forward testuale (in cache). La guardia
+    anti-allucinazione e' generalizzata: metadato ``vocal`` per prompt
+    quando dichiarato, altrimenti keyword della lingua del vocabolario
+    (lezione 2 addendum heritage). Le mappature accademiche (Schafer,
+    Krause, Schaeffer, Smalley) restano legate al vocabolario nativo e qui
+    non vengono applicate.
+
+    ``prompt_emb`` permette di iniettare embedding gia' pronti (test).
+    """
+    from .clap_mapping import mark_speech_hallucinations, vocal_keywords_for_language
+
+    prompts = vocab["prompts"]
+    texts = [p["text"] for p in prompts]
+    if prompt_emb is None:
+        prompt_emb = embed_prompts(texts)
+    prompt_emb = np.asarray(prompt_emb, dtype=np.float32)
+
+    timeline = tag_segments(audio_emb, prompt_emb, prompts, bounds, top_k=top_k)
+    top_global = global_top_tags(audio_emb, prompt_emb, prompts)
+
+    vocal_by_id = {p["id"]: bool(p["vocal"]) for p in prompts if "vocal" in p}
+    keywords = vocal_keywords_for_language(vocab.get("language", ""))
+    if vocal_by_id or keywords:
+        guard_state = "attiva"
+        top_global = mark_speech_hallucinations(
+            top_global, classifier, keywords=keywords, vocal_by_id=vocal_by_id
+        )
+    else:
+        # Senza keyword per la lingua e senza metadati vocal la guardia non
+        # ha basi per decidere: lo si dichiara invece di tacere (prima un
+        # vocabolario non italiano la attraversava in silenzio).
+        guard_state = "inattiva (lingua non coperta e nessun metadato vocal)"
+
+    block = {
+        "name": vocab.get("name", ""),
+        "version": vocab.get("version", ""),
+        "language": vocab.get("language", ""),
+        "source_file": vocab.get("source_file", ""),
+        "content_sha256": vocab.get("content_sha256", ""),
+        "vocabulary_size": len(prompts),
+        "hallucination_guard": guard_state,
+        "checkpoint_file": CLAP_CHECKPOINT_FILE.name,
+        "checkpoint_sha256": checkpoint_fingerprint(),
+        "timeline": timeline,
+        "top_global": top_global,
+    }
+    if include_embeddings:
+        block["embeddings_prompts_b64"] = _encode_float16(prompt_emb)
+        block["embeddings_prompts_shape"] = list(prompt_emb.shape)
+    return block
+
+
 def clap_summary(
     waveform: np.ndarray,
     sr: int,
@@ -341,9 +517,15 @@ def clap_summary(
     top_k: int = config.CLAP_TOP_K,
     include_embeddings: bool = True,
     classifier: dict | None = None,
+    custom_vocab_paths: list[Path] | None = None,
 ) -> dict:
     """Pipeline CLAP completa: carica vocabolario, embed audio + prompts,
-    tag per segmento + globale. Ritorna dict serializzabile."""
+    tag per segmento + globale. Ritorna dict serializzabile.
+
+    v0.20.0: ``custom_vocab_paths`` (P1 addendum heritage) applica in piu'
+    N vocabolari dell'utente sugli stessi embedding audio; i risultati
+    finiscono nel campo additivo ``custom_vocabularies``.
+    """
     if not enable:
         return {"enabled": False, "reason": "disabled"}
 
@@ -393,10 +575,27 @@ def clap_summary(
         timeline=timeline,
         top_global=top_global,
         academic_hints=academic_hints,
+        checkpoint_file=CLAP_CHECKPOINT_FILE.name,
+        checkpoint_sha256=checkpoint_fingerprint(),
     )
     if include_embeddings:
         result.embeddings_audio_b64 = _encode_float16(audio_emb)
         result.embeddings_prompts_b64 = _encode_float16(prompt_emb)
         result.embeddings_shape = [list(audio_emb.shape), list(prompt_emb.shape)]
 
-    return result.to_dict()
+    out = result.to_dict()
+
+    # v0.20.0 (P1 addendum heritage): vocabolari utente sugli stessi
+    # embedding audio. Campo additivo, presente solo se richiesto.
+    if custom_vocab_paths:
+        blocks = []
+        for vp in custom_vocab_paths:
+            voc_user = load_user_vocabulary(Path(vp))
+            blocks.append(tag_custom_vocabulary(
+                voc_user, audio_emb, bounds,
+                classifier=classifier, top_k=top_k,
+                include_embeddings=include_embeddings,
+            ))
+        out["custom_vocabularies"] = blocks
+
+    return out

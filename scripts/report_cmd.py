@@ -113,6 +113,7 @@ def _run_or_reuse_analyze(
     audio_paths: list[Path],
     output_dir: Path,
     rerun: bool,
+    custom_vocab_paths: list[Path] | None = None,
 ) -> list[Path]:
     """Per ogni file: riusa summary se cache valida, altrimenti lancia
     _analyze_single. Ritorna la lista dei summary JSON prodotti (o trovati)."""
@@ -152,6 +153,7 @@ def _run_or_reuse_analyze(
                 semantic_backend=None,
                 do_clap=True,
                 narrative_mode="full",
+                custom_vocab_paths=custom_vocab_paths,
             )
             summary_json = r.get("summary_json")
             if summary_json:
@@ -180,6 +182,7 @@ def run_corpus_report(
     no_synth: bool = False,
     golden_path: Path | None = None,
     synth_timeout_s: int | None = None,
+    custom_vocab_paths: list[Path] | None = None,
 ) -> dict:
     """Orchestrazione completa del comando `report`.
 
@@ -216,7 +219,9 @@ def run_corpus_report(
     click.echo(f"Output in {output_dir}")
 
     # 5. Analisi dei file
-    summary_paths = _run_or_reuse_analyze(audio_paths, output_dir, rerun)
+    summary_paths = _run_or_reuse_analyze(
+        audio_paths, output_dir, rerun, custom_vocab_paths=custom_vocab_paths
+    )
     if not summary_paths:
         raise click.ClickException(
             "Nessun summary JSON prodotto. Controllare gli errori di analisi sopra."

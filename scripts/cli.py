@@ -5,6 +5,7 @@ ecoacoustic -> semantic (con pre-check) -> multichannel -> comparison GRM ->
 plotting -> agente compositivo -> PDF ReportLab.
 """
 import json
+import os
 import sys
 import traceback
 from datetime import datetime
@@ -32,6 +33,30 @@ def _iter_audio_paths(path: Path):
                 yield p
 
 
+def _resolve_user_path(p: Path | str | None) -> Path | None:
+    """Risolve un path utente relativo contro la cwd del chiamante (v0.20.0,
+    lezione 6 addendum heritage).
+
+    Il wrapper `bin/soundscape` fa `cd` nella cartella della skill prima di
+    invocare il CLI, quindi un path relativo alla directory di lavoro
+    dell'utente non esiste piu'. Il wrapper esporta SOUNDSCAPE_CALLER_CWD;
+    se il path relativo non esiste qui ma esiste sotto quella cwd, si
+    risolve la'. I path assoluti e quelli gia' validi restano intatti (cosi'
+    gli usi storici relativi alla cartella della skill non cambiano).
+    """
+    if p is None:
+        return None
+    p = Path(p)
+    if p.is_absolute() or p.exists():
+        return p
+    caller = os.environ.get("SOUNDSCAPE_CALLER_CWD", "")
+    if caller:
+        candidate = Path(caller) / p
+        if candidate.exists():
+            return candidate
+    return p
+
+
 def _analyze_single(
     audio_path: Path,
     output_dir: Path,
@@ -50,6 +75,7 @@ def _analyze_single(
     known_piece: str = "",
     ecoacoustic_backend: str | None = None,
     narrative_profile: str = "auto",
+    custom_vocab_paths: list[Path] | None = None,
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     import time
@@ -178,6 +204,7 @@ def _analyze_single(
         clap_res = semantic_clap.clap_summary(
             clap_waveform, 48000, enable=True,
             classifier=semantic_res.get("classifier") if do_semantic else None,
+            custom_vocab_paths=custom_vocab_paths,
         )
         del clap_waveform  # v0.19.2: ~700 MB su file da 60 min, libera subito
         # v0.5.1: marca tag CLAP speech-related che PANNs non supporta
@@ -542,11 +569,21 @@ def cli():
                    "priorità di processo abbassata, per analisi lunghe che non "
                    "devono saturare la macchina. Più lenta ma convive col "
                    "lavoro interattivo.")
+@click.option("--clap-vocab", "clap_vocab_paths", multiple=True,
+              type=click.Path(path_type=Path),
+              help="v0.20.0: vocabolario CLAP dell'utente (file JSON, opzione "
+                   "ripetibile). Ogni vocabolario viene applicato agli stessi "
+                   "embedding audio del vocabolario nativo e produce un blocco "
+                   "additivo in clap.custom_vocabularies del summary. Schema "
+                   "minimo {\"prompts\": [{\"text\": ...}]} (accettato anche "
+                   "\"prompt\"), metadati liberi per prompt (id, category, "
+                   "vocal), top-level name/version/language. Richiede lo "
+                   "stadio CLAP attivo.")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 ecoacoustic_backend, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
-                narrative_profile, speech, known_piece, low_impact, lang):
+                narrative_profile, speech, known_piece, low_impact, clap_vocab_paths, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
@@ -562,6 +599,19 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
     if not files:
         click.echo(click.style("Nessun file audio valido trovato.", fg="red"))
         sys.exit(1)
+
+    # v0.20.0 (P1 addendum heritage): vocabolari CLAP dell'utente.
+    clap_vocab_paths = [_resolve_user_path(p) for p in clap_vocab_paths]
+    if clap_vocab_paths:
+        if not clap:
+            raise click.UsageError(
+                "--clap-vocab richiede lo stadio CLAP attivo: togli --no-clap."
+            )
+        non_trovati = [str(p) for p in clap_vocab_paths if not p.is_file()]
+        if non_trovati:
+            raise click.UsageError(
+                "Vocabolario CLAP non trovato: " + ", ".join(non_trovati)
+            )
 
     if output_dir is None:
         output_dir = path.parent if path.is_file() else path
@@ -595,6 +645,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 known_piece=known_piece,
                 ecoacoustic_backend=ecoacoustic_backend,
                 narrative_profile=narrative_profile,
+                custom_vocab_paths=clap_vocab_paths or None,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))
@@ -703,8 +754,15 @@ def init_profiles(overwrite):
               help=f"v0.19.3: timeout in secondi della sintesi claude (default "
                    f"{config.CORPUS_REPORT_TIMEOUT_S}; il retry lo raddoppia e "
                    f"ricade sul modello {config.CORPUS_REPORT_FALLBACK_MODEL}).")
+@click.option("--clap-vocab", "clap_vocab_paths", multiple=True,
+              type=click.Path(path_type=Path),
+              help="v0.20.0: vocabolario CLAP dell'utente (JSON, ripetibile), "
+                   "applicato a ogni file del corpus come in analyze. Con "
+                   "summary in cache serve --rerun per applicarlo ai file "
+                   "gia' analizzati.")
 def report_command(folder, output_dir, corpus_title, rerun, yes, model,
-                   no_synth, golden_path, low_impact, synth_timeout):
+                   no_synth, golden_path, low_impact, synth_timeout,
+                   clap_vocab_paths):
     """Report comparativo su un corpus di file audio.
 
     Lancia analyze su tutti i file della cartella (con cache di freschezza),
@@ -717,6 +775,13 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
         runtime.set_low_impact()
     else:
         runtime.apply_thread_caps()
+    # v0.20.0: vocabolari utente risolti contro la cwd del chiamante.
+    clap_vocab_paths = [_resolve_user_path(p) for p in clap_vocab_paths]
+    non_trovati = [str(p) for p in clap_vocab_paths if not p.is_file()]
+    if non_trovati:
+        raise click.UsageError(
+            "Vocabolario CLAP non trovato: " + ", ".join(non_trovati)
+        )
     from . import report_cmd as rc
     rc.run_corpus_report(
         folder=folder,
@@ -728,6 +793,7 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
         no_synth=no_synth,
         golden_path=golden_path,
         synth_timeout_s=synth_timeout,
+        custom_vocab_paths=list(clap_vocab_paths) or None,
     )
 
 

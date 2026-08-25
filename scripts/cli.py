@@ -76,6 +76,7 @@ def _analyze_single(
     ecoacoustic_backend: str | None = None,
     narrative_profile: str = "auto",
     custom_vocab_paths: list[Path] | None = None,
+    no_graphics: bool = False,
 ) -> dict:
     """Pipeline analitica su un singolo file audio."""
     import time
@@ -330,14 +331,20 @@ def _analyze_single(
     click.echo(f"[10/10] Grafici e profili")
     base = safe_filename(audio_path.stem)
     graphics_dir = output_dir / "graphics"
-    ensure_dir(graphics_dir)
-
-    # v0.19.2 (A4c): riusa spettro medio e frequenze calcolati allo stadio 4
-    # (prima qui partiva una seconda STFT n_fft=4096 identica).
-    plot_paths = plotting.generate_all_plots(
-        y, sr, spectrum_mean, freqs_mean, spec["bands_schafer"], hum_res,
-        graphics_dir, base
-    )
+    # v0.20.0 (P4 addendum heritage, lezione 5): --no-graphics salta tutti i
+    # PNG. Nel caso heritage i grafici costavano 76 s a sessione e il client
+    # batch li cancellava subito dopo.
+    plot_paths: dict = {}
+    if no_graphics:
+        click.echo("  Grafici disattivati (--no-graphics)")
+    else:
+        ensure_dir(graphics_dir)
+        # v0.19.2 (A4c): riusa spettro medio e frequenze calcolati allo
+        # stadio 4 (prima qui partiva una seconda STFT n_fft=4096 identica).
+        plot_paths = plotting.generate_all_plots(
+            y, sr, spectrum_mean, freqs_mean, spec["bands_schafer"], hum_res,
+            graphics_dir, base
+        )
     _lap("plots")
 
     if known_piece:
@@ -385,15 +392,16 @@ def _analyze_single(
     )
     if summary.get("dynamic_form"):
         summary["dynamic_form"]["phases"] = aural_form.infer_phases(summary["dynamic_form"])
-        try:
-            df_plot = graphics_dir / f"{base}_dynamic_form.png"
-            plotting.plot_dynamic_form(summary["dynamic_form"], duration_s, df_plot)
-            plot_paths["dynamic_form"] = df_plot
-        except Exception as exc:
-            click.echo(f"  avviso: plot dynamic_form saltato ({exc})")
+        if not no_graphics:
+            try:
+                df_plot = graphics_dir / f"{base}_dynamic_form.png"
+                plotting.plot_dynamic_form(summary["dynamic_form"], duration_s, df_plot)
+                plot_paths["dynamic_form"] = df_plot
+            except Exception as exc:
+                click.echo(f"  avviso: plot dynamic_form saltato ({exc})")
 
     # Timeline grafica strutturale per il PDF
-    if structure_res.get("enabled") and structure_res.get("sections"):
+    if not no_graphics and structure_res.get("enabled") and structure_res.get("sections"):
         timeline_path = graphics_dir / f"{base}_structure_timeline.png"
         plotting.plot_structure_timeline(
             structure_res["sections"],
@@ -404,7 +412,7 @@ def _analyze_single(
 
     # Radar ecoacustico (v0.12.3)
     eco_for_radar = summary.get("ecoacoustic") or {}
-    if eco_for_radar:
+    if eco_for_radar and not no_graphics:
         try:
             radar_path = graphics_dir / f"{base}_ecoacoustic_radar.png"
             plotting.plot_ecoacoustic_radar(eco_for_radar, out_path=radar_path)
@@ -414,7 +422,7 @@ def _analyze_single(
 
     # Timeline famiglie semantiche CLAP (v0.12.1)
     clap_timeline = (summary.get("clap") or {}).get("timeline") or []
-    if clap_timeline:
+    if clap_timeline and not no_graphics:
         from . import clap_families
         try:
             dominants = clap_families.dominant_family_per_window(clap_timeline)
@@ -530,7 +538,7 @@ def cli():
 
 
 @cli.command("analyze")
-@click.argument("path", type=click.Path(exists=True, path_type=Path))
+@click.argument("path", type=click.Path(path_type=Path))
 @click.option("--semantic/--no-semantic", default=True, help="Classificazione semantica")
 @click.option("--semantic-backend", "semantic_backend",
               type=click.Choice(["panns", "yamnet"]), default=None,
@@ -593,11 +601,16 @@ def cli():
                    "\"prompt\"), metadati liberi per prompt (id, category, "
                    "vocal), top-level name/version/language. Richiede lo "
                    "stadio CLAP attivo.")
+@click.option("--no-graphics", "no_graphics", is_flag=True, default=False,
+              help="v0.20.0: salta la generazione di tutti i grafici PNG (nel "
+                   "caso heritage costavano 76 s a sessione e il client batch "
+                   "li cancellava subito). Solo con --report json.")
 @click.option("--lang", type=click.Choice(["it", "en"]), default="it", help="Lingua output")
 def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 ecoacoustic_backend, compare_mode,
                 report_format, output_dir, multichannel_mode, agent, clap, narrative_mode,
-                narrative_profile, speech, known_piece, low_impact, clap_vocab_paths, lang):
+                narrative_profile, speech, known_piece, low_impact, clap_vocab_paths,
+                no_graphics, lang):
     """Analizza un file audio o una cartella di file audio.
 
     Esegue la pipeline completa: tecnica, hum, spettrale, ecoacustica,
@@ -609,6 +622,19 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
         runtime.set_low_impact()
     else:
         runtime.apply_thread_caps()
+
+    # v0.20.0 (P4 addendum heritage, lezione 6): path utente risolti contro
+    # la cwd del chiamante del wrapper.
+    path = _resolve_user_path(path)
+    output_dir = _resolve_user_path(output_dir)
+    if not path.exists():
+        raise click.UsageError(f"Path non trovato: {path}")
+    if no_graphics and report_format != "json":
+        raise click.UsageError(
+            "--no-graphics vale solo con --report json: il PDF e il "
+            "markdown hanno bisogno dei grafici."
+        )
+
     files = list(_iter_audio_paths(path))
     if not files:
         click.echo(click.style("Nessun file audio valido trovato.", fg="red"))
@@ -660,6 +686,7 @@ def analyze_cmd(path, semantic, semantic_backend, birdnet, ecoacoustic_mode,
                 ecoacoustic_backend=ecoacoustic_backend,
                 narrative_profile=narrative_profile,
                 custom_vocab_paths=clap_vocab_paths or None,
+                no_graphics=no_graphics,
             )
             results.append(r)
             click.echo(click.style(f"  OK", fg="green"))
@@ -746,7 +773,7 @@ def init_profiles(overwrite):
 
 
 @cli.command("report")
-@click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument("folder", type=click.Path(path_type=Path))
 @click.option("--output", "output_dir", type=click.Path(path_type=Path),
               default=None, help="Directory di output (default: <folder>/soundscape_report/)")
 @click.option("--corpus-title", default=None,
@@ -789,7 +816,11 @@ def report_command(folder, output_dir, corpus_title, rerun, yes, model,
         runtime.set_low_impact()
     else:
         runtime.apply_thread_caps()
-    # v0.20.0: vocabolari utente risolti contro la cwd del chiamante.
+    # v0.20.0 (P4/lezione 6): path utente risolti contro la cwd del chiamante.
+    folder = _resolve_user_path(folder)
+    output_dir = _resolve_user_path(output_dir)
+    if not Path(folder).is_dir():
+        raise click.UsageError(f"Cartella non trovata: {folder}")
     clap_vocab_paths = [_resolve_user_path(p) for p in clap_vocab_paths]
     non_trovati = [str(p) for p in clap_vocab_paths if not p.is_file()]
     if non_trovati:
@@ -882,6 +913,60 @@ def vocab_eval_command(summaries_dir, vocab_path, vocab_b_path, truth_path,
             output_dir=output_dir,
         )
     except VocabEvalError as e:
+        raise click.ClickException(str(e))
+
+
+@cli.command("tabulate")
+@click.argument("summaries_dir", type=click.Path(path_type=Path))
+@click.option("--output", "output_dir", type=click.Path(path_type=Path),
+              default=None,
+              help="Cartella dei CSV (default: <summaries_dir>/tabelle/)")
+@click.option("--group-by-parent", "group_by_parent", is_flag=True,
+              default=False,
+              help="Aggrega per cartella madre di ogni summary (es. le "
+                   "sessioni di un corpus batch).")
+@click.option("--group-map", "group_map_path", default=None,
+              type=click.Path(path_type=Path),
+              help="CSV chiave -> gruppo (colonne id/chiave/stazione e "
+                   "gruppo/etichetta; la chiave puo' essere un prefisso "
+                   "dello stem). Alternativa a --group-by-parent.")
+def tabulate_command(summaries_dir, output_dir, group_by_parent,
+                     group_map_path):
+    """Estrae in CSV un corpus di summary (v0.20.0, P3 addendum heritage).
+
+    Un CSV per campione (livelli, LUFS, timbro, onset, indici ecoacustici
+    con gate di dominio, top PANNs e top-5, top CLAP, Krause e ruolo
+    Schafer dominanti, versione della skill e impronta del checkpoint) e,
+    con un raggruppamento, l'aggregato per gruppo con mediane. I summary
+    illeggibili sono contati, mai saltati in silenzio.
+    """
+    from .corpus_csv import run_tabulate
+    from .vocab_eval import VocabEvalError, load_truth
+    summaries_dir = _resolve_user_path(summaries_dir)
+    output_dir = _resolve_user_path(output_dir)
+    group_map_path = _resolve_user_path(group_map_path)
+    if not Path(summaries_dir).is_dir():
+        raise click.UsageError(f"cartella summary non trovata: {summaries_dir}")
+    if group_by_parent and group_map_path:
+        raise click.UsageError(
+            "--group-by-parent e --group-map sono alternativi, scegline uno."
+        )
+    group_map = None
+    if group_map_path:
+        if not Path(group_map_path).is_file():
+            raise click.UsageError(f"--group-map: file non trovato: {group_map_path}")
+        try:
+            group_map = load_truth(group_map_path)
+        except VocabEvalError as e:
+            raise click.ClickException(str(e))
+    try:
+        run_tabulate(
+            root=summaries_dir,
+            output_dir=output_dir,
+            group_by_parent=group_by_parent,
+            group_map=group_map,
+        )
+    except ValueError as e:
         raise click.ClickException(str(e))
 
 

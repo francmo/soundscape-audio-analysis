@@ -173,11 +173,12 @@ def load_truth(path: Path) -> dict[str, str]:
         raise VocabEvalError(f"file di verita' vuoto: {path}")
     campi = righe[0].keys()
     col_id = next((c for c in ("id", "chiave", "stazione") if c in campi), None)
-    col_lab = next((c for c in ("etichetta", "label", "tradizione") if c in campi), None)
+    col_lab = next((c for c in ("etichetta", "label", "tradizione", "gruppo")
+                    if c in campi), None)
     if not col_id or not col_lab:
         raise VocabEvalError(
             f"il CSV di verita' deve avere colonne id/chiave/stazione ed "
-            f"etichetta/label/tradizione, trovate: {sorted(campi)}"
+            f"etichetta/label/tradizione/gruppo, trovate: {sorted(campi)}"
         )
     return {r[col_id].strip(): r[col_lab].strip() for r in righe if r.get(col_id)}
 

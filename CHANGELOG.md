@@ -1242,7 +1242,7 @@ report singolo. Chiude un pezzo rimasto aperto in v0.6.6.
 
 Hotfix release che traduce in patch concrete i feedback del confronto
 blind del corpus Nottoli (5 brani in `references/user_feedback/`,
-commit `020c0cc`). Quattro patch atomiche, nessuna regressione,
+commit `cae2d05`). Quattro patch atomiche, nessuna regressione,
 147 test passati + 2 skipped.
 
 ### Added

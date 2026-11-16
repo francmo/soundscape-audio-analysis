@@ -175,7 +175,7 @@ Se il checkpoint CLAP esiste già in `~/.cache/clap`, impostare `HF_HUB_OFFLINE=
 
 ### D1. Caveat metodologico sugli indici univariati (riprende v0.6.5 in backlog)
 
-Il caveat Kane et al. 2023 e il FADI proposti nella v0.6.5 del backlog restano validi e a costo basso; questo addendum non li ridefinisce, li richiama come naturale complemento della sezione ecoacustica. La divergenza ACI legacy/maad (parity rho 0,117, flip respinto) merita una riga nel PDF - dichiarare quale definizione di ACI usa la skill (implementazione legacy, riferimento Pieretti et al. 2011) così il numero è interpretabile e confrontabile.
+Il caveat Sethi et al. 2023 e il FADI proposti nella v0.6.5 del backlog restano validi e a costo basso; questo addendum non li ridefinisce, li richiama come naturale complemento della sezione ecoacustica. La divergenza ACI legacy/maad (parity rho 0,117, flip respinto) merita una riga nel PDF - dichiarare quale definizione di ACI usa la skill (implementazione legacy, riferimento Pieretti et al. 2011) così il numero è interpretabile e confrontabile.
 
 ### D2. Finestre narrative allineate ai confini strutturali (esperimento)
 

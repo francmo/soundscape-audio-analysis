@@ -333,8 +333,8 @@ Driver: ricerca web 16/04/2026
 (`references/external_feedback/research_2026-04-16_soundscape_texts.md`)
 ha individuato il manuale operativo di Bradfer-Lawrence et al., "The Acoustic
 Index User's Guide" (*Methods Ecol Evol* 2025) con 91 registrazioni di
-riferimento e codice; e il caveat di Kane et al., "Limits to accurate use of
-soundscapes for biodiversity" (*Nat Ecol Evol* 2023): gli indici univariati
+riferimento e codice; e il caveat di Sethi et al., "Limits to the accurate and generalizable use of
+soundscapes to monitor biodiversity" (*Nat Ecol Evol* 7, 1373-1378, 2023, DOI 10.1038/s41559-023-02148-z): gli indici univariati
 **non predicono species richness in modo cross-dataset**, ma il *cambiamento*
 di soundscape predice il *cambiamento* di community.
 
@@ -344,7 +344,7 @@ di soundscape predice il *cambiamento* di community.
 - **`scripts/report_pdf.py`**: nella sezione "Indici ecoacustici"
   aggiungere caveat in corsivo: "Gli indici univariati (ACI, NDSI, H, BI,
   FADI) non predicono in modo affidabile la ricchezza di specie tra
-  registrazioni eterogenee (Kane et al. 2023). Sono indicatori di *cambiamento*
+  registrazioni eterogenee (Sethi et al. 2023). Sono indicatori di *cambiamento*
   di soundscape, non di valore assoluto."
 - Test su fixture corte gia' esistenti.
 

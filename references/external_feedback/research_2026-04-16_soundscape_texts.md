@@ -141,7 +141,7 @@ Materiale di riferimento per pianificazione versioni v0.6.x → v0.8.0+
   per bioacustica ecologica. Riferimento metodologico per scelte di
   architettura.
 
-- **Kane J. et al., "Limits to the accurate and generalizable use of
+- **Sethi S. S. et al., "Limits to the accurate and generalizable use of
   soundscapes to monitor biodiversity", *Nature Ecology & Evolution* 7,
   2023**. Indici univariati e ML non predicono species richness in modo
   cross-dataset; soundscape change indica community change. **Caveat
@@ -171,7 +171,7 @@ Materiale di riferimento per pianificazione versioni v0.6.x → v0.8.0+
 
 | Risorsa | Versione skill | Stima ore |
 |---------|----------------|-----------|
-| FADI + caveat Kane et al. | v0.6.1 | 3-4 |
+| FADI + caveat Sethi et al. | v0.6.1 | 3-4 |
 | Soundscapy + ISO 12913-3 | v0.7.0 | 10-14 |
 | WavCaps + Battier + Westerkamp + WDR + BirdNET | v0.7.1 | 4-6 |
 | TARTYP completo + Smalley esteso + Wishart utterance + EARS | v0.8.0 | 12-18 |

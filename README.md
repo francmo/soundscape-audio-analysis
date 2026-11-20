@@ -76,9 +76,9 @@ del methodology paper associato:
 
 > Mariano, F. (2026). *Soundscape Annotation: workflow iterativo,
 > stratificazione interpretativa e calibrazione di una skill di
-> analisi audio in didattica AFAM*. Working Paper v1.0. Accademia
-> di Belle Arti di Macerata.
-> https://doi.org/10.5281/zenodo.20282496
+> analisi audio in didattica AFAM*. Working Paper 1.1, con edizione
+> inglese. Accademia di Belle Arti di Macerata.
+> https://doi.org/10.5281/zenodo.20282495
 
 In formato BibTeX:
 
@@ -90,10 +90,13 @@ In formato BibTeX:
                    una skill di analisi audio in didattica AFAM}},
   institution  = {Accademia di Belle Arti di Macerata},
   year         = {2026},
+  month        = {11},
   type         = {Working Paper},
-  number       = {v1.0},
-  doi          = {10.5281/zenodo.20282496},
-  url          = {https://zenodo.org/records/20282496}
+  number       = {v1.1},
+  doi          = {10.5281/zenodo.20282495},
+  url          = {https://doi.org/10.5281/zenodo.20282495},
+  note         = {Versione 1.1, 20 novembre 2026, con edizione inglese.
+                  Il DOI concept risolve sempre all'ultima versione.}
 }
 
 @software{mariano2026soundscapeskill,
@@ -110,4 +113,4 @@ In formato BibTeX:
 
 In forma discorsiva: "Analisi condotta con Soundscape Audio Analysis
 (Mariano, 2026), documentata nel methodology paper Soundscape Annotation
-(Mariano, 2026, DOI 10.5281/zenodo.20282496)."
+(Mariano, 2026, DOI 10.5281/zenodo.20282495)."
